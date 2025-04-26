@@ -6,8 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const GET_WEEKLY_STEPS = gql`
   query GetWeeklySteps {
     weeklyStepsAverage(range: {
-      from: "2024-01-01T00:00:00Z",
-      to: "2024-12-31T23:59:59Z"
+      from: "2024-01-01T00:00:00-05:00",
+      to: "2024-12-31T23:59:59-05:00"
     }) {
       weekNumber
       averageSteps

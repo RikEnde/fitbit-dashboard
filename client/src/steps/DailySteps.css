@@ -33,3 +33,15 @@
 .chart-container {
   margin-top: 20px;
 }
+
+/* Styles for chart axis labels */
+.month-label {
+  font-size: 14px;
+  font-weight: bold;
+  fill: #FF0000;
+}
+
+.day-label {
+  font-size: 12px;
+  fill: #666;
+}
