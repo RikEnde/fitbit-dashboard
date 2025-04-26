@@ -1,0 +1,19 @@
+/* Styles for the WeeklyDetailSteps component */
+.back-button-container {
+  margin-bottom: 20px;
+}
+
+.back-button {
+  padding: 8px 12px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #357ab8;
+}

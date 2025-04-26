@@ -1,0 +1,223 @@
+# add once, near the top
+scalar DateTime               # RFC‑3339 scalar from graphql‑java‑extended‑scalars
+
+input DateRange {
+    from: DateTime!
+    to:   DateTime!
+}
+
+type Query {
+    # Health Check
+    healthStatus: HealthStatus!
+
+    # Heart Rate Queries
+    heartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [HeartRate!]!
+    heartRatesPerInterval(range: DateRange!): [SumsOfHeartRates!]!
+
+    # Steps Queries
+    steps(limit: Int = 10, offset: Int = 0, range: DateRange): [Steps!]!
+    dailyStepsSum(range: DateRange!): [DailyStepsSum!]!
+    weeklyStepsAverage(range: DateRange!): [WeeklyStepsAverage!]!
+
+    # Calories Queries
+    calories(limit: Int = 10, offset: Int = 0, range: DateRange): [Calories!]!
+
+    # Distance Queries
+    distances(limit: Int = 10, offset: Int = 0, range: DateRange): [Distance!]!
+
+    # Exercise Queries
+    exercises(limit: Int = 10, offset: Int = 0, range: DateRange): [Exercise!]!
+
+    # Sleep Queries
+    sleeps(limit: Int = 10, offset: Int = 0, range: DateRange): [Sleep!]!
+
+    # Sleep Score Queries
+    sleepScores(limit: Int = 10, offset: Int = 0, range: DateRange): [SleepScore!]!
+
+    # Profile Queries
+    profiles(limit: Int = 10, offset: Int = 0): [Profile!]!
+    profile(id: ID!): Profile
+}
+
+type HealthStatus {
+    status: String!
+    message: String!
+}
+
+# Heart Rate Types
+type HeartRate {
+    id: ID!
+    bpm: Int!
+    confidence: Int!
+    time: String!
+}
+
+type SumsOfHeartRates {
+    timeInterval: DateTime!  # start of the bucket
+    bpmSum:       Int!       # Sum bpm inside the bucket
+}
+
+# Steps Type
+type Steps {
+    id: ID!
+    value: Int!
+    dateTime: String!
+}
+
+# Daily Steps Sum Type
+type DailyStepsSum {
+    date: String!
+    totalSteps: Int!
+}
+
+# Weekly Steps Average Type
+type WeeklyStepsAverage {
+    weekNumber: String!
+    averageSteps: Float!
+}
+
+# Calories Type
+type Calories {
+    id: ID!
+    value: Float!
+    dateTime: String!
+}
+
+# Distance Type
+type Distance {
+    id: ID!
+    value: Float!
+    dateTime: String!
+}
+
+# Exercise Types
+type Exercise {
+    id: ID!
+    logId: ID!
+    activityName: String!
+    activityTypeId: Int!
+    averageHeartRate: Int
+    calories: Int!
+    duration: Int!
+    activeDuration: Int!
+    steps: Int
+    logType: String!
+    startTime: String!
+    lastModified: String
+    originalStartTime: String
+    originalDuration: Int
+    elevationGain: Float
+    hasGps: Boolean!
+    shouldFetchDetails: Boolean!
+    hasActiveZoneMinutes: Boolean!
+    heartRateZones: [HeartRateZone!]!
+    activityLevels: [ActivityLevel!]!
+}
+
+type HeartRateZone {
+    id: ID!
+    name: String!
+    min: Int!
+    max: Int!
+    minutes: Int!
+}
+
+type ActivityLevel {
+    id: ID!
+    name: String!
+    minutes: Int!
+}
+
+# Sleep Types
+type Sleep {
+    id: ID!
+    logId: ID!
+    dateOfSleep: String!
+    startTime: String!
+    endTime: String!
+    duration: Int!
+    minutesToFallAsleep: Int!
+    minutesAsleep: Int!
+    minutesAwake: Int!
+    minutesAfterWakeup: Int!
+    timeInBed: Int!
+    efficiency: Int!
+    type: String!
+    infoCode: Int!
+    logType: String!
+    mainSleep: Boolean!
+    levelSummaries: [SleepLevelSummary!]!
+    levelData: [SleepLevelData!]!
+    levelShortData: [SleepLevelShortData!]!
+}
+
+type SleepLevelSummary {
+    id: ID!
+    level: String!
+    count: Int!
+    minutes: Int!
+    thirtyDayAvgMinutes: Int!
+}
+
+type SleepLevelData {
+    id: ID!
+    dateTime: String!
+    level: String!
+    seconds: Int!
+}
+
+type SleepLevelShortData {
+    id: ID!
+    dateTime: String!
+    level: String!
+    seconds: Int!
+}
+
+type SleepScore {
+    id: ID!
+    sleepLogEntryId: ID!
+    timestamp: String!
+    overallScore: Int!
+    compositionScore: Int
+    revitalizationScore: Int!
+    durationScore: Int
+    deepSleepInMinutes: Int!
+    restingHeartRate: Int!
+    restlessness: Float!
+}
+
+# Profile Type
+type Profile {
+    id: ID!
+    fullName: String!
+    firstName: String!
+    lastName: String!
+    displayNameSetting: String!
+    displayName: String!
+    username: String
+    emailAddress: String!
+    dateOfBirth: String!
+    child: Boolean!
+    country: String!
+    state: String
+    city: String
+    timezone: String!
+    locale: String!
+    memberSince: String!
+    aboutMe: String
+    startOfWeek: String!
+    sleepTracking: String!
+    timeDisplayFormat: String!
+    gender: String!
+    height: Float!
+    weight: Float!
+    strideLengthWalking: Float!
+    strideLengthRunning: Float!
+    weightUnit: String!
+    distanceUnit: String!
+    heightUnit: String!
+    waterUnit: String!
+    glucoseUnit: String!
+    swimUnit: String!
+    avatar: String
+}

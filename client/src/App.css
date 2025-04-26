@@ -1,0 +1,181 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+}
+
+.App-main {
+  padding: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.profile-container {
+  width: 30%;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.profile-info {
+  margin-top: 10px;
+}
+
+.avatar-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.error-message {
+  color: #d32f2f;
+  padding: 10px;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  background-color: #ffebee;
+  margin-top: 20px;
+}
+
+.steps-container {
+  width: 65%;
+  padding: 20px;
+  margin-left: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.daily-steps-container, .weekly-steps-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-container {
+  margin-top: 20px;
+  width: 100%;
+  height: 400px;
+}
+
+.view-selector {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.view-label {
+  margin-right: 10px;
+}
+
+.view-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.view-button {
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-button:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
+
+.view-button.active {
+  background-color: #e0e0e0;
+  border-color: #666;
+  font-weight: bold;
+}
+
+/* Button bar styles */
+.button-bar {
+  display: flex;
+  justify-content: center;
+  padding: 15px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 10px;
+  padding: 10px 20px;
+  border: 2px solid #ccc;
+  border-radius: 25px;
+  background-color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.icon-button:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
+
+.icon-button.active {
+  background-color: #e0e0e0;
+  border-color: #666;
+  font-weight: bold;
+}
+
+/* Adjust the heart rate container to match steps container */
+.heart-rate-container {
+  width: 65%;
+  padding: 20px;
+  margin-left: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+/* Back button styles */
+.back-button-container {
+  margin-bottom: 15px;
+}
+
+.back-button {
+  padding: 8px 15px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.back-button:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
