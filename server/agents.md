@@ -1,0 +1,393 @@
+# Fitbit Kotlin Server - Architecture & Tech Stack
+
+## Overview
+
+A Spring Boot 3.4 Kotlin application for importing, storing, and querying Fitbit wearable health data through GraphQL and REST APIs. The application provides comprehensive analytics for 20+ health metrics including steps, heart rate, sleep, exercise, calories, distance, and respiratory data.
+
+## Tech Stack
+
+### Core Technologies
+- **Language:** Kotlin 2.3.0
+- **Runtime:** Java 25 JVM
+- **Framework:** Spring Boot 3.4.4
+- **Database:** PostgreSQL 17
+- **Build Tool:** Maven
+
+### Key Dependencies
+- **Spring Boot Data JPA** - ORM and database access
+- **Spring Boot Web** - REST/MVC support
+- **Spring Data REST** - Auto-generated REST endpoints
+- **Spring GraphQL** - GraphQL API implementation
+- **Kotlinx Coroutines 1.10.1** - Asynchronous file processing
+- **Jackson Kotlin Module** - JSON serialization/deserialization
+- **GraphQL Java Extended Scalars 22.0** - DateTime support
+- **Jakarta Persistence API** - JPA entity annotations
+
+### Development & Testing
+- **JUnit 5** - Testing framework
+- **Spring Boot Test** - Integration testing
+- **Spring GraphQL Test** - GraphQL query testing
+- **Docker Compose** - Containerized database deployment
+
+## Architecture
+
+### Architectural Pattern
+The application follows a **layered domain-driven architecture** with clear separation of concerns:
+
+```
+┌─────────────────────────────────────┐
+│         API Layer                   │
+│  GraphQL Resolvers + REST Endpoints │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│       Service Layer                 │
+│  Importer Components (Async)        │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│     Data Access Layer               │
+│  JPA Repositories + Specifications  │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│       Domain Layer                  │
+│  JPA Entity Models                  │
+└─────────────────────────────────────┘
+```
+
+### Design Patterns
+
+1. **Repository Pattern** - JPA repositories for data access abstraction
+2. **Importer Pattern** - Abstract `Importer<T>` interface for async file processing
+3. **Resolver Pattern** - GraphQL controllers with `@QueryMapping` and `@SchemaMapping`
+4. **Specification Pattern** - `JpaSpecificationExecutor` for dynamic queries
+5. **Application Runner Pattern** - CLI-based import trigger on startup
+
+## Project Structure
+
+```
+src/main/kotlin/kenny/fitbitkotlin/
+├── FitbitKotlinApplication.kt      # Entry point + ImportRunner
+├── GraphQLConfig.kt                # GraphQL scalar configuration
+├── Importers.kt                    # Base Importer<T> interface
+├── calories/                       # Calories module
+│   ├── Model.kt                    # JPA entity
+│   ├── Repository.kt               # Data access
+│   ├── Resolver.kt                 # GraphQL queries
+│   ├── Importer.kt                 # Import interface
+│   └── ImporterJpa.kt              # Import implementation
+├── distance/                       # Distance module
+├── exercise/                       # Exercise & activity module
+├── heartrate/                      # Heart rate & HRV module
+├── profile/                        # User profile module
+├── security/                       # Security (prepared for future)
+└── sleep/                          # Sleep & respiratory module
+
+src/main/resources/
+├── application.yml                 # Spring configuration
+├── graphql/schema.graphqls         # GraphQL schema
+└── static/graphiql.html            # GraphQL IDE
+
+docker-compose.yml                  # PostgreSQL + pgAdmin
+```
+
+**Total:** 38 Kotlin source files across 11 domain modules
+
+## Core Components
+
+### 1. Domain Modules
+
+Each health metric is organized as a self-contained module:
+
+| Module | Purpose | Key Entities |
+|--------|---------|--------------|
+| **Steps** | Activity step tracking | Steps |
+| **Heart Rate** | Cardiac metrics | HeartRate, RestingHeartRate, DailyHeartRateVariability, HeartRateVariabilityDetails, TimeInHeartRateZones |
+| **Calories** | Energy expenditure | Calories |
+| **Distance** | Movement distance | Distance |
+| **Exercise** | Workout sessions | Exercise, HeartRateZone, ActivityLevel, ActivityMinutes, DemographicVO2Max, RunVO2Max, ActivityGoal |
+| **Sleep** | Sleep analysis | Sleep, SleepLevelSummary, SleepLevelData, SleepLevelShortData, SleepScore, DeviceTemperature, DailyRespiratoryRate, MinuteSpO2, ComputedTemperature, RespiratoryRateSummary, DailySpO2 |
+| **Profile** | User demographics | Profile (30+ attributes) |
+
+### 2. ImportRunner
+
+**Purpose:** Async file processing engine for Fitbit JSON/CSV data
+
+**Key Features:**
+- Kotlin coroutines with `Dispatchers.IO` for parallel imports
+- CLI options for selective imports (--heartrate, --steps, --exercise, etc.)
+- File pattern matching with regex
+- Automatic `.imported` suffix marking
+- Progress logging
+
+**Supported Import Types:**
+- Heart rate, Steps, Exercise, Calories, Distance
+- Sleep, Sleep scores, Respiratory rates
+- Temperature, SpO2, VO2 Max
+- Activity goals, Activity levels
+- And more (20+ types total)
+
+### 3. GraphQL API
+
+**Endpoint:** `/graphql` (with GraphiQL at `/graphiql`)
+
+**Key Queries:**
+```graphql
+# Health check
+healthStatus
+
+# Time-series data with pagination
+heartRates(limit: Int!, offset: Int!, range: DateRange)
+steps(limit: Int!, offset: Int!, range: DateRange)
+exercises(limit: Int!, offset: Int!, range: DateRange)
+sleeps(limit: Int!, offset: Int!, range: DateRange)
+calories(limit: Int!, offset: Int!, range: DateRange)
+distances(limit: Int!, offset: Int!, range: DateRange)
+
+# Aggregations
+dailyStepsSum(range: DateRange!)
+weeklyStepsAverage(range: DateRange!)
+heartRatesPerInterval(range: DateRange!)
+
+# Profile data
+profiles(limit: Int!, offset: Int!)
+profile(id: ID!)
+```
+
+**Features:**
+- Custom DateTime scalar (RFC-3339 format)
+- DateRange input type for filtering
+- Nested entity resolution
+- Pagination support
+
+### 4. REST API
+
+**Endpoint:** `/api` (Spring Data REST)
+
+Auto-generated CRUD endpoints for all repositories with:
+- Pagination
+- Sorting
+- Filtering
+- HATEOAS links
+
+### 5. Data Access Layer
+
+**Repositories:** JPA repositories extending `JpaRepository` and `JpaSpecificationExecutor`
+
+**Custom Queries:**
+- Native SQL for complex aggregations
+- Window functions for weekly averages
+- Time bucketing (10-minute intervals)
+- Date-range filtering
+- Daily summations with GROUP BY
+
+**Example Advanced Query:**
+```kotlin
+@Query(nativeQuery = true)
+fun findHeartRatesPerInterval(startDate: LocalDateTime, endDate: LocalDateTime): List<Any>
+// Uses generate_series() for 10-minute buckets
+```
+
+## Database Architecture
+
+### Configuration
+- **DBMS:** PostgreSQL 17-Alpine (Docker)
+- **Connection:** jdbc:postgresql://localhost:5432/fitbit_db
+- **ORM:** Hibernate with JPA
+- **DDL Mode:** update (auto schema migration)
+
+### Performance Optimizations
+
+1. **Database Indexes:**
+   - Time/date columns for time-series queries
+   - Unique constraints on logical keys (e.g., sleep log IDs)
+   - Composite indexes for common query patterns
+
+2. **Fetch Strategies:**
+   - LAZY fetching for nested collections (default)
+   - Fetch joins or DTO projections when related data is needed
+   - Avoids N+1 queries and OOM on large datasets
+
+3. **Entity Relationships:**
+   - One-to-many with cascade delete and orphan removal
+   - Proper bidirectional mappings
+
+### Example Index Definition
+```kotlin
+@Entity
+@Table(
+    indexes = [
+        Index(name = "idx_steps_date_time", columnList = "date_time")
+    ]
+)
+class Steps { ... }
+```
+
+## Data Pipeline
+
+### Import Flow
+```
+1. Application Startup
+   ↓
+2. ImportRunner Triggered (with CLI options)
+   ↓
+3. File Pattern Matching (regex)
+   ↓
+4. Parallel Async Processing (Kotlin Coroutines)
+   ↓
+5. JSON/CSV Parsing (Jackson)
+   ↓
+6. Entity Mapping
+   ↓
+7. Database Persistence (JPA)
+   ↓
+8. File Renaming (.imported suffix)
+```
+
+### Supported File Formats
+- **JSON:** Heart rate, steps, exercise, calories, distance, sleep, etc.
+- **CSV:** Activity goals, sleep scores, respiratory rates
+
+## Configuration
+
+### Application Configuration (`application.yml`)
+
+```yaml
+spring:
+  application:
+    name: fitbit-kotlin
+  graphql:
+    graphiql:
+      enabled: true
+      path: /graphiql
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fitbit_db
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  data:
+    rest:
+      base-path: /api
+server:
+  port: 8080
+```
+
+### Docker Compose Services
+- **PostgreSQL 17** - Primary database
+- **pgAdmin** - Database administration UI
+
+## API Examples
+
+### GraphQL Query Example
+```graphql
+query {
+  dailyStepsSum(range: {
+    startDate: "2024-01-01T00:00:00Z"
+    endDate: "2024-01-31T23:59:59Z"
+  }) {
+    date
+    totalSteps
+  }
+}
+```
+
+### REST API Example
+```
+GET /api/steps?page=0&size=20&sort=dateTime,desc
+```
+
+## Special Features
+
+### 1. Advanced Time-Series Analytics
+- Heart rate bucketing into 10-minute intervals
+- Daily aggregations (steps, calories)
+- Weekly averages with moving windows
+- Custom date range filtering
+
+### 2. Complex Entity Relationships
+- Sleep data with 3 levels of nested details
+- Exercise with heart rate zones and activity breakdowns
+- Historical temperature and respiratory tracking
+
+### 3. Asynchronous Processing
+- Parallel file imports using coroutines
+- Non-blocking I/O operations
+- Progress tracking and logging
+
+### 4. Multi-Format Support
+- JSON parsing for raw Fitbit exports
+- CSV parsing for aggregate data
+- Flexible schema mapping
+
+## Security Considerations
+
+**Current State:**
+- Security module prepared but not implemented
+- Database credentials in application.yml (should migrate to environment variables)
+- No authentication/authorization on API endpoints
+
+**Recommended Enhancements:**
+- Spring Security integration
+- JWT-based authentication
+- Environment variable configuration
+- API rate limiting
+
+## Deployment
+
+### Local Development
+```bash
+# Start database
+docker-compose up -d
+
+# Run application
+mvn spring-boot:run
+
+# Import data with options
+mvn spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
+```
+
+### Accessing Services
+- **GraphQL API:** http://localhost:8080/graphql
+- **GraphiQL IDE:** http://localhost:8080/graphiql
+- **REST API:** http://localhost:8080/api
+- **pgAdmin:** http://localhost:5050
+
+## Testing
+
+### Test Coverage
+- Unit tests for importers
+- Spring Boot integration tests
+- GraphQL query tests
+- Repository tests
+
+### Running Tests
+```bash
+mvn test
+```
+
+## Future Enhancements
+
+1. **Security:** Implement authentication and authorization
+2. **Real-time:** WebSocket support for live data streaming
+3. **Analytics:** Machine learning insights from health data
+4. **Export:** Data export to CSV, PDF reports
+5. **Notifications:** Alerts for health metric anomalies
+6. **Mobile:** REST API optimization for mobile clients
+
+## Summary
+
+This is a production-ready, data-centric health analytics platform that combines:
+- Modern Spring Boot 3 + Kotlin stack
+- Dual GraphQL/REST API architecture
+- Sophisticated async file importing
+- Optimized PostgreSQL storage
+- Advanced time-series analytics
+- Modular domain-driven design
+
+The application is well-suited for storing and analyzing large volumes of Fitbit wearable data with performance optimizations and comprehensive query capabilities.

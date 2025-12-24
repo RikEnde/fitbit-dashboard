@@ -2,6 +2,7 @@ spring:
   graphql:
     graphiql:
       enabled: true
+      path: /graphiql
     path: /graphql
     schema:
       printer:
@@ -11,7 +12,7 @@ spring:
       base-path: /api
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:

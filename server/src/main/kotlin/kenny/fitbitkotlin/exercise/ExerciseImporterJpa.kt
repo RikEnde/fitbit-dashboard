@@ -39,10 +39,9 @@ class ExerciseImporterImpl(
         val shouldFetchDetails = jsonItem.get("shouldFetchDetails")?.asBoolean() ?: false
         val hasActiveZoneMinutes = jsonItem.get("hasActiveZoneMinutes")?.asBoolean() ?: false
 
-        val dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
-        val startTime = LocalDateTime.parse(startTimeStr, dateTimeFormatter)
-        val lastModified = if (lastModifiedStr != null) LocalDateTime.parse(lastModifiedStr, dateTimeFormatter) else null
-        val originalStartTime = if (originalStartTimeStr != null) LocalDateTime.parse(originalStartTimeStr, dateTimeFormatter) else null
+        val startTime = LocalDateTime.parse(startTimeStr, getDateTimeFormatter())
+        val lastModified = if (lastModifiedStr != null) LocalDateTime.parse(lastModifiedStr, getDateTimeFormatter()) else null
+        val originalStartTime = if (originalStartTimeStr != null) LocalDateTime.parse(originalStartTimeStr, getDateTimeFormatter()) else null
 
         val exercise = Exercise(
             logId = logId,
@@ -85,7 +84,7 @@ class ExerciseImporterImpl(
         }
 
         // Process activity levels
-        val activityLevels = jsonItem.get("activityLevels")
+        val activityLevels = jsonItem.get("activityLevel")
         if (activityLevels != null && activityLevels.isArray) {
             for (level in activityLevels) {
                 val name = level.get("name")?.asText() ?: ""

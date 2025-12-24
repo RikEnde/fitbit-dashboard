@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import kenny.fitbitkotlin.sleep.SleepImporterImpl
 import kenny.fitbitkotlin.sleep.SleepRepository
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -18,6 +19,7 @@ class SleepImporterImplTest {
     private lateinit var sleepRepository: SleepRepository
 
     @Test
+    @Disabled("Requires actual data files")
     fun `test import returns sleep data`() {
         // Call the import method
         val sleepRecords = sleepImporter.import()
