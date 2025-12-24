@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -19,6 +20,12 @@ class SleepImporterImpl(
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         val logId = jsonItem.get("logId")?.asLong() ?: return
+
+        // Skip if already imported
+        if (repository.findByLogId(logId) != null) {
+            return
+        }
+
         val dateOfSleepStr = jsonItem.get("dateOfSleep")?.asText()
         val startTimeStr = jsonItem.get("startTime")?.asText()
         val endTimeStr = jsonItem.get("endTime")?.asText()
@@ -34,8 +41,9 @@ class SleepImporterImpl(
         val logType = jsonItem.get("logType")?.asText() ?: ""
         val mainSleep = jsonItem.get("mainSleep")?.asBoolean() ?: false
 
-        val dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
-        val dateOfSleep = LocalDateTime.parse(dateOfSleepStr, dateTimeFormatter)
+        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
+        val dateOfSleep = LocalDate.parse(dateOfSleepStr, dateFormatter).atStartOfDay()
         val startTime = LocalDateTime.parse(startTimeStr, dateTimeFormatter)
         val endTime = LocalDateTime.parse(endTimeStr, dateTimeFormatter)
 

@@ -57,13 +57,13 @@ data class Sleep(
     @Column(nullable = false)
     val mainSleep: Boolean,
 
-    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val levelSummaries: MutableList<SleepLevelSummary> = mutableListOf(),
 
-    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val levelData: MutableList<SleepLevelData> = mutableListOf(),
 
-    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val levelShortData: MutableList<SleepLevelShortData> = mutableListOf(),
 
     @Id

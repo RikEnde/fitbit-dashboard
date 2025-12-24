@@ -63,10 +63,10 @@ data class Exercise(
     @Column(nullable = false)
     val hasActiveZoneMinutes: Boolean = false,
 
-    @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val heartRateZones: MutableList<HeartRateZone> = mutableListOf(),
 
-    @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val activityLevels: MutableList<ActivityLevel> = mutableListOf(),
 
     @Id

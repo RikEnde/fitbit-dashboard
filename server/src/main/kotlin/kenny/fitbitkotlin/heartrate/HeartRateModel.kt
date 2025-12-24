@@ -36,7 +36,7 @@ data class TimeInHeartRateZones(
     @Column(nullable = false)
     val dateTime: LocalDateTime,
 
-    @OneToMany(mappedBy = "timeInHeartRateZones", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "timeInHeartRateZones", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val zoneValues: MutableList<TimeInHeartRateZoneValue> = mutableListOf(),
 
     @Id
