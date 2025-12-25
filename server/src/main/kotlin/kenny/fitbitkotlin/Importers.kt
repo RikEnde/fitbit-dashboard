@@ -3,13 +3,12 @@ package kenny.fitbitkotlin
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import jakarta.persistence.EntityManager
 import java.io.File
 import java.time.format.DateTimeFormatter
 
 interface Importer<T> {
     val dataDir: String
-        get() = "data"
+        get() = "../data"
 
     val batchSize: Int
         get() = BatchConstants.DEFAULT_BATCH_SIZE
@@ -78,7 +77,7 @@ interface Importer<T> {
         size: Int,
         file: File,
         objectMapper: ObjectMapper,
-        entityManager: EntityManager,
+        batchService: TransactionalBatchService,
         saveAllBatch: (List<T>) -> Unit
     ) {
         println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
@@ -97,18 +96,14 @@ interface Importer<T> {
                         count++
 
                         if (batch.size >= batchSize) {
-                            saveAllBatch(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList(), saveAllBatch)
                             batch.clear()
                         }
                     }
                 }
 
                 if (batch.isNotEmpty()) {
-                    saveAllBatch(batch)
-                    entityManager.flush()
-                    entityManager.clear()
+                    batchService.saveBatchWithFlush(batch.toList(), saveAllBatch)
                 }
 
                 println("Imported $count records from ${file.name}")

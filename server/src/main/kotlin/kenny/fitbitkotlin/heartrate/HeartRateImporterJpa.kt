@@ -2,11 +2,8 @@ package kenny.fitbitkotlin.heartrate
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.EntityManager
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -16,7 +13,7 @@ import java.time.format.DateTimeFormatter
 @Component
 class HeartRateImporterImpl(
     val repository: HeartRateRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): HeartRateImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): HeartRate? {
@@ -36,14 +33,13 @@ class HeartRateImporterImpl(
         // Not used - parseToEntity handles it
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(
         index: Int,
         size: Int,
         file: File,
         objectMapper: ObjectMapper
     ) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -52,7 +48,7 @@ class HeartRateImporterImpl(
 @Component
 class RestingHeartRateImporterImpl(
     val repository: RestingHeartRateRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): RestingHeartRateImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): RestingHeartRate? {
@@ -73,14 +69,13 @@ class RestingHeartRateImporterImpl(
         // Not used - parseToEntity handles it
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(
         index: Int,
         size: Int,
         file: File,
         objectMapper: ObjectMapper
     ) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -89,7 +84,7 @@ class RestingHeartRateImporterImpl(
 @Component
 class DailyHeartRateVariabilityImporterImpl(
     val repository: DailyHeartRateVariabilityRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): DailyHeartRateVariabilityImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -125,7 +120,6 @@ class DailyHeartRateVariabilityImporterImpl(
         return size
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
         println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
@@ -156,9 +150,7 @@ class DailyHeartRateVariabilityImporterImpl(
                         lineCount++
 
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -166,9 +158,7 @@ class DailyHeartRateVariabilityImporterImpl(
             }
 
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -182,7 +172,7 @@ class DailyHeartRateVariabilityImporterImpl(
 @Component
 class HeartRateVariabilityDetailsImporterImpl(
     val repository: HeartRateVariabilityDetailsRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): HeartRateVariabilityDetailsImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -218,7 +208,6 @@ class HeartRateVariabilityDetailsImporterImpl(
         return size
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
         println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
@@ -251,9 +240,7 @@ class HeartRateVariabilityDetailsImporterImpl(
                         lineCount++
 
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -261,9 +248,7 @@ class HeartRateVariabilityDetailsImporterImpl(
             }
 
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")

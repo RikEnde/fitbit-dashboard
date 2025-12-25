@@ -2,7 +2,8 @@ package kenny.fitbitkotlin
 
 import kenny.fitbitkotlin.profile.AccountImporterImpl
 import kenny.fitbitkotlin.profile.ProfileRepository
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

@@ -2,25 +2,12 @@ package kenny.fitbitkotlin
 
 import kenny.fitbitkotlin.calories.CaloriesImporter
 import kenny.fitbitkotlin.distance.DistanceImporter
-import kenny.fitbitkotlin.exercise.ActiveZoneMinutesImporter
-import kenny.fitbitkotlin.exercise.ActivityGoalImporter
-import kenny.fitbitkotlin.exercise.ActivityMinutesImporter
-import kenny.fitbitkotlin.exercise.DemographicVO2MaxImporter
-import kenny.fitbitkotlin.exercise.ExerciseImporter
-import kenny.fitbitkotlin.exercise.RunVO2MaxImporter
-import kenny.fitbitkotlin.exercise.TimeInHeartRateZonesImporter
+import kenny.fitbitkotlin.exercise.*
 import kenny.fitbitkotlin.heartrate.DailyHeartRateVariabilityImporter
 import kenny.fitbitkotlin.heartrate.HeartRateImporterImpl
 import kenny.fitbitkotlin.heartrate.HeartRateVariabilityDetailsImporter
 import kenny.fitbitkotlin.heartrate.RestingHeartRateImporter
-import kenny.fitbitkotlin.sleep.ComputedTemperatureImporter
-import kenny.fitbitkotlin.sleep.DailyRespiratoryRateImporter
-import kenny.fitbitkotlin.sleep.DailySpO2Importer
-import kenny.fitbitkotlin.sleep.DeviceTemperatureImporter
-import kenny.fitbitkotlin.sleep.MinuteSpO2Importer
-import kenny.fitbitkotlin.sleep.RespiratoryRateSummaryImporter
-import kenny.fitbitkotlin.sleep.SleepImporter
-import kenny.fitbitkotlin.sleep.SleepScoreImporter
+import kenny.fitbitkotlin.sleep.*
 import kenny.fitbitkotlin.steps.StepsImporter
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner

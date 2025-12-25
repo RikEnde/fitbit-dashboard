@@ -2,7 +2,6 @@ package kenny.fitbitkotlin.exercise
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.BatchConstants
 import kenny.fitbitkotlin.heartrate.TimeInHeartRateZoneValue
 import kenny.fitbitkotlin.heartrate.TimeInHeartRateZones
@@ -23,7 +22,7 @@ class ExerciseImporterImpl(
     val repository: ExerciseRepository,
     val heartRateZoneRepository: HeartRateZoneRepository,
     val activityLevelRepository: ActivityLevelRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ) : ExerciseImporter {
 
     override val batchSize: Int = 2000
@@ -116,7 +115,7 @@ class ExerciseImporterImpl(
 
     @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -125,7 +124,7 @@ class ExerciseImporterImpl(
 @Component
 class ActivityMinutesImporterImpl(
     val repository: ActivityMinutesRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): ActivityMinutesImporter {
     // Track the current file being processed
     private val currentFile = ThreadLocal<String>()
@@ -134,7 +133,7 @@ class ActivityMinutesImporterImpl(
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
         currentFile.set(file.name)
         try {
-            importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+            importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
                 repository.saveAll(batch)
             }
         } finally {
@@ -178,7 +177,7 @@ class ActivityMinutesImporterImpl(
 @Component
 class ActiveZoneMinutesImporterImpl(
     val repository: ActivityMinutesRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): ActiveZoneMinutesImporter {
 
     // Define a formatter for the ISO date-time format in the CSV
@@ -255,9 +254,7 @@ class ActiveZoneMinutesImporterImpl(
                         lineCount++
 
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -265,9 +262,7 @@ class ActiveZoneMinutesImporterImpl(
             }
 
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -281,7 +276,7 @@ class ActiveZoneMinutesImporterImpl(
 @Component
 class DemographicVO2MaxImporterImpl(
     val repository: DemographicVO2MaxRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): DemographicVO2MaxImporter {
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
@@ -335,7 +330,7 @@ class DemographicVO2MaxImporterImpl(
 
     @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -344,7 +339,7 @@ class DemographicVO2MaxImporterImpl(
 @Component
 class RunVO2MaxImporterImpl(
     val repository: RunVO2MaxRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): RunVO2MaxImporter {
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
@@ -400,7 +395,7 @@ class RunVO2MaxImporterImpl(
 
     @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -409,7 +404,7 @@ class RunVO2MaxImporterImpl(
 @Component
 class ActivityGoalImporterImpl(
     val repository: ActivityGoalRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): ActivityGoalImporter {
 
     // Define a formatter for the ISO date-time format in the CSV
@@ -500,9 +495,7 @@ class ActivityGoalImporterImpl(
                         lineCount++
 
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -510,9 +503,7 @@ class ActivityGoalImporterImpl(
             }
 
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -526,7 +517,7 @@ class ActivityGoalImporterImpl(
 @Component
 class TimeInHeartRateZonesImporterImpl(
     val repository: TimeInHeartRateZonesRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): TimeInHeartRateZonesImporter {
 
     override fun getDateTimeFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm:ss")
@@ -558,7 +549,7 @@ class TimeInHeartRateZonesImporterImpl(
 
     @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }

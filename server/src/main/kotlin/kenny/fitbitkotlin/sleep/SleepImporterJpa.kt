@@ -2,7 +2,6 @@ package kenny.fitbitkotlin.sleep
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.EntityManager
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
@@ -20,7 +19,7 @@ class SleepImporterImpl(
     val sleepLevelSummaryRepository: SleepLevelSummaryRepository,
     val sleepLevelDataRepository: SleepLevelDataRepository,
     val sleepLevelShortDataRepository: SleepLevelShortDataRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ) : SleepImporter {
 
     override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.SMALL_BATCH_SIZE
@@ -146,7 +145,7 @@ class SleepImporterImpl(
         file: File,
         objectMapper: ObjectMapper
     ) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
@@ -155,7 +154,7 @@ class SleepImporterImpl(
 @Component
 class SleepScoreImporterImpl(
     val repository: SleepScoreRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): SleepScoreImporter {
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm:ss")
 
@@ -236,9 +235,7 @@ class SleepScoreImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -247,9 +244,7 @@ class SleepScoreImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -263,7 +258,7 @@ class SleepScoreImporterImpl(
 @Component
 class DeviceTemperatureImporterImpl(
     val repository: DeviceTemperatureRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): DeviceTemperatureImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
@@ -333,9 +328,7 @@ class DeviceTemperatureImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -344,9 +337,7 @@ class DeviceTemperatureImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -360,7 +351,7 @@ class DeviceTemperatureImporterImpl(
 @Component
 class DailyRespiratoryRateImporterImpl(
     val repository: DailyRespiratoryRateRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): DailyRespiratoryRateImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -428,9 +419,7 @@ class DailyRespiratoryRateImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -439,9 +428,7 @@ class DailyRespiratoryRateImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -455,7 +442,7 @@ class DailyRespiratoryRateImporterImpl(
 @Component
 class MinuteSpO2ImporterImpl(
     val repository: MinuteSpO2Repository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): MinuteSpO2Importer {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -523,9 +510,7 @@ class MinuteSpO2ImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -534,9 +519,7 @@ class MinuteSpO2ImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -550,7 +533,7 @@ class MinuteSpO2ImporterImpl(
 @Component
 class ComputedTemperatureImporterImpl(
     val repository: ComputedTemperatureRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): ComputedTemperatureImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -633,9 +616,7 @@ class ComputedTemperatureImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -644,9 +625,7 @@ class ComputedTemperatureImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -661,7 +640,7 @@ class ComputedTemperatureImporterImpl(
 @Component
 class DailySpO2ImporterImpl(
     val repository: DailySpO2Repository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): DailySpO2Importer {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -733,9 +712,7 @@ class DailySpO2ImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -744,9 +721,7 @@ class DailySpO2ImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -760,7 +735,7 @@ class DailySpO2ImporterImpl(
 @Component
 class RespiratoryRateSummaryImporterImpl(
     val repository: RespiratoryRateSummaryRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): RespiratoryRateSummaryImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -850,9 +825,7 @@ class RespiratoryRateSummaryImporterImpl(
 
                         // Batch flush
                         if (batch.size >= batchSize) {
-                            repository.saveAll(batch)
-                            entityManager.flush()
-                            entityManager.clear()
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
                             batch.clear()
                         }
                     }
@@ -861,9 +834,7 @@ class RespiratoryRateSummaryImporterImpl(
 
             // Save remaining
             if (batch.isNotEmpty()) {
-                repository.saveAll(batch)
-                entityManager.flush()
-                entityManager.clear()
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")

@@ -2,17 +2,14 @@ package kenny.fitbitkotlin.calories
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.EntityManager
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.time.LocalDateTime
 
 @Component
 class CaloriesImporterImpl(
     val repository: CaloriesRepository,
-    val entityManager: EntityManager
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ): CaloriesImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): Calories? {
@@ -32,14 +29,13 @@ class CaloriesImporterImpl(
         // Not used - parseToEntity handles it
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(
         index: Int,
         size: Int,
         file: File,
         objectMapper: ObjectMapper
     ) {
-        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
             repository.saveAll(batch)
         }
     }
