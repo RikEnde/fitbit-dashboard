@@ -14,6 +14,9 @@ interface SleepRepository :
 
     fun findByLogId(logId: Long): Sleep?
 
+    @org.springframework.data.jpa.repository.Query("SELECT s.logId FROM Sleep s")
+    fun findAllLogIds(): Set<Long>
+
     fun findByStartTimeBetween(
         from: LocalDateTime,
         to: LocalDateTime,
