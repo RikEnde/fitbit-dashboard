@@ -34,3 +34,4 @@ yarn-error.log*
 client/.env
 .env
 .run
+/.claude/

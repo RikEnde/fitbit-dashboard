@@ -2,6 +2,7 @@ package kenny.fitbitkotlin
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.exercise.RunVO2Max
 import kenny.fitbitkotlin.exercise.RunVO2MaxImporterImpl
 import kenny.fitbitkotlin.exercise.RunVO2MaxRepository
@@ -42,6 +43,9 @@ class RunVO2MaxImporterUnitTest {
     @Mock
     private lateinit var repository: RunVO2MaxRepository
 
+    @Mock
+    private lateinit var entityManager: EntityManager
+
     @InjectMocks
     private lateinit var importer: RunVO2MaxImporterImpl
 
@@ -64,22 +68,21 @@ class RunVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "11/18/21 16:42:56")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was called once
-        verify(repository, times(1)).save(vo2MaxCaptor.capture())
+        // Verify the result is not null
+        assertNotNull(result)
 
-        // Verify the captured entity has the correct values
-        val capturedVO2Max = vo2MaxCaptor.value
-        assertEquals(44261899226, capturedVO2Max.exerciseId)
-        assertEquals(52.64144, capturedVO2Max.runVO2Max)
-        assertEquals(3.92498, capturedVO2Max.runVO2MaxError)
-        assertEquals(53.52355, capturedVO2Max.filteredRunVO2Max)
-        assertEquals(0.96033, capturedVO2Max.filteredRunVO2MaxError)
+        // Verify the entity has the correct values
+        assertEquals(44261899226, result!!.exerciseId)
+        assertEquals(52.64144, result.runVO2Max)
+        assertEquals(3.92498, result.runVO2MaxError)
+        assertEquals(53.52355, result.filteredRunVO2Max)
+        assertEquals(0.96033, result.filteredRunVO2MaxError)
 
         // Verify the date was parsed correctly
         val expectedDateTime = LocalDateTime.of(2021, 11, 18, 16, 42, 56)
-        assertEquals(expectedDateTime, capturedVO2Max.dateTime)
+        assertEquals(expectedDateTime, result.dateTime)
     }
 
     @Test
@@ -90,10 +93,10 @@ class RunVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "11/18/21 16:42:56")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        assertNull(result)
     }
 
     @Test
@@ -111,10 +114,10 @@ class RunVO2MaxImporterUnitTest {
         rootNode.set<JsonNode>("value", valueNode)
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        assertNull(result)
     }
 
     @Test
@@ -133,10 +136,10 @@ class RunVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "2021-11-18T16:42:56") // Wrong format
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        assertNull(result)
     }
 
     @Test
@@ -155,9 +158,9 @@ class RunVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "11/18/21 16:42:56")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        assertNull(result)
     }
 }

@@ -1,14 +1,21 @@
 package kenny.fitbitkotlin.profile
 
 import com.fasterxml.jackson.databind.JsonNode
+import jakarta.persistence.EntityManager
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
 @Component
-class AccountImporterImpl(private val profileRepository: ProfileRepository) : AccountImporter {
+class AccountImporterImpl(
+    private val profileRepository: ProfileRepository,
+    private val entityManager: EntityManager
+) : AccountImporter {
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV imports
     }
@@ -16,12 +23,18 @@ class AccountImporterImpl(private val profileRepository: ProfileRepository) : Ac
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -31,8 +44,9 @@ class AccountImporterImpl(private val profileRepository: ProfileRepository) : Ac
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
         try {
             // Read the CSV file

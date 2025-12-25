@@ -112,7 +112,11 @@ class ExerciseImporterImplTest {
         exerciseRepository.deleteAll()
 
         // Call the method under test
-        exerciseImporter.parseAndSaveEntity(jsonNode)
+        val parsedExercise = exerciseImporter.parseToEntity(jsonNode)
+        assertNotNull(parsedExercise, "parseToEntity should return an Exercise entity")
+
+        // Save the entity
+        val savedExercise = exerciseRepository.save(parsedExercise!!)
 
         // Verify that the exercise was saved
         val exercises = exerciseRepository.findAll()

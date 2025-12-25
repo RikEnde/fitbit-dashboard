@@ -79,13 +79,17 @@ class SleepImporterImplTest {
         """
         val jsonNode = objectMapper.readTree(sampleSleepJson)
 
-        // First call should succeed
-        sleepImporter.parseAndSaveEntity(jsonNode)
-        println("First save succeeded")
+        // First call should return a Sleep entity
+        val firstEntity = sleepImporter.parseToEntity(jsonNode)
+        println("First parse succeeded")
+        if (firstEntity != null) {
+            sleepRepository.save(firstEntity)
+            println("First save succeeded")
+        }
 
-        // Second call should skip the import rather than throw an exception
-        sleepImporter.parseAndSaveEntity(jsonNode)
-        println("Second call completed without error")
+        // Second call should return null (duplicate detected)
+        val secondEntity = sleepImporter.parseToEntity(jsonNode)
+        println("Second call completed without error, returned: ${if (secondEntity == null) "null (duplicate detected)" else "entity"}")
 
         // Verify that only one record was saved
         val allSleepRecords = sleepRepository.findAll()

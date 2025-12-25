@@ -2,10 +2,15 @@ package kenny.fitbitkotlin.exercise
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityManager
+import kenny.fitbitkotlin.BatchConstants
 import kenny.fitbitkotlin.heartrate.TimeInHeartRateZoneValue
 import kenny.fitbitkotlin.heartrate.TimeInHeartRateZones
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -17,11 +22,18 @@ import java.time.format.DateTimeFormatter
 class ExerciseImporterImpl(
     val repository: ExerciseRepository,
     val heartRateZoneRepository: HeartRateZoneRepository,
-    val activityLevelRepository: ActivityLevelRepository
+    val activityLevelRepository: ActivityLevelRepository,
+    val entityManager: EntityManager
 ) : ExerciseImporter {
 
+    override val batchSize: Int = 2000
+
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        val logId = jsonItem.get("logId")?.asLong() ?: return
+        parseToEntity(jsonItem)
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): Exercise? {
+        val logId = jsonItem.get("logId")?.asLong() ?: return null
         val activityName = jsonItem.get("activityName")?.asText() ?: ""
         val activityTypeId = jsonItem.get("activityTypeId")?.asInt() ?: 0
         val averageHeartRate = jsonItem.get("averageHeartRate")?.asInt()
@@ -99,28 +111,42 @@ class ExerciseImporterImpl(
             }
         }
 
-        repository.save(exercise)
+        return exercise
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
+        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+            repository.saveAll(batch)
+        }
     }
 }
 
 @Component
-class ActivityMinutesImporterImpl(val repository: ActivityMinutesRepository): ActivityMinutesImporter {
+class ActivityMinutesImporterImpl(
+    val repository: ActivityMinutesRepository,
+    val entityManager: EntityManager
+): ActivityMinutesImporter {
     // Track the current file being processed
     private val currentFile = ThreadLocal<String>()
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        // Store the current file name in the ThreadLocal
         currentFile.set(file.name)
         try {
-            // Call the parent method to process the file
-            super.importFile(index, size, file, objectMapper)
+            importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+                repository.saveAll(batch)
+            }
         } finally {
-            // Clear the ThreadLocal
             currentFile.remove()
         }
     }
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
+        parseToEntity(jsonItem)
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): ActivityMinutes? {
         val valueStr = jsonItem.get("value")?.asText()
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
 
@@ -138,22 +164,27 @@ class ActivityMinutesImporterImpl(val repository: ActivityMinutesRepository): Ac
                 else -> throw IllegalArgumentException("Unknown activity type in file: $fileName")
             }
 
-            // Create and save the ActivityMinutes entity
-            val activityMinutes = ActivityMinutes(
+            // Create and return the ActivityMinutes entity
+            return ActivityMinutes(
                 dateTime = dateTime,
                 value = value,
                 intensity = intensity
             )
-            repository.save(activityMinutes)
         }
+        return null
     }
 }
 
 @Component
-class ActiveZoneMinutesImporterImpl(val repository: ActivityMinutesRepository): ActiveZoneMinutesImporter {
+class ActiveZoneMinutesImporterImpl(
+    val repository: ActivityMinutesRepository,
+    val entityManager: EntityManager
+): ActiveZoneMinutesImporter {
 
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+
+    override val batchSize: Int = BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -163,12 +194,18 @@ class ActiveZoneMinutesImporterImpl(val repository: ActivityMinutesRepository): 
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -178,12 +215,13 @@ class ActiveZoneMinutesImporterImpl(val repository: ActivityMinutesRepository): 
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
         println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<ActivityMinutes>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
@@ -207,16 +245,29 @@ class ActiveZoneMinutesImporterImpl(val repository: ActivityMinutesRepository): 
                             else -> "light" // Default to light for unknown zones
                         }
 
-                        // Create and save the ActivityMinutes entity
+                        // Create and add to batch
                         val activityMinutes = ActivityMinutes(
                             dateTime = dateTime,
                             value = totalMinutes,
                             intensity = intensity
                         )
-                        repository.save(activityMinutes)
+                        batch.add(activityMinutes)
                         lineCount++
+
+                        if (batch.size >= batchSize) {
+                            repository.saveAll(batch)
+                            entityManager.flush()
+                            entityManager.clear()
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            if (batch.isNotEmpty()) {
+                repository.saveAll(batch)
+                entityManager.flush()
+                entityManager.clear()
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -228,14 +279,21 @@ class ActiveZoneMinutesImporterImpl(val repository: ActivityMinutesRepository): 
 }
 
 @Component
-class DemographicVO2MaxImporterImpl(val repository: DemographicVO2MaxRepository): DemographicVO2MaxImporter {
+class DemographicVO2MaxImporterImpl(
+    val repository: DemographicVO2MaxRepository,
+    val entityManager: EntityManager
+): DemographicVO2MaxImporter {
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
+        parseToEntity(jsonItem)
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): DemographicVO2Max? {
         try {
             val valueNode = jsonItem.get("value")
             if (valueNode == null) {
                 println("Warning: Missing 'value' node in demographic VO2 max data")
-                return
+                return null
             }
 
             val demographicVO2Max = valueNode.get("demographicVO2Max")?.asDouble()
@@ -246,7 +304,7 @@ class DemographicVO2MaxImporterImpl(val repository: DemographicVO2MaxRepository)
 
             if (dateTimeStr == null) {
                 println("Warning: Missing 'dateTime' in demographic VO2 max data")
-                return
+                return null
             }
 
             try {
@@ -261,8 +319,8 @@ class DemographicVO2MaxImporterImpl(val repository: DemographicVO2MaxRepository)
                         filteredDemographicVO2MaxError = filteredDemographicVO2MaxError,
                         dateTime = dateTime
                     )
-                    repository.save(vo2Max)
                     println("Successfully imported demographic VO2 max data for $dateTime")
+                    return vo2Max
                 } else {
                     println("Warning: Missing required fields in demographic VO2 max data")
                 }
@@ -272,18 +330,33 @@ class DemographicVO2MaxImporterImpl(val repository: DemographicVO2MaxRepository)
         } catch (e: Exception) {
             println("Error processing demographic VO2 max data: ${e.message}")
         }
+        return null
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
+        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+            repository.saveAll(batch)
+        }
     }
 }
 
 @Component
-class RunVO2MaxImporterImpl(val repository: RunVO2MaxRepository): RunVO2MaxImporter {
+class RunVO2MaxImporterImpl(
+    val repository: RunVO2MaxRepository,
+    val entityManager: EntityManager
+): RunVO2MaxImporter {
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
+        parseToEntity(jsonItem)
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): RunVO2Max? {
         try {
             val valueNode = jsonItem.get("value")
             if (valueNode == null) {
                 println("Warning: Missing 'value' node in run VO2 max data")
-                return
+                return null
             }
 
             val exerciseId = valueNode.get("exerciseId")?.asLong()
@@ -295,7 +368,7 @@ class RunVO2MaxImporterImpl(val repository: RunVO2MaxRepository): RunVO2MaxImpor
 
             if (dateTimeStr == null) {
                 println("Warning: Missing 'dateTime' in run VO2 max data")
-                return
+                return null
             }
 
             try {
@@ -311,8 +384,8 @@ class RunVO2MaxImporterImpl(val repository: RunVO2MaxRepository): RunVO2MaxImpor
                         filteredRunVO2MaxError = filteredRunVO2MaxError,
                         dateTime = dateTime
                     )
-                    repository.save(entity)
                     println("Successfully imported run VO2 max data for $dateTime (exerciseId: $exerciseId)")
+                    return entity
                 } else {
                     println("Warning: Missing required fields in run VO2 max data")
                 }
@@ -322,15 +395,28 @@ class RunVO2MaxImporterImpl(val repository: RunVO2MaxRepository): RunVO2MaxImpor
         } catch (e: Exception) {
             println("Error processing run VO2 max data: ${e.message}")
         }
+        return null
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
+        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+            repository.saveAll(batch)
+        }
     }
 }
 
 @Component
-class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): ActivityGoalImporter {
+class ActivityGoalImporterImpl(
+    val repository: ActivityGoalRepository,
+    val entityManager: EntityManager
+): ActivityGoalImporter {
 
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    override val batchSize: Int = BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -340,12 +426,18 @@ class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): Activity
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -355,12 +447,13 @@ class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): Activity
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
         println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<ActivityGoal>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
@@ -390,7 +483,7 @@ class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): Activity
                             LocalDateTime.parse(it, dateTimeFormatter)
                         }
 
-                        // Create and save the ActivityGoal entity
+                        // Create and add to batch
                         val activityGoal = ActivityGoal(
                             type = type,
                             frequency = frequency,
@@ -403,10 +496,23 @@ class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): Activity
                             createdOn = createdOn,
                             editedOn = editedOn
                         )
-                        repository.save(activityGoal)
+                        batch.add(activityGoal)
                         lineCount++
+
+                        if (batch.size >= batchSize) {
+                            repository.saveAll(batch)
+                            entityManager.flush()
+                            entityManager.clear()
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            if (batch.isNotEmpty()) {
+                repository.saveAll(batch)
+                entityManager.flush()
+                entityManager.clear()
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -418,11 +524,18 @@ class ActivityGoalImporterImpl(val repository: ActivityGoalRepository): Activity
 }
 
 @Component
-class TimeInHeartRateZonesImporterImpl(val repository: TimeInHeartRateZonesRepository): TimeInHeartRateZonesImporter {
+class TimeInHeartRateZonesImporterImpl(
+    val repository: TimeInHeartRateZonesRepository,
+    val entityManager: EntityManager
+): TimeInHeartRateZonesImporter {
 
     override fun getDateTimeFormatter(): DateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm:ss")
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
+        parseToEntity(jsonItem)
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): TimeInHeartRateZones? {
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
         val valueNode = jsonItem.get("value")
         val valuesInZonesNode = valueNode?.get("valuesInZones")
@@ -431,9 +544,6 @@ class TimeInHeartRateZonesImporterImpl(val repository: TimeInHeartRateZonesRepos
             val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
             val timeInHeartRateZones = TimeInHeartRateZones(dateTime)
 
-            // Save the entity first to get an ID
-            repository.save(timeInHeartRateZones)
-
             // Process each zone value
             valuesInZonesNode.fields().forEach { (zoneName, minutesNode) ->
                 val minutes = minutesNode.asDouble()
@@ -441,8 +551,15 @@ class TimeInHeartRateZonesImporterImpl(val repository: TimeInHeartRateZonesRepos
                 timeInHeartRateZones.zoneValues.add(zoneValue)
             }
 
-            // Save again with the zone values
-            repository.save(timeInHeartRateZones)
+            return timeInHeartRateZones
+        }
+        return null
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
+        importFileWithBatching(index, size, file, objectMapper, entityManager) { batch ->
+            repository.saveAll(batch)
         }
     }
 }
