@@ -2,7 +2,6 @@ package kenny.fitbitkotlin
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.exercise.RunVO2Max
 import kenny.fitbitkotlin.exercise.RunVO2MaxImporterImpl
 import kenny.fitbitkotlin.exercise.RunVO2MaxRepository
@@ -43,7 +42,7 @@ class RunVO2MaxImporterUnitTest {
     private lateinit var repository: RunVO2MaxRepository
 
     @Mock
-    private lateinit var entityManager: EntityManager
+    private lateinit var batchService: TransactionalBatchService
 
     @InjectMocks
     private lateinit var importer: RunVO2MaxImporterImpl

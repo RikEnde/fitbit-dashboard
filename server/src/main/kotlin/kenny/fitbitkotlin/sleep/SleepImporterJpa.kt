@@ -24,11 +24,23 @@ class SleepImporterImpl(
 
     override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.SMALL_BATCH_SIZE
 
+    // Cache of existing log IDs to avoid per-record database lookups
+    private var existingLogIds: Set<Long> = emptySet()
+
+    override fun import(): Int {
+        // Load all existing log IDs upfront for fast duplicate checking
+        println("Loading existing sleep log IDs for duplicate detection...")
+        existingLogIds = repository.findAllLogIds()
+        println("Found ${existingLogIds.size} existing sleep records")
+
+        return super.import()
+    }
+
     override fun parseToEntity(jsonItem: JsonNode): Sleep? {
         val logId = jsonItem.get("logId")?.asLong() ?: return null
 
-        // Skip if already imported
-        if (repository.findByLogId(logId) != null) {
+        // Skip if already imported (check against cached set)
+        if (logId in existingLogIds) {
             return null
         }
 
