@@ -1,8 +1,11 @@
 package kenny.fitbitkotlin.sleep
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.*
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -15,15 +18,30 @@ class SleepImporterImpl(
     val repository: SleepRepository,
     val sleepLevelSummaryRepository: SleepLevelSummaryRepository,
     val sleepLevelDataRepository: SleepLevelDataRepository,
-    val sleepLevelShortDataRepository: SleepLevelShortDataRepository
+    val sleepLevelShortDataRepository: SleepLevelShortDataRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
 ) : SleepImporter {
 
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        val logId = jsonItem.get("logId")?.asLong() ?: return
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.SMALL_BATCH_SIZE
 
-        // Skip if already imported
-        if (repository.findByLogId(logId) != null) {
-            return
+    // Cache of existing log IDs to avoid per-record database lookups
+    private var existingLogIds: Set<Long> = emptySet()
+
+    override fun import(): Int {
+        // Load all existing log IDs upfront for fast duplicate checking
+        println("Loading existing sleep log IDs for duplicate detection...")
+        existingLogIds = repository.findAllLogIds()
+        println("Found ${existingLogIds.size} existing sleep records")
+
+        return super.import()
+    }
+
+    override fun parseToEntity(jsonItem: JsonNode): Sleep? {
+        val logId = jsonItem.get("logId")?.asLong() ?: return null
+
+        // Skip if already imported (check against cached set)
+        if (logId in existingLogIds) {
+            return null
         }
 
         val dateOfSleepStr = jsonItem.get("dateOfSleep")?.asText()
@@ -125,13 +143,34 @@ class SleepImporterImpl(
             }
         }
 
-        repository.save(sleep)
+        return sleep
+    }
+
+    override fun parseAndSaveEntity(jsonItem: JsonNode) {
+        // Not used - parseToEntity handles it
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    override suspend fun importFile(
+        index: Int,
+        size: Int,
+        file: File,
+        objectMapper: ObjectMapper
+    ) {
+        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
+            repository.saveAll(batch)
+        }
     }
 }
 
 @Component
-class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreImporter {
+class SleepScoreImporterImpl(
+    val repository: SleepScoreRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): SleepScoreImporter {
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yy HH:mm:ss")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV imports
@@ -141,12 +180,18 @@ class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreIm
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -156,19 +201,21 @@ class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreIm
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<SleepScore>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size >= 9) {
                         val timestampStr = parts[0]
                         val sleepLogEntryId = parts[1].toLongOrNull() ?: continue
@@ -183,7 +230,7 @@ class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreIm
                         // Parse the date time using the formatter
                         val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
 
-                        // Create and save the SleepScore entity
+                        // Create the SleepScore entity
                         val sleepScore = SleepScore(
                             sleepLogEntryId = sleepLogEntryId,
                             timestamp = timestamp,
@@ -195,10 +242,21 @@ class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreIm
                             restingHeartRate = restingHeartRate,
                             restlessness = restlessness
                         )
-                        repository.save(sleepScore)
+                        batch.add(sleepScore)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -210,9 +268,14 @@ class SleepScoreImporterImpl(val repository: SleepScoreRepository): SleepScoreIm
 }
 
 @Component
-class DeviceTemperatureImporterImpl(val repository: DeviceTemperatureRepository): DeviceTemperatureImporter {
+class DeviceTemperatureImporterImpl(
+    val repository: DeviceTemperatureRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): DeviceTemperatureImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -222,12 +285,18 @@ class DeviceTemperatureImporterImpl(val repository: DeviceTemperatureRepository)
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -237,19 +306,21 @@ class DeviceTemperatureImporterImpl(val repository: DeviceTemperatureRepository)
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<DeviceTemperature>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 3) {
                         val recordedTimeStr = parts[0]
                         val temperature = parts[1].toDoubleOrNull() ?: 0.0
@@ -258,16 +329,27 @@ class DeviceTemperatureImporterImpl(val repository: DeviceTemperatureRepository)
                         // Parse the date time using the formatter
                         val recordedTime = LocalDateTime.parse(recordedTimeStr, dateTimeFormatter)
 
-                        // Create and save the DeviceTemperature entity
+                        // Create the DeviceTemperature entity
                         val deviceTemperature = DeviceTemperature(
                             recordedTime = recordedTime,
                             temperature = temperature,
                             sensorType = sensorType
                         )
-                        repository.save(deviceTemperature)
+                        batch.add(deviceTemperature)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -279,9 +361,14 @@ class DeviceTemperatureImporterImpl(val repository: DeviceTemperatureRepository)
 }
 
 @Component
-class DailyRespiratoryRateImporterImpl(val repository: DailyRespiratoryRateRepository): DailyRespiratoryRateImporter {
+class DailyRespiratoryRateImporterImpl(
+    val repository: DailyRespiratoryRateRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): DailyRespiratoryRateImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -291,12 +378,18 @@ class DailyRespiratoryRateImporterImpl(val repository: DailyRespiratoryRateRepos
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -306,19 +399,21 @@ class DailyRespiratoryRateImporterImpl(val repository: DailyRespiratoryRateRepos
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<DailyRespiratoryRate>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 2) {
                         val timestampStr = parts[0]
                         val dailyRespiratoryRate = parts[1].toDoubleOrNull() ?: 0.0
@@ -326,15 +421,26 @@ class DailyRespiratoryRateImporterImpl(val repository: DailyRespiratoryRateRepos
                         // Parse the date time using the formatter
                         val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
 
-                        // Create and save the DailyRespiratoryRate entity
+                        // Create the DailyRespiratoryRate entity
                         val dailyRespiratoryRateEntity = DailyRespiratoryRate(
                             timestamp = timestamp,
                             dailyRespiratoryRate = dailyRespiratoryRate
                         )
-                        repository.save(dailyRespiratoryRateEntity)
+                        batch.add(dailyRespiratoryRateEntity)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -346,9 +452,14 @@ class DailyRespiratoryRateImporterImpl(val repository: DailyRespiratoryRateRepos
 }
 
 @Component
-class MinuteSpO2ImporterImpl(val repository: MinuteSpO2Repository): MinuteSpO2Importer {
+class MinuteSpO2ImporterImpl(
+    val repository: MinuteSpO2Repository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): MinuteSpO2Importer {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -358,12 +469,18 @@ class MinuteSpO2ImporterImpl(val repository: MinuteSpO2Repository): MinuteSpO2Im
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -373,19 +490,21 @@ class MinuteSpO2ImporterImpl(val repository: MinuteSpO2Repository): MinuteSpO2Im
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<MinuteSpO2>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 2) {
                         val timestampStr = parts[0]
                         val value = parts[1].toDoubleOrNull() ?: 0.0
@@ -393,15 +512,26 @@ class MinuteSpO2ImporterImpl(val repository: MinuteSpO2Repository): MinuteSpO2Im
                         // Parse the date time using the formatter
                         val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
 
-                        // Create and save the MinuteSpO2 entity
+                        // Create the MinuteSpO2 entity
                         val minuteSpO2 = MinuteSpO2(
                             timestamp = timestamp,
                             value = value
                         )
-                        repository.save(minuteSpO2)
+                        batch.add(minuteSpO2)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -413,9 +543,14 @@ class MinuteSpO2ImporterImpl(val repository: MinuteSpO2Repository): MinuteSpO2Im
 }
 
 @Component
-class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureRepository): ComputedTemperatureImporter {
+class ComputedTemperatureImporterImpl(
+    val repository: ComputedTemperatureRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): ComputedTemperatureImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -425,12 +560,18 @@ class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureReposit
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -440,19 +581,21 @@ class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureReposit
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<ComputedTemperature>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 9) {
                         val type = parts[0]
                         val sleepStartStr = parts[1]
@@ -468,7 +611,7 @@ class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureReposit
                         val sleepStart = LocalDateTime.parse(sleepStartStr, dateTimeFormatter)
                         val sleepEnd = LocalDateTime.parse(sleepEndStr, dateTimeFormatter)
 
-                        // Create and save the ComputedTemperature entity
+                        // Create the ComputedTemperature entity
                         val computedTemperature = ComputedTemperature(
                             type = type,
                             sleepStart = sleepStart,
@@ -480,10 +623,21 @@ class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureReposit
                             baselineRelativeNightlyStandardDeviation = baselineRelativeNightlyStandardDeviation,
                             baselineRelativeSampleStandardDeviation = baselineRelativeSampleStandardDeviation
                         )
-                        repository.save(computedTemperature)
+                        batch.add(computedTemperature)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -496,9 +650,14 @@ class ComputedTemperatureImporterImpl(val repository: ComputedTemperatureReposit
 
 // Daily SpO2 Importer Implementation
 @Component
-class DailySpO2ImporterImpl(val repository: DailySpO2Repository): DailySpO2Importer {
+class DailySpO2ImporterImpl(
+    val repository: DailySpO2Repository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): DailySpO2Importer {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -508,12 +667,18 @@ class DailySpO2ImporterImpl(val repository: DailySpO2Repository): DailySpO2Impor
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -523,19 +688,21 @@ class DailySpO2ImporterImpl(val repository: DailySpO2Repository): DailySpO2Impor
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<DailySpO2>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 4) {
                         val timestampStr = parts[0]
                         val averageValue = parts[1].toDoubleOrNull() ?: 0.0
@@ -545,17 +712,28 @@ class DailySpO2ImporterImpl(val repository: DailySpO2Repository): DailySpO2Impor
                         // Parse the date time using the formatter
                         val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
 
-                        // Create and save the DailySpO2 entity
+                        // Create the DailySpO2 entity
                         val dailySpO2 = DailySpO2(
                             timestamp = timestamp,
                             averageValue = averageValue,
                             lowerBound = lowerBound,
                             upperBound = upperBound
                         )
-                        repository.save(dailySpO2)
+                        batch.add(dailySpO2)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")
@@ -567,9 +745,14 @@ class DailySpO2ImporterImpl(val repository: DailySpO2Repository): DailySpO2Impor
 }
 
 @Component
-class RespiratoryRateSummaryImporterImpl(val repository: RespiratoryRateSummaryRepository): RespiratoryRateSummaryImporter {
+class RespiratoryRateSummaryImporterImpl(
+    val repository: RespiratoryRateSummaryRepository,
+    val batchService: kenny.fitbitkotlin.TransactionalBatchService
+): RespiratoryRateSummaryImporter {
     // Define a formatter for the ISO date-time format in the CSV
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+
+    override val batchSize: Int = kenny.fitbitkotlin.BatchConstants.LARGE_BATCH_SIZE
 
     override fun parseAndSaveEntity(jsonItem: JsonNode) {
         // This method is not used for CSV files, but must be implemented
@@ -579,12 +762,18 @@ class RespiratoryRateSummaryImporterImpl(val repository: RespiratoryRateSummaryR
     override fun import(): Int {
         val files = files()
         val size = files.size
+        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
 
         runBlocking(Dispatchers.IO) {
             val jobs = files.mapIndexed { index, file ->
                 launch(Dispatchers.IO) {
-                    importFile(index, size, file)
-                    file.renameTo(File(file.absolutePath + ".imported"))
+                    semaphore.acquire()
+                    try {
+                        importFile(index, size, file)
+                        file.renameTo(File(file.absolutePath + ".imported"))
+                    } finally {
+                        semaphore.release()
+                    }
                 }
             }
             jobs.joinAll()
@@ -594,19 +783,21 @@ class RespiratoryRateSummaryImporterImpl(val repository: RespiratoryRateSummaryR
         return size
     }
 
+    @Transactional(propagation = Propagation.REQUIRED)
     override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
         println("Parsing $file")
 
         try {
-            // Skip the header line
+            val batch = mutableListOf<RespiratoryRateSummary>()
             var lineCount = 0
 
             BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
+                reader.readLine() // Skip header
 
+                var line: String? = null
                 while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
+                    val parts = line!!.split(",")
                     if (parts.size == 13) {
                         val timestampStr = parts[0]
                         val fullSleepBreathingRate = parts[1].toDoubleOrNull() ?: 0.0
@@ -625,7 +816,7 @@ class RespiratoryRateSummaryImporterImpl(val repository: RespiratoryRateSummaryR
                         // Parse the date time using the formatter
                         val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
 
-                        // Create and save the RespiratoryRateSummary entity
+                        // Create the RespiratoryRateSummary entity
                         val respiratoryRateSummary = RespiratoryRateSummary(
                             timestamp = timestamp,
                             fullSleepBreathingRate = fullSleepBreathingRate,
@@ -641,10 +832,21 @@ class RespiratoryRateSummaryImporterImpl(val repository: RespiratoryRateSummaryR
                             remSleepStandardDeviation = remSleepStandardDeviation,
                             remSleepSignalToNoise = remSleepSignalToNoise
                         )
-                        repository.save(respiratoryRateSummary)
+                        batch.add(respiratoryRateSummary)
                         lineCount++
+
+                        // Batch flush
+                        if (batch.size >= batchSize) {
+                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
+                            batch.clear()
+                        }
                     }
                 }
+            }
+
+            // Save remaining
+            if (batch.isNotEmpty()) {
+                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
             }
 
             println("Imported $lineCount records from ${file.name}")

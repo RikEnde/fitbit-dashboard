@@ -13,7 +13,6 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -42,6 +41,9 @@ class DemographicVO2MaxImporterUnitTest {
     @Mock
     private lateinit var repository: DemographicVO2MaxRepository
 
+    @Mock
+    private lateinit var batchService: TransactionalBatchService
+
     @InjectMocks
     private lateinit var importer: DemographicVO2MaxImporterImpl
 
@@ -63,21 +65,20 @@ class DemographicVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "06/15/22 10:30:00")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was called once
-        verify(repository, times(1)).save(vo2MaxCaptor.capture())
+        // Verify the result is not null
+        org.junit.jupiter.api.Assertions.assertNotNull(result)
 
-        // Verify the captured entity has the correct values
-        val capturedVO2Max = vo2MaxCaptor.value
-        assertEquals(45.5, capturedVO2Max.demographicVO2Max)
-        assertEquals(1.2, capturedVO2Max.demographicVO2MaxError)
-        assertEquals(44.8, capturedVO2Max.filteredDemographicVO2Max)
-        assertEquals(0.9, capturedVO2Max.filteredDemographicVO2MaxError)
+        // Verify the entity has the correct values
+        assertEquals(45.5, result!!.demographicVO2Max)
+        assertEquals(1.2, result.demographicVO2MaxError)
+        assertEquals(44.8, result.filteredDemographicVO2Max)
+        assertEquals(0.9, result.filteredDemographicVO2MaxError)
 
         // Verify the date was parsed correctly
         val expectedDateTime = LocalDateTime.of(2022, 6, 15, 10, 30, 0)
-        assertEquals(expectedDateTime, capturedVO2Max.dateTime)
+        assertEquals(expectedDateTime, result.dateTime)
     }
 
     @Test
@@ -88,10 +89,10 @@ class DemographicVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "06/15/22 10:30:00")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        org.junit.jupiter.api.Assertions.assertNull(result)
     }
 
     @Test
@@ -108,10 +109,10 @@ class DemographicVO2MaxImporterUnitTest {
         rootNode.set<JsonNode>("value", valueNode)
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        org.junit.jupiter.api.Assertions.assertNull(result)
     }
 
     @Test
@@ -129,10 +130,10 @@ class DemographicVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "2022-06-15T10:30:00") // Wrong format
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        org.junit.jupiter.api.Assertions.assertNull(result)
     }
 
     @Test
@@ -150,9 +151,9 @@ class DemographicVO2MaxImporterUnitTest {
         rootNode.put("dateTime", "06/15/22 10:30:00")
 
         // Call the method under test
-        importer.parseAndSaveEntity(rootNode)
+        val result = importer.parseToEntity(rootNode)
 
-        // Verify that repository.save was not called
-        verify(repository, never()).save(any())
+        // Verify that the result is null
+        org.junit.jupiter.api.Assertions.assertNull(result)
     }
 }
