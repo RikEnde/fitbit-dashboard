@@ -1,10 +1,26 @@
 package kenny.fitbitkotlin
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.time.format.DateTimeFormatter
+
+@Service
+class TransactionalBatchService(
+    private val entityManager: EntityManager
+) {
+    @Transactional(propagation = Propagation.REQUIRED)
+    fun <T> saveBatchWithFlush(batch: List<T>, saveOperation: (List<T>) -> Unit) {
+        saveOperation(batch)
+        entityManager.flush()
+        entityManager.clear()
+    }
+}
 
 interface Importer<T> {
     val dataDir: String

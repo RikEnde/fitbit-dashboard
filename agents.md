@@ -71,13 +71,15 @@ src/main/kotlin/kenny/fitbitkotlin/
 ├── FitbitKotlinApplication.kt      # Entry point + ImportRunner
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
 ├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
-├── Importers.kt                    # Base Importer<T> interface
+├── Importers.kt                    # Base Importer<T> interface + TransactionalBatchService
+├── Exporters.kt                    # Exporter<T> interface + ExportController + AppleHealthXmlWriter
 ├── calories/                       # Calories module
 │   ├── Model.kt                    # JPA entity
 │   ├── Repository.kt               # Data access
 │   ├── Resolver.kt                 # GraphQL queries
 │   ├── Importer.kt                 # Import interface
-│   └── ImporterJpa.kt              # Import implementation
+│   ├── ImporterJpa.kt              # Import implementation
+│   └── Exporter.kt                 # Apple Health XML export
 ├── distance/                       # Distance module
 ├── exercise/                       # Exercise & activity module
 ├── heartrate/                      # Heart rate & HRV module
@@ -172,7 +174,29 @@ Auto-generated CRUD endpoints for all repositories with:
 - Filtering
 - HATEOAS links
 
-### 5. Data Access Layer
+### 5. Apple Health Export API
+
+**Endpoint:** `/api/export/{type}`
+
+Exports Fitbit data to Apple Health XML format for import via iOS apps like "Health Data Importer".
+
+**Supported Types:**
+- `/api/export/heartrate` → HKQuantityTypeIdentifierHeartRate
+- `/api/export/steps` → HKQuantityTypeIdentifierStepCount
+- `/api/export/calories` → HKQuantityTypeIdentifierActiveEnergyBurned
+- `/api/export/distance` → HKQuantityTypeIdentifierDistanceWalkingRunning
+- `/api/export/sleep` → HKCategoryTypeIdentifierSleepAnalysis
+
+**Parameters:**
+- `from` - Start datetime (ISO format: `2024-01-01T00:00:00`)
+- `to` - End datetime (ISO format: `2024-12-31T23:59:59`)
+
+**Example:**
+```bash
+curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
+```
+
+### 6. Data Access Layer
 
 **Repositories:** JPA repositories extending `JpaRepository` and `JpaSpecificationExecutor`
 
@@ -369,7 +393,7 @@ mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps 
 ## Testing
 
 ### Test Coverage
-- Unit tests for importers
+- Unit tests for importers and exporters
 - Spring Boot integration tests
 - GraphQL query tests
 - Repository tests
@@ -387,7 +411,7 @@ mvn -pl server test -Dtest=HeartRateImporterImplTest
 1. **Security:** Implement authentication and authorization
 2. **Real-time:** WebSocket support for live data streaming
 3. **Analytics:** Machine learning insights from health data
-4. **Export:** Data export to CSV, PDF reports
+4. **Export:** CSV and PDF report exports (Apple Health XML export implemented)
 5. **Notifications:** Alerts for health metric anomalies
 6. **Mobile:** REST API optimization for mobile clients
 
