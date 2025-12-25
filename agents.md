@@ -70,6 +70,7 @@ The application follows a **layered domain-driven architecture** with clear sepa
 src/main/kotlin/kenny/fitbitkotlin/
 ├── FitbitKotlinApplication.kt      # Entry point + ImportRunner
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
+├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
 ├── Importers.kt                    # Base Importer<T> interface
 ├── calories/                       # Calories module
 │   ├── Model.kt                    # JPA entity
@@ -81,13 +82,13 @@ src/main/kotlin/kenny/fitbitkotlin/
 ├── exercise/                       # Exercise & activity module
 ├── heartrate/                      # Heart rate & HRV module
 ├── profile/                        # User profile module
-├── security/                       # Security (prepared for future)
+├── steps/                          # Steps module
 └── sleep/                          # Sleep & respiratory module
 
 src/main/resources/
 ├── application.yml                 # Spring configuration
 ├── graphql/schema.graphqls         # GraphQL schema
-└── static/graphiql.html            # GraphQL IDE
+└── graphiql/index.html             # GraphiQL IDE (served via GraphiQlController)
 
 docker-compose.yml                  # PostgreSQL + pgAdmin
 ```
@@ -255,22 +256,28 @@ class Steps { ... }
 
 ```yaml
 spring:
-  application:
-    name: fitbit-kotlin
   graphql:
     graphiql:
       enabled: true
       path: /graphiql
+    path: /graphql
+    schema:
+      printer:
+        enabled: true
   datasource:
     url: jdbc:postgresql://localhost:5432/fitbit_db
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: admin
+    password: admin_password
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 1000
+        order_inserts: true
+        order_updates: true
   data:
     rest:
       base-path: /api
@@ -288,8 +295,8 @@ server:
 ```graphql
 query {
   dailyStepsSum(range: {
-    startDate: "2024-01-01T00:00:00Z"
-    endDate: "2024-01-31T23:59:59Z"
+    from: "2024-01-01T00:00:00Z"
+    to: "2024-01-31T23:59:59Z"
   }) {
     date
     totalSteps
@@ -316,7 +323,8 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 - Historical temperature and respiratory tracking
 
 ### 3. Asynchronous Processing
-- Parallel file imports using coroutines
+- Parallel file imports using coroutines with configurable semaphore (`maxConcurrentFiles`)
+- Batch inserts with configurable size for performance
 - Non-blocking I/O operations
 - Progress tracking and logging
 
@@ -328,14 +336,14 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 ## Security Considerations
 
 **Current State:**
-- Security module prepared but not implemented
-- Database credentials in application.yml (should migrate to environment variables)
 - No authentication/authorization on API endpoints
+- Database credentials in application.yml (consider using environment variables for production)
+- Docker Compose uses `.env` file for PostgreSQL credentials
 
 **Recommended Enhancements:**
 - Spring Security integration
 - JWT-based authentication
-- Environment variable configuration
+- Environment variable configuration for sensitive data
 - API rate limiting
 
 ## Deployment
@@ -346,10 +354,10 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 docker-compose up -d
 
 # Run application
-mvn spring-boot:run
+mvn -pl server spring-boot:run
 
 # Import data with options
-mvn spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
+mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
 ```
 
 ### Accessing Services
@@ -368,7 +376,10 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
 
 ### Running Tests
 ```bash
-mvn test
+mvn -pl server test
+
+# Run a single test
+mvn -pl server test -Dtest=HeartRateImporterImplTest
 ```
 
 ## Future Enhancements
@@ -379,6 +390,14 @@ mvn test
 4. **Export:** Data export to CSV, PDF reports
 5. **Notifications:** Alerts for health metric anomalies
 6. **Mobile:** REST API optimization for mobile clients
+
+## React Client
+
+The `client/` directory contains a React + TypeScript frontend:
+
+- **Stack:** React 18, TypeScript, Apollo Client, Recharts
+- **Dev server:** `npm start` (port 3000, proxies API calls to :8080)
+- **Features:** Profile display, steps visualization (daily/weekly bar charts), heart rate charts
 
 ## Summary
 
