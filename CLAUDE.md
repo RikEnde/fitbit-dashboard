@@ -40,7 +40,6 @@ npm run build
 ### Infrastructure
 
 ```bash
-# Start PostgreSQL and pgAdmin (requires .env file copied from .env.example)
 docker-compose up -d
 
 # Access points:

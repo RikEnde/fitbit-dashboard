@@ -289,9 +289,9 @@ spring:
       printer:
         enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/fitbit_db
-    username: admin
-    password: admin_password
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
