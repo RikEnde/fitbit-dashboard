@@ -37,6 +37,7 @@ class HeartRateExporterImpl(
         return AppleHealthRecord(
             type = healthKitType(),
             sourceName = sourceName,
+            sourceVersion = sourceVersion,
             unit = unit(),
             value = entity.bpm.toString(),
             creationDate = formattedDate,
