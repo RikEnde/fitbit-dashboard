@@ -62,6 +62,7 @@ Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin
 - `{Domain}Resolver.kt` - GraphQL `@Controller` with `@QueryMapping` methods
 - `{Domain}Importer.kt` - Interface extending `Importer<T>` for JSON file imports
 - `{Domain}ImporterJpa.kt` - Implementation that parses JSON and persists to database
+- `{Domain}Exporter.kt` - Interface extending `Exporter<T>` for Apple Health XML export
 
 Domains: heartrate, steps, calories, distance, exercise, sleep, profile
 
@@ -74,6 +75,19 @@ The `Importer<T>` interface in `Importers.kt` provides:
 - Imported files renamed with `.imported` suffix
 
 Import triggered via CLI args to `FitbitKotlinApplication` (see `ImportRunner`).
+
+### Data Export System
+
+The `Exporter<T>` interface in `Exporters.kt` provides Apple Health XML export:
+- Generates XML compatible with iOS "Health Data Importer" app
+- REST endpoints at `/api/export/{type}?from=...&to=...`
+- Types: heartrate, steps, calories, distance, sleep
+- Paginated queries to handle large datasets
+
+```bash
+# Export heart rate data for a year
+curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
+```
 
 ### GraphQL
 
