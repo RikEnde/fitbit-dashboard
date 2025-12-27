@@ -7,6 +7,7 @@ import kenny.fitbitkotlin.heartrate.DailyHeartRateVariabilityImporter
 import kenny.fitbitkotlin.heartrate.HeartRateImporterImpl
 import kenny.fitbitkotlin.heartrate.HeartRateVariabilityDetailsImporter
 import kenny.fitbitkotlin.heartrate.RestingHeartRateImporter
+import kenny.fitbitkotlin.profile.AccountImporter
 import kenny.fitbitkotlin.sleep.*
 import kenny.fitbitkotlin.steps.StepsImporter
 import org.springframework.boot.ApplicationArguments
@@ -45,7 +46,8 @@ class ImportRunner(
     val sleepScoreImporter: SleepScoreImporter,
     val computedTemperatureImporter: ComputedTemperatureImporter,
     val respiratoryRateSummaryImporter: RespiratoryRateSummaryImporter,
-    val dailySpO2Importer: DailySpO2Importer
+    val dailySpO2Importer: DailySpO2Importer,
+    val accountImporter: AccountImporter
 ) : ApplicationRunner {
     override fun run(args: ApplicationArguments) {
         if (args.containsOption("heartrate")) {
@@ -178,6 +180,12 @@ class ImportRunner(
             println("Importing daily SpO2 data...")
             val count = dailySpO2Importer.import()
             println("Imported $count daily SpO2 files")
+        }
+
+        if (args.containsOption("profile")) {
+            println("Importing profile data...")
+            val count = accountImporter.import()
+            println("Imported $count profile files")
         }
     }
 }

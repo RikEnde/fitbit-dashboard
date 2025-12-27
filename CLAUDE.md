@@ -16,7 +16,8 @@ mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps 
 # Import options: --heartrate, --steps, --calories, --distance, --exercise, --sleep,
 # --sleepscore, --restingheartrate, --timeinzone, --activityminutes, --activezoneminutes,
 # --vo2max, --runvo2max, --activitygoals, --devicetemperature, --respiratoryrate,
-# --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary, --dailyspo2
+# --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary, --dailyspo2,
+# --profile
 
 # Run tests
 mvn -pl server test
