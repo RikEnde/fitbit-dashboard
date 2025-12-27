@@ -37,6 +37,7 @@ class DistanceExporterImpl(
         return AppleHealthRecord(
             type = healthKitType(),
             sourceName = sourceName,
+            sourceVersion = sourceVersion,
             unit = unit(),
             value = entity.value.toString(),
             creationDate = formattedDate,

@@ -64,6 +64,7 @@ class SleepExporterImpl(
         return AppleHealthRecord(
             type = healthKitType(),
             sourceName = sourceName,
+            sourceVersion = sourceVersion,
             unit = unit(),
             value = mapFitbitLevelToAppleHealth(entity.level).toString(),
             creationDate = startDate,

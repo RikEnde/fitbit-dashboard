@@ -27,6 +27,7 @@ import javax.xml.stream.XMLStreamWriter
 data class AppleHealthRecord(
     val type: String,
     val sourceName: String,
+    val sourceVersion: String,
     val unit: String,
     val value: String,
     val creationDate: String,
@@ -41,6 +42,9 @@ data class AppleHealthRecord(
 interface Exporter<T> {
     val sourceName: String
         get() = "Fitbit-dump"
+
+    val sourceVersion: String
+        get() = "1.0"
 
     val appleHealthDateFormatter: DateTimeFormatter
         get() = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
@@ -67,16 +71,46 @@ interface Exporter<T> {
  */
 object AppleHealthXmlWriter {
 
+    private val DTD = """<!DOCTYPE HealthData [
+<!ELEMENT HealthData (ExportDate,Me?,Record*)>
+<!ATTLIST HealthData locale CDATA #REQUIRED>
+<!ELEMENT ExportDate EMPTY>
+<!ATTLIST ExportDate value CDATA #REQUIRED>
+<!ELEMENT Me EMPTY>
+<!ELEMENT Record (MetadataEntry*)>
+<!ATTLIST Record type CDATA #REQUIRED>
+<!ATTLIST Record sourceName CDATA #REQUIRED>
+<!ATTLIST Record sourceVersion CDATA #IMPLIED>
+<!ATTLIST Record unit CDATA #IMPLIED>
+<!ATTLIST Record creationDate CDATA #IMPLIED>
+<!ATTLIST Record startDate CDATA #REQUIRED>
+<!ATTLIST Record endDate CDATA #REQUIRED>
+<!ATTLIST Record value CDATA #IMPLIED>
+<!ELEMENT MetadataEntry EMPTY>
+<!ATTLIST MetadataEntry key CDATA #REQUIRED>
+<!ATTLIST MetadataEntry value CDATA #REQUIRED>
+]>"""
+
+    private val exportDateFormatter: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z")
+
     fun write(records: List<AppleHealthRecord>, output: OutputStream) {
         val factory = XMLOutputFactory.newInstance()
         val writer = factory.createXMLStreamWriter(output, "UTF-8")
 
         writer.writeStartDocument("UTF-8", "1.0")
         writer.writeCharacters("\n")
-        writer.writeDTD("<!DOCTYPE HealthData>")
+        writer.writeDTD(DTD)
         writer.writeCharacters("\n")
         writer.writeStartElement("HealthData")
         writer.writeAttribute("locale", "en_US")
+        writer.writeCharacters("\n")
+
+        // Write ExportDate element
+        val exportDate = LocalDateTime.now().atOffset(ZoneOffset.UTC).format(exportDateFormatter)
+        writer.writeCharacters(" ")
+        writer.writeEmptyElement("ExportDate")
+        writer.writeAttribute("value", exportDate)
         writer.writeCharacters("\n")
 
         for (record in records) {
@@ -84,19 +118,19 @@ object AppleHealthXmlWriter {
         }
 
         writer.writeEndElement()
+        writer.writeCharacters("\n")
         writer.writeEndDocument()
         writer.flush()
         writer.close()
     }
 
     private fun writeRecord(writer: XMLStreamWriter, record: AppleHealthRecord) {
-        writer.writeCharacters("  ")
+        writer.writeCharacters(" ")
         writer.writeEmptyElement("Record")
         writer.writeAttribute("type", record.type)
         writer.writeAttribute("sourceName", record.sourceName)
-        if (record.unit.isNotEmpty()) {
-            writer.writeAttribute("unit", record.unit)
-        }
+        writer.writeAttribute("sourceVersion", record.sourceVersion)
+        writer.writeAttribute("unit", record.unit)
         writer.writeAttribute("creationDate", record.creationDate)
         writer.writeAttribute("startDate", record.startDate)
         writer.writeAttribute("endDate", record.endDate)
