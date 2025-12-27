@@ -7,17 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Server (Kotlin/Spring Boot)
 
 ```bash
-# Build and run
+# Build and run the server (API/GraphQL)
 mvn -pl server spring-boot:run
-
-# Run with data import (from ../data directory)
-mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
-
-# Import options: --heartrate, --steps, --calories, --distance, --exercise, --sleep,
-# --sleepscore, --restingheartrate, --timeinzone, --activityminutes, --activezoneminutes,
-# --vo2max, --runvo2max, --activitygoals, --devicetemperature, --respiratoryrate,
-# --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary, --dailyspo2,
-# --profile
 
 # Run tests
 mvn -pl server test
@@ -27,6 +18,25 @@ mvn -pl server test -Dtest=HeartRateImporterImplTest
 
 # Compile only
 mvn -pl server compile
+```
+
+### Importer (Data Import Module)
+
+```bash
+# Run data import (from ../data directory)
+mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
+
+# Import options: --heartrate, --steps, --calories, --distance, --exercise, --sleep,
+# --sleepscore, --restingheartrate, --timeinzone, --activityminutes, --activezoneminutes,
+# --vo2max, --runvo2max, --activitygoals, --devicetemperature, --respiratoryrate,
+# --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary, --dailyspo2,
+# --profile
+
+# Run tests
+mvn -pl importer test
+
+# Compile only
+mvn -pl importer compile
 ```
 
 ### Client (React/TypeScript)
@@ -53,6 +63,13 @@ docker-compose up -d
 
 ## Architecture
 
+### Module Structure
+
+The project consists of two main modules:
+
+- **server** - REST API and GraphQL server with entities, repositories, resolvers, and exporters
+- **importer** - Data import CLI for Fitbit JSON/CSV files
+
 ### Server Domain Structure
 
 Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin/kenny/fitbitkotlin/{domain}/`:
@@ -60,13 +77,16 @@ Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin
 - `{Domain}Model.kt` - JPA entities
 - `{Domain}Repository.kt` - Spring Data JPA repository with custom queries
 - `{Domain}Resolver.kt` - GraphQL `@Controller` with `@QueryMapping` methods
-- `{Domain}Importer.kt` - Interface extending `Importer<T>` for JSON file imports
-- `{Domain}ImporterJpa.kt` - Implementation that parses JSON and persists to database
 - `{Domain}Exporter.kt` - Interface extending `Exporter<T>` for Apple Health XML export
 
 Domains: heartrate, steps, calories, distance, exercise, sleep, profile
 
-### Data Import System
+### Importer Structure
+
+Import code is in `importer/src/main/kotlin/kenny/fitbitkotlin/importer/{domain}/`:
+
+- `{Domain}Importer.kt` - Interface extending `Importer<T>` for JSON file imports
+- `{Domain}ImporterJpa.kt` - Implementation that parses JSON/CSV and persists to database
 
 The `Importer<T>` interface in `Importers.kt` provides:
 - Concurrent file processing with configurable semaphore (`maxConcurrentFiles`)
@@ -74,7 +94,7 @@ The `Importer<T>` interface in `Importers.kt` provides:
 - Files read from `../data/{directory}` matching `filePattern()` regex
 - Imported files renamed with `.imported` suffix
 
-Import triggered via CLI args to `FitbitKotlinApplication` (see `ImportRunner`).
+Import triggered via CLI args to `FitbitImporterApplication` (see `ImportRunner`).
 
 ### Data Export System
 
