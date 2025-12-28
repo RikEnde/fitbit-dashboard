@@ -1,38 +1,60 @@
+# Maven
 HELP.md
 target/
+.mvn
 
-### IntelliJ IDEA ###
-.idea
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
+.run/
 
-### VS Code ###
+# VS Code
 .vscode/
 
-.mvn
-data/
-pg_data/
-**/node_modules/
+# Editor swap files
+*.swp
+*.swo
 
-# testing
-/coverage
-
-# production
-/build
-
-# misc
+# OS
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+Thumbs.db
 
+# Environment files
+.env
+.env.*
+!.env.example
+.envrc
+client/.env
+
+# Node.js
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-client/.env
-.envrc
-.run
+*.log
+
+# Testing
+/coverage
+
+# Production builds
+/build
+
+# Dashboard (SvelteKit)
+/dashboard/.svelte-kit/
+/dashboard/build/
+/dashboard/dist/
+*.tsbuildinfo
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Data directories
+data/
+pg_data/
+
+# Claude Code
 /.claude/
+
+# Misc
 /output/

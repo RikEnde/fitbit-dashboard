@@ -39,7 +39,16 @@ mvn -pl importer test
 mvn -pl importer compile
 ```
 
-### Client (React/TypeScript)
+### Dashboard (SvelteKit/TypeScript) - Primary Frontend
+
+```bash
+cd dashboard
+npm run dev      # Dev server on port 3000, proxies to :8080
+npm run build    # Production build
+npm run preview  # Preview production build
+```
+
+### Client (React/TypeScript) - Legacy
 
 ```bash
 cd client
@@ -65,10 +74,11 @@ docker-compose up -d
 
 ### Module Structure
 
-The project consists of two main modules:
+The project consists of three main modules:
 
 - **server** - REST API and GraphQL server with entities, repositories, resolvers, and exporters
 - **importer** - Data import CLI for Fitbit JSON/CSV files
+- **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
 
 ### Server Domain Structure
 
@@ -119,9 +129,30 @@ curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=202
 
 Schema at `server/src/main/resources/graphql/schema.graphqls`. Uses `graphql-java-extended-scalars` for `DateTime` scalar. Resolvers use pagination with `PageRequest` and date range filtering via `DateRange` input type.
 
+### Dashboard Structure
+
+The SvelteKit dashboard in `dashboard/src/lib/`:
+
+- `components/layout/` - Header, ProfileAvatar, ProfileDropdown
+- `components/tiles/` - StepsTile, CaloriesTile, DistanceTile, HeartRateTile, SleepTile, ActiveMinutesTile
+- `components/charts/` - ProgressRing, MiniBarChart
+- `graphql/client.ts` - URQL GraphQL client
+- `stores/` - Svelte stores for dashboard state, preferences, profile
+- `utils/` - Colors, formatters, date utilities
+
+Key patterns:
+- Uses Svelte 5 runes (`$state`, `$derived`, `$props`, `$effect`)
+- GraphQL queries via URQL with client-side fetching in `onMount`
+- Reactive date range filtering via stores
+- TailwindCSS with custom Fitbit color palette
+
+Data unit notes:
+- Distance values from Fitbit are stored in centimeters (divide by 100,000 for km)
+
 ### Tech Stack
 
 - Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
 - PostgreSQL 17 with JPA/Hibernate
 - GraphQL + REST (Spring Data REST at `/api`)
-- React 18 + TypeScript + Apollo Client + Recharts
+- SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS (primary dashboard)
+- React 18 + TypeScript + Apollo Client + Recharts (legacy client)
