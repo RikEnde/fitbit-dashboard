@@ -1,23 +1,21 @@
 package kenny.fitbitkotlin.importer.heartrate
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.heartrate.*
-import kenny.fitbitkotlin.importer.BatchConstants
-import kenny.fitbitkotlin.importer.TransactionalBatchService
-import kotlinx.coroutines.*
+import kenny.fitbitkotlin.importer.CsvImporter
+import kenny.fitbitkotlin.importer.JsonImporter
 import org.springframework.stereotype.Component
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileReader
+import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Component
 class HeartRateImporterImpl(
-    val repository: HeartRateRepository,
-    val batchService: TransactionalBatchService
-): HeartRateImporter {
+    repository: HeartRateRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : JsonImporter<HeartRate>(repository, entityManager, transactionManager), HeartRateImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): HeartRate? {
         val bpm = jsonItem.get("value")?.get("bpm")?.asInt()
@@ -31,28 +29,14 @@ class HeartRateImporterImpl(
             null
         }
     }
-
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // Not used - parseToEntity handles it
-    }
-
-    override suspend fun importFile(
-        index: Int,
-        size: Int,
-        file: File,
-        objectMapper: ObjectMapper
-    ) {
-        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
-            repository.saveAll(batch)
-        }
-    }
 }
 
 @Component
 class RestingHeartRateImporterImpl(
-    val repository: RestingHeartRateRepository,
-    val batchService: TransactionalBatchService
-): RestingHeartRateImporter {
+    repository: RestingHeartRateRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : JsonImporter<RestingHeartRate>(repository, entityManager, transactionManager), RestingHeartRateImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): RestingHeartRate? {
         val valueNode = jsonItem.get("value")
@@ -67,197 +51,66 @@ class RestingHeartRateImporterImpl(
             null
         }
     }
-
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // Not used - parseToEntity handles it
-    }
-
-    override suspend fun importFile(
-        index: Int,
-        size: Int,
-        file: File,
-        objectMapper: ObjectMapper
-    ) {
-        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
-            repository.saveAll(batch)
-        }
-    }
 }
 
 @Component
 class DailyHeartRateVariabilityImporterImpl(
-    val repository: DailyHeartRateVariabilityRepository,
-    val batchService: TransactionalBatchService
-): DailyHeartRateVariabilityImporter {
-    // Define a formatter for the ISO date-time format in the CSV
-    private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+    repository: DailyHeartRateVariabilityRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : CsvImporter<DailyHeartRateVariability>(repository, entityManager, transactionManager), DailyHeartRateVariabilityImporter {
 
-    override val batchSize: Int = BatchConstants.LARGE_BATCH_SIZE
+    override val batchSize: Int = 10000
 
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // This method is not used for CSV files, but must be implemented
-        throw UnsupportedOperationException("This method is not used for CSV files")
-    }
+    override fun getDateTimeFormatter(): DateTimeFormatter =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
-    override fun import(): Int {
-        val files = files()
-        val size = files.size
-        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
+    override fun parseRow(values: List<String>, headers: List<String>): DailyHeartRateVariability? {
+        if (values.size < 4) return null
 
-        runBlocking(Dispatchers.IO) {
-            val jobs = files.mapIndexed { index, file ->
-                launch(Dispatchers.IO) {
-                    semaphore.acquire()
-                    try {
-                        importFile(index, size, file)
-                        file.renameTo(File(file.absolutePath + ".imported"))
-                    } finally {
-                        semaphore.release()
-                    }
-                }
-            }
-            jobs.joinAll()
-        }
+        val timestampStr = values[0]
+        val rmssd = values[1].toDoubleOrNull() ?: 0.0
+        val nremhr = values[2].toDoubleOrNull() ?: 0.0
+        val entropy = values[3].toDoubleOrNull() ?: 0.0
+        val timestamp = LocalDateTime.parse(timestampStr, getDateTimeFormatter())
 
-        println("Completed processing ${files.size} files")
-        return size
-    }
-
-    override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
-        println("Parsing $file")
-
-        try {
-            val batch = mutableListOf<DailyHeartRateVariability>()
-            var lineCount = 0
-
-            BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
-
-                while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
-                    if (parts.size == 4) {
-                        val timestampStr = parts[0]
-                        val rmssd = parts[1].toDoubleOrNull() ?: 0.0
-                        val nremhr = parts[2].toDoubleOrNull() ?: 0.0
-                        val entropy = parts[3].toDoubleOrNull() ?: 0.0
-                        val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
-
-                        val dailyHeartRateVariability = DailyHeartRateVariability(
-                            timestamp = timestamp,
-                            rmssd = rmssd,
-                            nremhr = nremhr,
-                            entropy = entropy
-                        )
-                        batch.add(dailyHeartRateVariability)
-                        lineCount++
-
-                        if (batch.size >= batchSize) {
-                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
-                            batch.clear()
-                        }
-                    }
-                }
-            }
-
-            if (batch.isNotEmpty()) {
-                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
-            }
-
-            println("Imported $lineCount records from ${file.name}")
-        } catch (e: Exception) {
-            println("Error parsing file ${file.name}: ${e.message}")
-            e.printStackTrace()
-        }
+        return DailyHeartRateVariability(
+            timestamp = timestamp,
+            rmssd = rmssd,
+            nremhr = nremhr,
+            entropy = entropy
+        )
     }
 }
 
 @Component
 class HeartRateVariabilityDetailsImporterImpl(
-    val repository: HeartRateVariabilityDetailsRepository,
-    val batchService: TransactionalBatchService
-): HeartRateVariabilityDetailsImporter {
-    // Define a formatter for the ISO date-time format in the CSV
-    private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+    repository: HeartRateVariabilityDetailsRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : CsvImporter<HeartRateVariabilityDetails>(repository, entityManager, transactionManager), HeartRateVariabilityDetailsImporter {
 
-    override val batchSize: Int = BatchConstants.LARGE_BATCH_SIZE
+    override val batchSize: Int = 10000
 
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // This method is not used for CSV files, but must be implemented
-        throw UnsupportedOperationException("This method is not used for CSV files")
-    }
+    override fun getDateTimeFormatter(): DateTimeFormatter =
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
 
-    override fun import(): Int {
-        val files = files()
-        val size = files.size
-        val semaphore = kotlinx.coroutines.sync.Semaphore(maxConcurrentFiles)
+    override fun parseRow(values: List<String>, headers: List<String>): HeartRateVariabilityDetails? {
+        if (values.size < 5) return null
 
-        runBlocking(Dispatchers.IO) {
-            val jobs = files.mapIndexed { index, file ->
-                launch(Dispatchers.IO) {
-                    semaphore.acquire()
-                    try {
-                        importFile(index, size, file)
-                        file.renameTo(File(file.absolutePath + ".imported"))
-                    } finally {
-                        semaphore.release()
-                    }
-                }
-            }
-            jobs.joinAll()
-        }
+        val timestampStr = values[0]
+        val rmssd = values[1].toDoubleOrNull() ?: 0.0
+        val coverage = values[2].toDoubleOrNull() ?: 0.0
+        val lowFrequency = values[3].toDoubleOrNull() ?: 0.0
+        val highFrequency = values[4].toDoubleOrNull() ?: 0.0
+        val timestamp = LocalDateTime.parse(timestampStr, getDateTimeFormatter())
 
-        println("Completed processing ${files.size} files")
-        return size
-    }
-
-    override suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
-        println("Parsing $file")
-
-        try {
-            val batch = mutableListOf<HeartRateVariabilityDetails>()
-            var lineCount = 0
-
-            BufferedReader(FileReader(file)).use { reader ->
-                var line = reader.readLine() // Skip header
-
-                while (reader.readLine()?.also { line = it } != null) {
-                    val parts = line.split(",")
-                    if (parts.size == 5) {
-                        val timestampStr = parts[0]
-                        val rmssd = parts[1].toDoubleOrNull() ?: 0.0
-                        val coverage = parts[2].toDoubleOrNull() ?: 0.0
-                        val lowFrequency = parts[3].toDoubleOrNull() ?: 0.0
-                        val highFrequency = parts[4].toDoubleOrNull() ?: 0.0
-                        val timestamp = LocalDateTime.parse(timestampStr, dateTimeFormatter)
-
-                        val heartRateVariabilityDetails = HeartRateVariabilityDetails(
-                            timestamp = timestamp,
-                            rmssd = rmssd,
-                            coverage = coverage,
-                            lowFrequency = lowFrequency,
-                            highFrequency = highFrequency
-                        )
-                        batch.add(heartRateVariabilityDetails)
-                        lineCount++
-
-                        if (batch.size >= batchSize) {
-                            batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
-                            batch.clear()
-                        }
-                    }
-                }
-            }
-
-            if (batch.isNotEmpty()) {
-                batchService.saveBatchWithFlush(batch.toList()) { repository.saveAll(it) }
-            }
-
-            println("Imported $lineCount records from ${file.name}")
-        } catch (e: Exception) {
-            println("Error parsing file ${file.name}: ${e.message}")
-            e.printStackTrace()
-        }
+        return HeartRateVariabilityDetails(
+            timestamp = timestamp,
+            rmssd = rmssd,
+            coverage = coverage,
+            lowFrequency = lowFrequency,
+            highFrequency = highFrequency
+        )
     }
 }

@@ -14,7 +14,7 @@ mvn -pl server spring-boot:run
 mvn -pl server test
 
 # Run a single test
-mvn -pl server test -Dtest=HeartRateImporterImplTest
+mvn -pl server test -Dtest=StepsResolverTest
 
 # Compile only
 mvn -pl server compile
@@ -83,14 +83,20 @@ Domains: heartrate, steps, calories, distance, exercise, sleep, profile
 
 ### Importer Structure
 
-Import code is in `importer/src/main/kotlin/kenny/fitbitkotlin/importer/{domain}/`:
+Import code is in `importer/src/main/kotlin/kenny/fitbitkotlin/importer/`:
 
-- `{Domain}Importer.kt` - Interface extending `Importer<T>` for JSON file imports
-- `{Domain}ImporterJpa.kt` - Implementation that parses JSON/CSV and persists to database
+Core classes:
+- `Importer.kt` - Contains `Importer<T>` interface, `JsonImporter<T>`, and `CsvImporter<T>` with built-in JPA batch persistence
 
-The `Importer<T>` interface in `Importers.kt` provides:
-- Concurrent file processing with configurable semaphore (`maxConcurrentFiles`)
-- Batch inserts for performance (`batchSize`)
+Domain importers in `{domain}/`:
+- `{Domain}Importer.kt` - Interface extending `Importer<T>`
+- `{Domain}ImporterJpa.kt` - Implementation extending `JsonImporter` or `CsvImporter`
+
+Features:
+- Format-specific base classes (no JSON dependency for CSV importers)
+- Built-in JPA batch persistence with flush/clear
+- Concurrent file processing with configurable semaphore
+- Configurable batch sizes per importer
 - Files read from `../data/{directory}` matching `filePattern()` regex
 - Imported files renamed with `.imported` suffix
 

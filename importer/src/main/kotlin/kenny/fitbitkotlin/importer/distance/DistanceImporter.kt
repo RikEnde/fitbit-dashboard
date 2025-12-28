@@ -1,7 +1,7 @@
 package kenny.fitbitkotlin.importer.distance
 
-import kenny.fitbitkotlin.importer.Importer
 import kenny.fitbitkotlin.distance.Distance
+import kenny.fitbitkotlin.importer.Importer
 
 interface DistanceImporter : Importer<Distance> {
     override fun directory(): String = "Physical Activity"

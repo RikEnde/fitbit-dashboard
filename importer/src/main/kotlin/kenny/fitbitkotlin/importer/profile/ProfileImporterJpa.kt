@@ -1,7 +1,5 @@
 package kenny.fitbitkotlin.importer.profile
 
-import com.fasterxml.jackson.databind.JsonNode
-import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.profile.Profile
 import kenny.fitbitkotlin.profile.ProfileRepository
 import kotlinx.coroutines.*
@@ -13,14 +11,17 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
+/**
+ * Profile importer with custom implementation.
+ * Reads a single CSV file and an avatar image - doesn't fit the standard CsvImporter pattern.
+ */
 @Component
 class AccountImporterImpl(
-    private val profileRepository: ProfileRepository,
-    private val entityManager: EntityManager
+    private val profileRepository: ProfileRepository
 ) : AccountImporter {
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // This method is not used for CSV imports
-    }
+
+    val maxConcurrentFiles: Int
+        get() = 10
 
     override fun import(): Int {
         val files = files()

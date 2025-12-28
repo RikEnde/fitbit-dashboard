@@ -1,19 +1,20 @@
 package kenny.fitbitkotlin.importer.steps
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import kenny.fitbitkotlin.importer.TransactionalBatchService
+import jakarta.persistence.EntityManager
+import kenny.fitbitkotlin.importer.JsonImporter
 import kenny.fitbitkotlin.steps.Steps
 import kenny.fitbitkotlin.steps.StepsRepository
 import org.springframework.stereotype.Component
-import java.io.File
+import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDateTime
 
 @Component
 class StepsImporterImpl(
-    val repository: StepsRepository,
-    val batchService: TransactionalBatchService
-): StepsImporter {
+    repository: StepsRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : JsonImporter<Steps>(repository, entityManager, transactionManager), StepsImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): Steps? {
         val valueStr = jsonItem.get("value")?.asText()
@@ -25,21 +26,6 @@ class StepsImporterImpl(
             Steps(value, dateTime)
         } else {
             null
-        }
-    }
-
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // Not used - parseToEntity handles it
-    }
-
-    override suspend fun importFile(
-        index: Int,
-        size: Int,
-        file: File,
-        objectMapper: ObjectMapper
-    ) {
-        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
-            repository.saveAll(batch)
         }
     }
 }

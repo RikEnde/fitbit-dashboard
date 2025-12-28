@@ -59,7 +59,7 @@ The application follows a **layered domain-driven architecture** with clear sepa
 ### Design Patterns
 
 1. **Repository Pattern** - JPA repositories for data access abstraction
-2. **Importer Pattern** - Abstract `Importer<T>` interface for async file processing
+2. **Importer Pattern** - Format-specific abstract classes (`JsonImporter<T>`, `CsvImporter<T>`) for async file processing with built-in JPA batch persistence
 3. **Resolver Pattern** - GraphQL controllers with `@QueryMapping` and `@SchemaMapping`
 4. **Specification Pattern** - `JpaSpecificationExecutor` for dynamic queries
 5. **Application Runner Pattern** - CLI-based import trigger on startup
@@ -67,18 +67,15 @@ The application follows a **layered domain-driven architecture** with clear sepa
 ## Project Structure
 
 ```
-src/main/kotlin/kenny/fitbitkotlin/
-├── FitbitKotlinApplication.kt      # Entry point + ImportRunner
+server/src/main/kotlin/kenny/fitbitkotlin/
+├── FitbitKotlinApplication.kt      # Entry point
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
 ├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
-├── Importers.kt                    # Base Importer<T> interface + TransactionalBatchService
 ├── Exporters.kt                    # Exporter<T> interface + ExportController + AppleHealthXmlWriter
 ├── calories/                       # Calories module
 │   ├── Model.kt                    # JPA entity
 │   ├── Repository.kt               # Data access
 │   ├── Resolver.kt                 # GraphQL queries
-│   ├── Importer.kt                 # Import interface
-│   ├── ImporterJpa.kt              # Import implementation
 │   └── Exporter.kt                 # Apple Health XML export
 ├── distance/                       # Distance module
 ├── exercise/                       # Exercise & activity module
@@ -86,6 +83,19 @@ src/main/kotlin/kenny/fitbitkotlin/
 ├── profile/                        # User profile module
 ├── steps/                          # Steps module
 └── sleep/                          # Sleep & respiratory module
+
+importer/src/main/kotlin/kenny/fitbitkotlin/importer/
+├── FitbitImporterApplication.kt    # Importer entry point + ImportRunner
+├── Importer.kt                     # Importer<T> interface + JsonImporter + CsvImporter
+├── calories/                       # Calories importer
+│   ├── CaloriesImporter.kt         # Import interface
+│   └── CaloriesImporterJpa.kt      # Import implementation (extends JsonImporter)
+├── distance/                       # Distance importer
+├── exercise/                       # Exercise & activity importers
+├── heartrate/                      # Heart rate & HRV importers
+├── profile/                        # Profile importer
+├── steps/                          # Steps importer
+└── sleep/                          # Sleep & respiratory importers
 
 src/main/resources/
 ├── application.yml                 # Spring configuration
@@ -95,7 +105,7 @@ src/main/resources/
 docker-compose.yml                  # PostgreSQL + pgAdmin
 ```
 
-**Total:** 38 Kotlin source files across 11 domain modules
+**Total:** ~45 Kotlin source files across server and importer modules
 
 ## Core Components
 
@@ -113,16 +123,43 @@ Each health metric is organized as a self-contained module:
 | **Sleep** | Sleep analysis | Sleep, SleepLevelSummary, SleepLevelData, SleepLevelShortData, SleepScore, DeviceTemperature, DailyRespiratoryRate, MinuteSpO2, ComputedTemperature, RespiratoryRateSummary, DailySpO2 |
 | **Profile** | User demographics | Profile (30+ attributes) |
 
-### 2. ImportRunner
+### 2. Importer Architecture
 
 **Purpose:** Async file processing engine for Fitbit JSON/CSV data
 
+**Architecture:**
+```
+Importer<T> (interface)
+├── directory(): String
+├── filePattern(): String
+├── files(): List<File>
+└── import(): Int
+
+JsonImporter<T> (abstract class)
+├── repository: JpaRepository<T, *>
+├── entityManager: EntityManager
+├── parseToEntity(JsonNode): T?
+├── batchSize, maxConcurrentFiles
+├── saveBatch() - @Transactional batch persistence
+└── Handles JSON parsing + batching + persistence
+
+CsvImporter<T> (abstract class)
+├── repository: JpaRepository<T, *>
+├── entityManager: EntityManager
+├── parseRow(values, headers): T?
+├── batchSize, maxConcurrentFiles
+├── saveBatch() - @Transactional batch persistence
+└── Handles CSV parsing + batching + persistence
+```
+
 **Key Features:**
+- Format-specific base classes (no JSON dependency for CSV importers)
+- Built-in JPA batch persistence with flush/clear
 - Kotlin coroutines with `Dispatchers.IO` for parallel imports
 - CLI options for selective imports (--heartrate, --steps, --exercise, etc.)
 - File pattern matching with regex
 - Automatic `.imported` suffix marking
-- Progress logging
+- Configurable batch sizes and concurrency
 
 **Supported Import Types:**
 - Heart rate, Steps, Exercise, Calories, Distance
@@ -257,15 +294,17 @@ class Steps { ... }
    ↓
 2. ImportRunner Triggered (with CLI options)
    ↓
-3. File Pattern Matching (regex)
+3. File Pattern Matching (regex via Importer.files())
    ↓
-4. Parallel Async Processing (Kotlin Coroutines)
+4. Parallel Async Processing (Kotlin Coroutines + Semaphore)
    ↓
-5. JSON/CSV Parsing (Jackson)
+5. Format-Specific Parsing
+   ├── JsonImporter: Jackson ObjectMapper
+   └── CsvImporter: BufferedReader
    ↓
-6. Entity Mapping
+6. Entity Mapping (parseToEntity/parseRow)
    ↓
-7. Database Persistence (JPA)
+7. Batched Persistence (saveBatch with flush/clear)
    ↓
 8. File Renaming (.imported suffix)
 ```
@@ -348,7 +387,8 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 
 ### 3. Asynchronous Processing
 - Parallel file imports using coroutines with configurable semaphore (`maxConcurrentFiles`)
-- Batch inserts with configurable size for performance
+- Batch inserts with configurable size (default 5000, customizable per importer)
+- Format-specific base classes (`JsonImporter`, `CsvImporter`) handle concurrency and persistence
 - Non-blocking I/O operations
 - Progress tracking and logging
 
@@ -377,11 +417,11 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 # Start database
 docker-compose up -d
 
-# Run application
+# Run server (API/GraphQL)
 mvn -pl server spring-boot:run
 
-# Import data with options
-mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
+# Run importer with options
+mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --sleep"
 ```
 
 ### Accessing Services
@@ -400,10 +440,14 @@ mvn -pl server spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps 
 
 ### Running Tests
 ```bash
+# Server tests
 mvn -pl server test
 
+# Importer tests
+mvn -pl importer test
+
 # Run a single test
-mvn -pl server test -Dtest=HeartRateImporterImplTest
+mvn -pl importer test -Dtest=AccountImporterImplTest
 ```
 
 ## Future Enhancements
@@ -428,9 +472,9 @@ The `client/` directory contains a React + TypeScript frontend:
 This is a production-ready, data-centric health analytics platform that combines:
 - Modern Spring Boot 3 + Kotlin stack
 - Dual GraphQL/REST API architecture
-- Sophisticated async file importing
+- Sophisticated async file importing with format-specific parsers and built-in batch persistence
 - Optimized PostgreSQL storage
 - Advanced time-series analytics
-- Modular domain-driven design
+- Modular domain-driven design with separate server and importer modules
 
 The application is well-suited for storing and analyzing large volumes of Fitbit wearable data with performance optimizations and comprehensive query capabilities.

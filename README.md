@@ -1,32 +1,101 @@
 # Fitbit Kotlin Application
 
-This application provides a GraphQL API for querying Fitbit data stored in a PostgreSQL database.
+A Kotlin/Spring Boot application for importing, storing, and querying your Fitbit data. Includes a GraphQL API, REST API, and React frontend for visualizing health metrics.
+
+## Obtaining Your Fitbit Data
+
+To use this application, you first need to download your data from Fitbit:
+
+1. Log in to your Fitbit account at [fitbit.com](https://www.fitbit.com)
+2. Go to **Settings** (gear icon) → **Data Export**
+3. Or navigate directly to: https://www.fitbit.com/settings/data/export
+4. Click **Request Data** to export your complete Fitbit history
+5. Fitbit will email you when your data is ready (this can take a few hours to days)
+6. Download the ZIP file and extract it to a `data` directory in the parent folder of this project:
+   ```
+   ../data/
+   ├── Personal & Account/
+   │   ├── Profile.csv
+   │   └── Media/
+   ├── Physical Activity/
+   │   ├── heart_rate-2024-01-01.json
+   │   ├── steps-2024-01-01.json
+   │   └── ...
+   ├── Sleep/
+   │   ├── sleep-2024-01-01.json
+   │   └── ...
+   └── ...
+   ```
+
+### Import Your Fitbit Data
+
+```bash
+# Import all data types
+mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories --distance --exercise --sleep --sleepscore --profile"
+
+# Or import specific data types
+mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps"
+```
+
+Supported import options:
+- `--heartrate` - Heart rate measurements
+- `--steps` - Step counts
+- `--calories` - Calories burned
+- `--distance` - Distance traveled
+- `--exercise` - Exercise/activity logs
+- `--sleep` - Sleep sessions
+- `--sleepscore` - Sleep scores
+- `--restingheartrate` - Resting heart rate
+- `--timeinzone` - Time in heart rate zones
+- `--activityminutes` - Activity minutes
+- `--activezoneminutes` - Active zone minutes
+- `--vo2max` - VO2 Max estimates
+- `--runvo2max` - Running VO2 Max
+- `--activitygoals` - Activity goals
+- `--devicetemperature` - Device temperature
+- `--respiratoryrate` - Respiratory rate
+- `--hrv` - Heart rate variability
+- `--hrvdetails` - HRV details
+- `--minutespo2` - SpO2 minutes
+- `--computedtemperature` - Computed temperature
+- `--respiratoryratesummary` - Respiratory rate summary
+- `--dailyspo2` - Daily SpO2
+- `--profile` - User profile
+
+### 3. Run the Server
+
+```bash
+mvn -pl server spring-boot:run
+```
+
+The server will start on http://localhost:8080
+
+### 4. Access the Application
+
+- **GraphiQL** (GraphQL IDE): http://localhost:8080/graphiql
+- **REST API**: http://localhost:8080/api
+- **pgAdmin** (database admin): http://localhost:5050
+
+### 5. Run the React Client (Optional)
+
+```bash
+cd client
+npm install
+npm start
+```
+
+The client runs on http://localhost:3000 and proxies API requests to the server.
 
 ## GraphQL API
 
-The application exposes a GraphQL API at `/graphql` that allows querying various types of Fitbit data:
-
-- Heart rate data (raw data and aggregated by interval)
-- Steps data (raw data, daily sums, and weekly averages)
-- Calories data
-- Distance data
-- Exercise data
-- Sleep data
-- Sleep score data
-- Profile data
-- Health status
-
-### GraphiQL
-
-The application includes GraphiQL, a web-based GraphQL IDE, which is accessible at `/graphiql` when the application is running.
+The application exposes a GraphQL API at `/graphql` for querying Fitbit data.
 
 ### Example Queries
 
-Here are some example GraphQL queries:
-
-#### Query Heart Rate Data
+#### Heart Rate Data
 
 ```graphql
+# Get recent heart rate readings
 query {
   heartRates(limit: 10, offset: 0) {
     id
@@ -35,9 +104,37 @@ query {
     time
   }
 }
+
+# Get heart rate aggregated by time interval
+query {
+  heartRatesPerInterval(range: {from: "2024-01-01T00:00:00Z", to: "2024-01-01T23:59:59Z"}) {
+    timeInterval
+    bpmSum
+  }
+}
 ```
 
-#### Query Exercise Data with Heart Rate Zones
+#### Steps Data
+
+```graphql
+# Get daily step totals
+query {
+  dailyStepsSum(range: {from: "2024-01-01T00:00:00Z", to: "2024-01-31T23:59:59Z"}) {
+    date
+    totalSteps
+  }
+}
+
+# Get weekly step averages
+query {
+  weeklyStepsAverage(range: {from: "2024-01-01T00:00:00Z", to: "2024-03-31T23:59:59Z"}) {
+    weekNumber
+    averageSteps
+  }
+}
+```
+
+#### Exercise Data
 
 ```graphql
 query {
@@ -61,7 +158,7 @@ query {
 }
 ```
 
-#### Query Sleep Data with Level Summaries
+#### Sleep Data
 
 ```graphql
 query {
@@ -82,7 +179,7 @@ query {
 }
 ```
 
-#### Query Profile Data
+#### Profile Data
 
 ```graphql
 query {
@@ -104,34 +201,7 @@ query {
 }
 ```
 
-#### Query Aggregated Steps Data
-
-```graphql
-query {
-  dailyStepsSum(range: {from: "2024-01-01T00:00:00Z", to: "2024-01-31T23:59:59Z"}) {
-    date
-    totalSteps
-  }
-
-  weeklyStepsAverage(range: {from: "2024-01-01T00:00:00Z", to: "2024-03-31T23:59:59Z"}) {
-    weekNumber
-    averageSteps
-  }
-}
-```
-
-#### Query Heart Rate Data by Interval
-
-```graphql
-query {
-  heartRatesPerInterval(range: {from: "2024-01-01T00:00:00Z", to: "2024-01-01T23:59:59Z"}) {
-    timeInterval
-    bpmSum
-  }
-}
-```
-
-#### Health Check Query
+#### Health Check
 
 ```graphql
 query {
@@ -144,22 +214,21 @@ query {
 
 ## REST API
 
-In addition to the GraphQL API, the application also exposes a REST API at `/api` using Spring Data REST. This provides standard CRUD operations for all entities.
+The application also exposes a REST API at `/api` using Spring Data REST, providing standard CRUD operations for all entities.
 
-## Running the Application
+## Data Export
 
-1. Create a `.env` file in the root directory by copying the `.env.example` file:
-   ```
-   cp .env.example .env
-   ```
-   Then edit the `.env` file to set your desired database credentials.
+Export your data to Apple Health XML format (compatible with iOS "Health Data Importer" app):
 
-2. Start PostgreSQL and pgAdmin using Docker Compose:
-   ```
-   docker-compose up -d
-   ```
+```bash
+# Export heart rate data
+curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
 
-3. Run the application using Maven: `./mvnw spring-boot:run`
-4. Access the GraphiQL interface at http://localhost:8080/graphiql
-5. Access the REST API at http://localhost:8080/api
-6. Access the GraphQL schema at http://localhost:8080/graphql/schema
+# Export steps data
+curl "http://localhost:8080/api/export/steps?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o steps.xml
+```
+
+Available export types: `heartrate`, `steps`, `calories`, `distance`, `sleep`
+
+The amount of heart rate data for an entire year can be too large for Apple Health to import in one go, so you may have 
+to divide the export data into chunks. See the script `export.sh` for an example. 

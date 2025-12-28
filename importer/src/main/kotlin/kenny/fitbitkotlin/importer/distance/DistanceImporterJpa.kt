@@ -1,19 +1,20 @@
 package kenny.fitbitkotlin.importer.distance
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import kenny.fitbitkotlin.importer.TransactionalBatchService
+import jakarta.persistence.EntityManager
 import kenny.fitbitkotlin.distance.Distance
 import kenny.fitbitkotlin.distance.DistanceRepository
+import kenny.fitbitkotlin.importer.JsonImporter
 import org.springframework.stereotype.Component
-import java.io.File
+import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDateTime
 
 @Component
 class DistanceImporterImpl(
-    val repository: DistanceRepository,
-    val batchService: TransactionalBatchService
-): DistanceImporter {
+    repository: DistanceRepository,
+    entityManager: EntityManager,
+    transactionManager: PlatformTransactionManager
+) : JsonImporter<Distance>(repository, entityManager, transactionManager), DistanceImporter {
 
     override fun parseToEntity(jsonItem: JsonNode): Distance? {
         val valueStr = jsonItem.get("value")?.asText()
@@ -25,21 +26,6 @@ class DistanceImporterImpl(
             Distance(value, dateTime)
         } else {
             null
-        }
-    }
-
-    override fun parseAndSaveEntity(jsonItem: JsonNode) {
-        // Not used - parseToEntity handles it
-    }
-
-    override suspend fun importFile(
-        index: Int,
-        size: Int,
-        file: File,
-        objectMapper: ObjectMapper
-    ) {
-        importFileWithBatching(index, size, file, objectMapper, batchService) { batch ->
-            repository.saveAll(batch)
         }
     }
 }

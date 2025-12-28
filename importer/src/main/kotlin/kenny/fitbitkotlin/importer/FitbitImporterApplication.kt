@@ -3,7 +3,10 @@ package kenny.fitbitkotlin.importer
 import kenny.fitbitkotlin.importer.calories.CaloriesImporter
 import kenny.fitbitkotlin.importer.distance.DistanceImporter
 import kenny.fitbitkotlin.importer.exercise.*
-import kenny.fitbitkotlin.importer.heartrate.*
+import kenny.fitbitkotlin.importer.heartrate.DailyHeartRateVariabilityImporter
+import kenny.fitbitkotlin.importer.heartrate.HeartRateImporterImpl
+import kenny.fitbitkotlin.importer.heartrate.HeartRateVariabilityDetailsImporter
+import kenny.fitbitkotlin.importer.heartrate.RestingHeartRateImporter
 import kenny.fitbitkotlin.importer.profile.AccountImporter
 import kenny.fitbitkotlin.importer.sleep.*
 import kenny.fitbitkotlin.importer.steps.StepsImporter
