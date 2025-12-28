@@ -3,7 +3,6 @@ package kenny.fitbitkotlin.importer.exercise
 import kenny.fitbitkotlin.importer.Importer
 import kenny.fitbitkotlin.heartrate.TimeInHeartRateZones
 import kenny.fitbitkotlin.exercise.*
-import java.io.File
 
 interface TimeInHeartRateZonesImporter : Importer<TimeInHeartRateZones> {
     override fun directory(): String = "Physical Activity"
@@ -13,8 +12,6 @@ interface TimeInHeartRateZonesImporter : Importer<TimeInHeartRateZones> {
 interface ActivityGoalImporter : Importer<ActivityGoal> {
     override fun directory(): String = "Physical Activity"
     override fun filePattern(): String = "Activity Goals\\.csv"
-    override fun import(): Int
-    suspend fun importFile(index: Int, size: Int, file: File)
 }
 
 interface ExerciseImporter : Importer<Exercise> {
@@ -31,8 +28,6 @@ interface ActivityMinutesImporter : Importer<ActivityMinutes> {
 interface ActiveZoneMinutesImporter : Importer<ActivityMinutes> {
     override fun directory(): String = "Physical Activity"
     override fun filePattern(): String = "Active Zone Minutes - \\d{4}-\\d{2}-\\d{2}\\.csv"
-    override fun import(): Int
-    suspend fun importFile(index: Int, size: Int, file: File)
 }
 
 interface DemographicVO2MaxImporter : Importer<DemographicVO2Max> {

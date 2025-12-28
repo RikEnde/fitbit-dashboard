@@ -1,6 +1,5 @@
 package kenny.fitbitkotlin.importer
 
-import com.fasterxml.jackson.databind.JsonNode
 import kenny.fitbitkotlin.importer.profile.AccountImporter
 import kenny.fitbitkotlin.importer.profile.AccountImporterImpl
 import kenny.fitbitkotlin.profile.Profile
@@ -48,9 +47,7 @@ class AccountImporterImplTest {
         // Create a test-specific importer that uses test data directory
         val testImporter = object : AccountImporter {
             override val dataDir: String = testDataDir
-            override fun parseAndSaveEntity(jsonItem: JsonNode) {
-                // Not used for this test
-            }
+            override fun import(): Int = 0  // Not used in this test
         }
 
         // Verify test files exist
