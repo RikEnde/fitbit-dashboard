@@ -65,8 +65,8 @@ function createPreferencesStore() {
 		},
 		toggleTheme: () => {
 			update((prefs) => {
-				const newTheme = prefs.theme === 'dark' ? 'light' : 'dark';
-				const updated = { ...prefs, theme: newTheme };
+				const newTheme: 'dark' | 'light' = prefs.theme === 'dark' ? 'light' : 'dark';
+				const updated: Preferences = { ...prefs, theme: newTheme };
 				if (browser) {
 					localStorage.setItem('fitbit-dashboard-preferences', JSON.stringify(updated));
 					document.documentElement.classList.toggle('dark', newTheme === 'dark');
