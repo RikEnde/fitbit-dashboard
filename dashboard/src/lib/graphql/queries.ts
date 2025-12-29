@@ -1,4 +1,4 @@
-import { gql } from '@urql/svelte';
+import {gql} from '@urql/svelte';
 
 // Profile query for the avatar dropdown
 export const PROFILE_QUERY = gql`

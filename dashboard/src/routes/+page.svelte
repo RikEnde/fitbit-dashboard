@@ -1,13 +1,13 @@
 <script lang="ts">
-	import {
-		StepsTile,
-		CaloriesTile,
-		DistanceTile,
-		HeartRateTile,
-		SleepTile,
-		ActiveMinutesTile
-	} from '$components/tiles';
-	import { preferences } from '$stores/preferences';
+    import {
+        ActiveMinutesTile,
+        CaloriesTile,
+        DistanceTile,
+        HeartRateTile,
+        SleepTile,
+        StepsTile
+    } from '$components/tiles';
+    import {preferences} from '$stores/preferences';
 </script>
 
 <svelte:head>

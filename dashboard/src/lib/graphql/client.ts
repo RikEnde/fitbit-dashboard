@@ -1,4 +1,4 @@
-import { Client, cacheExchange, fetchExchange } from '@urql/svelte';
+import {cacheExchange, Client, fetchExchange} from '@urql/svelte';
 
 export const client = new Client({
 	url: '/graphql',

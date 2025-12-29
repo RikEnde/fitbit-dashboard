@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { dateRange } from '$stores/dashboard';
-	import { colors, heartRateZoneColors } from '$utils/colors';
-	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {dateRange} from '$stores/dashboard';
+    import {colors, heartRateZoneColors} from '$utils/colors';
+    import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
-	// State
+    // State
 	let currentBpm = $state(0);
 	let minBpm = $state(0);
 	let maxBpm = $state(0);

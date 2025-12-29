@@ -1,5 +1,5 @@
-import { writable, derived } from 'svelte/store';
-import { startOfDay, endOfDay, format } from 'date-fns';
+import {derived, writable} from 'svelte/store';
+import {endOfDay, format, startOfDay} from 'date-fns';
 
 // Selected date for the dashboard
 export const selectedDate = writable<Date>(new Date());

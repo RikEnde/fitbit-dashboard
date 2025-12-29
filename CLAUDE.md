@@ -20,12 +20,17 @@ mvn -pl server test -Dtest=StepsResolverTest
 mvn -pl server compile
 ```
 
-### Importer (Data Import Module)
+### Model (Shared Entities and Repositories)
 
-**Note:** The importer depends on the server module. Build server first:
 ```bash
-mvn -pl server install -DskipTests
+# Compile only
+mvn -pl model compile
+
+# Install to local repository (required before building server/importer separately)
+mvn -pl model install -DskipTests
 ```
+
+### Importer (Data Import Module)
 
 ```bash
 # Run data import (from ../data directory)
@@ -70,26 +75,40 @@ docker-compose up -d
 
 ### Module Structure
 
-The project consists of three main modules:
+The project consists of four main modules:
 
-- **server** - REST API and GraphQL server with entities, repositories, resolvers, and exporters
+- **model** - Shared JPA entities and Spring Data repositories (used by server and importer)
+- **server** - REST API and GraphQL server with resolvers and exporters
 - **importer** - Data import CLI for Fitbit JSON/CSV files
 - **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
 
-### Server Domain Structure
+Dependency graph:
+```
+        model
+       /     \
+      v       v
+   server   importer
+```
 
-Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin/kenny/fitbit/{domain}/`:
+### Model Module Structure
+
+Shared entities and repositories in `model/src/main/kotlin/kenny/fitbit/{domain}/`:
 
 - `{Domain}Model.kt` - JPA entities
 - `{Domain}Repository.kt` - Spring Data JPA repository with custom queries
-- `{Domain}Resolver.kt` - GraphQL `@Controller` with `@QueryMapping` methods
-- `{Domain}Exporter.kt` - Interface extending `Exporter<T>` for Apple Health XML export
 
 Domains: heartrate, steps, calories, distance, exercise, sleep, profile
 
+### Server Domain Structure
+
+Server-specific code in `server/src/main/kotlin/kenny/fitbit/{domain}/`:
+
+- `{Domain}Resolver.kt` - GraphQL `@Controller` with `@QueryMapping` methods
+- `{Domain}Exporter.kt` - Interface extending `Exporter<T>` for Apple Health XML export
+
 ### Importer Structure
 
-Import code is in `importer/src/main/kotlin/kenny/fitbit/importer/`:
+Import code is in `importer/src/main/kotlin/kenny/fitbit/`:
 
 Core classes:
 - `Importer.kt` - Contains `Importer<T>` interface, `JsonImporter<T>`, and `CsvImporter<T>` with built-in JPA batch persistence

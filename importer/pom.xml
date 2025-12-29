@@ -46,10 +46,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Depend on server module for entities and repositories -->
+        <!-- Shared models and repositories -->
         <dependency>
             <groupId>kenny</groupId>
-            <artifactId>fitbit-server</artifactId>
+            <artifactId>fitbit-model</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -105,7 +105,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>kenny.fitbit.importer.FitbitImporterApplicationKt</mainClass>
+                    <mainClass>kenny.fitbit.FitbitImporterApplicationKt</mainClass>
                     <executable>true</executable>
                 </configuration>
             </plugin>

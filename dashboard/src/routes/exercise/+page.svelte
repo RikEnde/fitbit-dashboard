@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
-	import { colors, heartRateZoneColors } from '$utils/colors';
-	import { formatDuration, formatNumber } from '$utils/formatters';
-	import { startOfDay, endOfDay, subDays, format, parseISO } from 'date-fns';
-	import ProgressRing from '$components/charts/ProgressRing.svelte';
-	import BarChart from '$components/charts/BarChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {colors, heartRateZoneColors} from '$utils/colors';
+    import {formatDuration, formatNumber} from '$utils/formatters';
+    import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
+    import ProgressRing from '$components/charts/ProgressRing.svelte';
+    import BarChart from '$components/charts/BarChart.svelte';
 
-	// Constants
+    // Constants
 	const ACTIVE_MINUTES_GOAL = 30;
 
 	// State

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { format } from 'date-fns';
-	import { sleepStageColors } from '$utils/colors';
+    import {format} from 'date-fns';
+    import {sleepStageColors} from '$utils/colors';
 
-	interface SleepLevelData {
+    interface SleepLevelData {
 		dateTime: string;
 		level: string;
 		seconds: number;

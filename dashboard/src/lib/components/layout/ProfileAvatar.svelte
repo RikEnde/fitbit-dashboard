@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { profile, profileLoading } from '$stores/profile';
-	import ProfileDropdown from './ProfileDropdown.svelte';
+    import {profile, profileLoading} from '$stores/profile';
+    import ProfileDropdown from './ProfileDropdown.svelte';
 
-	let showDropdown = false;
+    let showDropdown = false;
 
 	function toggleDropdown() {
 		showDropdown = !showDropdown;

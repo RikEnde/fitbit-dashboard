@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { format } from 'date-fns';
+    import {format} from 'date-fns';
 
-	interface DataPoint {
+    interface DataPoint {
 		time: string;
 		value: number;
 	}

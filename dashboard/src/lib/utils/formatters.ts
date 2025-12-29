@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, differenceInYears, parseISO } from 'date-fns';
+import {differenceInYears, format, formatDistanceToNow, parseISO} from 'date-fns';
 
 // Format numbers with commas
 export function formatNumber(num: number): string {
