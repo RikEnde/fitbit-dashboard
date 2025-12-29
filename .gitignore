@@ -58,3 +58,4 @@ pg_data/
 
 # Misc
 /output/
+/cleanslate.sh
