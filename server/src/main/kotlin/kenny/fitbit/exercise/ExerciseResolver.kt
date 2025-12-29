@@ -17,7 +17,7 @@ class ExerciseResolver(private val exerciseRepository: ExerciseRepository) {
         return if (range == null) {
             exerciseRepository.findAll(pageable).content
         } else {
-            exerciseRepository.findByStartTimeBetween(range.from, range.to, pageable).content
+            exerciseRepository.findByStartTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 

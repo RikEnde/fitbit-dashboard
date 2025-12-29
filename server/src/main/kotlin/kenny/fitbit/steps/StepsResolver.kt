@@ -19,13 +19,13 @@ class StepsResolver(private val stepsRepository: StepsRepository) {
         return if (range == null) {
             stepsRepository.findAll(pageable).content
         } else {
-            stepsRepository.findByDateTimeBetween(range.from, range.to, pageable).content
+            stepsRepository.findByDateTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 
     @QueryMapping
     fun dailyStepsSum(@Argument range: DateRange): List<DailyStepsSum> {
-        val results = stepsRepository.sumStepsPerDayBetween(range.from, range.to)
+        val results = stepsRepository.sumStepsPerDayBetween(range.fromLocal, range.toLocal)
         return results.map {
             val date = it[0] as java.sql.Date
             val totalSteps = (it[1] as Number).toInt()
@@ -35,7 +35,7 @@ class StepsResolver(private val stepsRepository: StepsRepository) {
 
     @QueryMapping
     fun weeklyStepsAverage(@Argument range: DateRange): List<WeeklyStepsAverage> {
-        val results = stepsRepository.avgStepsPerWeekBetween(range.from, range.to)
+        val results = stepsRepository.avgStepsPerWeekBetween(range.fromLocal, range.toLocal)
         return results.map {
             val weekNumber = (it[0] as Number).toString()
             val averageSteps = (it[1] as Number).toDouble()

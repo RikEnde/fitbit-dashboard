@@ -16,7 +16,7 @@ class CaloriesResolver(private val caloriesRepository: CaloriesRepository) {
         return if (range == null) {
             caloriesRepository.findAll(pageable).content
         } else {
-            caloriesRepository.findByDateTimeBetween(range.from, range.to, pageable).content
+            caloriesRepository.findByDateTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 }

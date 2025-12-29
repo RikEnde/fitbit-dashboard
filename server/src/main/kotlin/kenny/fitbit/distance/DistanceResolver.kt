@@ -16,7 +16,7 @@ class DistanceResolver(private val distanceRepository: DistanceRepository) {
         return if (range == null) {
             distanceRepository.findAll(pageable).content
         } else {
-            distanceRepository.findByDateTimeBetween(range.from, range.to, pageable).content
+            distanceRepository.findByDateTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 }

@@ -2,7 +2,7 @@
     import {onMount} from 'svelte';
     import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
-    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
     import {endOfDay, endOfWeek, format, parseISO, startOfDay, startOfWeek, subDays, subWeeks} from 'date-fns';
@@ -91,8 +91,8 @@
 
 	async function fetchDailyData(endDate: Date) {
 		const range = {
-			from: startOfDay(subDays(endDate, 29)).toISOString(),
-			to: endOfDay(endDate).toISOString()
+			from: toLocalISOString(startOfDay(subDays(endDate, 29))),
+			to: toLocalISOString(endOfDay(endDate))
 		};
 
 		const result = await client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise();
@@ -121,8 +121,8 @@
 	async function fetchWeeklyData(endDate: Date) {
 		// Get 12 weeks of data
 		const range = {
-			from: startOfWeek(subWeeks(endDate, 11)).toISOString(),
-			to: endOfWeek(endDate).toISOString()
+			from: toLocalISOString(startOfWeek(subWeeks(endDate, 11))),
+			to: toLocalISOString(endOfWeek(endDate))
 		};
 
 		const result = await client.query(WEEKLY_STEPS_AVERAGE_QUERY, { range }).toPromise();
@@ -135,8 +135,8 @@
 
 	async function fetchHourlyData(date: Date) {
 		const range = {
-			from: startOfDay(date).toISOString(),
-			to: endOfDay(date).toISOString()
+			from: toLocalISOString(startOfDay(date)),
+			to: toLocalISOString(endOfDay(date))
 		};
 
 		const [dailyResult, hourlyResult] = await Promise.all([
