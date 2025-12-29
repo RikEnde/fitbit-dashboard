@@ -10,6 +10,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
+import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class SleepImporterImpl(
@@ -18,25 +19,29 @@ class SleepImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<Sleep>(repository, entityManager, transactionManager), SleepImporter {
 
-    // Cast to specific repository type for findAllLogIds()
     private val sleepRepository: SleepRepository = repository
 
     override val batchSize: Int = 1000  // Smaller batch for cascade entities
 
-    // Cache of existing log IDs to avoid per-record database lookups
-    private var existingLogIds: Set<Long> = emptySet()
+    // Thread-safe set to track log IDs (from DB + being imported) to prevent duplicates
+    // Fitbit's monthly exports overlap at boundaries. Sleep sessions near month transitions
+    // appear in both months' files. We need a workaround to prevent duplicate keys
+    private val seenLogIds: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+    @Volatile private var importing = false
 
     override fun beforeImport() {
         println("Loading existing sleep log IDs for duplicate detection...")
-        existingLogIds = sleepRepository.findAllLogIds()
-        println("Found ${existingLogIds.size} existing sleep records")
+        seenLogIds.clear()
+        seenLogIds.addAll(sleepRepository.findAllLogIds())
+        importing = true
+        println("Found ${seenLogIds.size} existing sleep records")
     }
 
     override fun parseToEntity(jsonItem: JsonNode): Sleep? {
         val logId = jsonItem.get("logId")?.asLong() ?: return null
 
-        // Skip if already imported (check against cached set)
-        if (logId in existingLogIds) {
+        // During imports, atomically check-and-add to prevent duplicates across concurrent files
+        if (importing && !seenLogIds.add(logId)) {
             return null
         }
 
