@@ -140,7 +140,7 @@ abstract class JsonImporter<T>(
         file: File,
         objectMapper: ObjectMapper
     ) {
-        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
+        println("Processing file ${index + 1} of $size (%.1f%%)".format(100.0 * index / size))
         println("Parsing $file")
 
         try {

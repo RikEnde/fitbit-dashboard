@@ -10,6 +10,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
 
 @Component
 class SleepImporterImpl(
@@ -277,7 +278,12 @@ class ComputedTemperatureImporterImpl(
     override val batchSize: Int = 10000
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd'T'HH:mm")
+            .optionalStart()
+            .appendPattern(":ss")
+            .optionalEnd()
+            .toFormatter()
 
     override fun parseRow(values: List<String>, headers: List<String>): ComputedTemperature? {
         if (values.size < 9) return null
