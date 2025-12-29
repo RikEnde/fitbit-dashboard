@@ -457,7 +457,6 @@ dashboard/
 │   │   │   ├── dashboard.ts      # Svelte store for dashboard state
 │   │   │   └── preferences.ts    # Layout & theme preferences
 │   │   ├── utils/
-│   │   │   ├── dateUtils.ts
 │   │   │   ├── formatters.ts
 │   │   │   └── colors.ts
 │   │   └── types/
@@ -818,7 +817,7 @@ These existing queries can be used as-is or with minor modifications:
 
 ### Backend Implementation Notes
 
-New resolvers should follow the existing patterns in `server/src/main/kotlin/kenny/fitbitkotlin/`:
+New resolvers should follow the existing patterns in `server/src/main/kotlin/kenny/fitbit/`:
 
 1. **Resolver location**: `{domain}/{Domain}Resolver.kt`
 2. **Use `@QueryMapping`** annotation for GraphQL queries

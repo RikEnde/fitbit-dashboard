@@ -139,7 +139,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>kenny.fitbitkotlin.FitbitKotlinApplicationKt</mainClass>
+                    <mainClass>kenny.fitbit.FitbitKotlinApplicationKt</mainClass>
                     <executable>true</executable>
                 </configuration>
             </plugin>

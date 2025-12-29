@@ -67,16 +67,16 @@ The application follows a **layered domain-driven architecture** with clear sepa
 ## Project Structure
 
 ```
-server/src/main/kotlin/kenny/fitbitkotlin/
+server/src/main/kotlin/kenny/fitbit/
 ├── FitbitKotlinApplication.kt      # Entry point
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
 ├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
 ├── Exporters.kt                    # Exporter<T> interface + ExportController + AppleHealthXmlWriter
 ├── calories/                       # Calories module
-│   ├── Model.kt                    # JPA entity
-│   ├── Repository.kt               # Data access
-│   ├── Resolver.kt                 # GraphQL queries
-│   └── Exporter.kt                 # Apple Health XML export
+│   ├── CaloriesModel.kt            # JPA entity
+│   ├── CaloriesRepository.kt       # Data access
+│   ├── CaloriesResolver.kt         # GraphQL queries
+│   └── CaloriesExporter.kt         # Apple Health XML export
 ├── distance/                       # Distance module
 ├── exercise/                       # Exercise & activity module
 ├── heartrate/                      # Heart rate & HRV module
@@ -84,7 +84,7 @@ server/src/main/kotlin/kenny/fitbitkotlin/
 ├── steps/                          # Steps module
 └── sleep/                          # Sleep & respiratory module
 
-importer/src/main/kotlin/kenny/fitbitkotlin/importer/
+importer/src/main/kotlin/kenny/fitbit/importer/
 ├── FitbitImporterApplication.kt    # Importer entry point + ImportRunner
 ├── Importer.kt                     # Importer<T> interface + JsonImporter + CsvImporter
 ├── calories/                       # Calories importer
@@ -97,7 +97,7 @@ importer/src/main/kotlin/kenny/fitbitkotlin/importer/
 ├── steps/                          # Steps importer
 └── sleep/                          # Sleep & respiratory importers
 
-src/main/resources/
+server/src/main/resources/
 ├── application.yml                 # Spring configuration
 ├── graphql/schema.graphqls         # GraphQL schema
 └── graphiql/index.html             # GraphiQL IDE (served via GraphiQlController)
@@ -459,13 +459,34 @@ mvn -pl importer test -Dtest=AccountImporterImplTest
 5. **Notifications:** Alerts for health metric anomalies
 6. **Mobile:** REST API optimization for mobile clients
 
-## React Client
+## Dashboard Module
 
-The `client/` directory contains a React + TypeScript frontend:
+The `dashboard/` directory contains a SvelteKit web dashboard for visualizing Fitbit data:
 
-- **Stack:** React 18, TypeScript, Apollo Client, Recharts
-- **Dev server:** `npm start` (port 3000, proxies API calls to :8080)
-- **Features:** Profile display, steps visualization (daily/weekly bar charts), heart rate charts
+- **Stack:** SvelteKit 2, Svelte 5, TypeScript, URQL, TailwindCSS
+- **Dev server:** `npm run dev` (port 3000, proxies API calls to :8080)
+- **Features:**
+  - Tile-based dashboard with Steps, Calories, Distance, Heart Rate, Sleep, Active Minutes
+  - Detail pages for each metric with 30-day trends and hourly breakdowns
+  - Profile page with user info and settings
+  - Interactive charts with date selection
+  - Svelte 5 runes mode (`$state`, `$derived`, `$props`, `$effect`)
+
+See `dashboard/agents.md` for detailed Svelte development patterns.
+
+## Build Note
+
+**Important:** The importer module depends on the server module. Before building the importer, install the server module first:
+
+```bash
+mvn -pl server install -DskipTests
+mvn -pl importer compile
+```
+
+Or build from the parent to ensure correct ordering:
+```bash
+mvn compile
+```
 
 ## Summary
 

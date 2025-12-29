@@ -22,6 +22,11 @@ mvn -pl server compile
 
 ### Importer (Data Import Module)
 
+**Note:** The importer depends on the server module. Build server first:
+```bash
+mvn -pl server install -DskipTests
+```
+
 ```bash
 # Run data import (from ../data directory)
 mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
@@ -73,7 +78,7 @@ The project consists of three main modules:
 
 ### Server Domain Structure
 
-Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin/kenny/fitbitkotlin/{domain}/`:
+Each Fitbit data type follows a consistent pattern under `server/src/main/kotlin/kenny/fitbit/{domain}/`:
 
 - `{Domain}Model.kt` - JPA entities
 - `{Domain}Repository.kt` - Spring Data JPA repository with custom queries
@@ -84,7 +89,7 @@ Domains: heartrate, steps, calories, distance, exercise, sleep, profile
 
 ### Importer Structure
 
-Import code is in `importer/src/main/kotlin/kenny/fitbitkotlin/importer/`:
+Import code is in `importer/src/main/kotlin/kenny/fitbit/importer/`:
 
 Core classes:
 - `Importer.kt` - Contains `Importer<T>` interface, `JsonImporter<T>`, and `CsvImporter<T>` with built-in JPA batch persistence
