@@ -13,28 +13,12 @@ import kenny.fitbit.importer.steps.StepsImporter
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration
 import org.springframework.boot.autoconfigure.domain.EntityScan
-import org.springframework.boot.autoconfigure.graphql.GraphQlAutoConfiguration
-import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration
-import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
-import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 import org.springframework.boot.runApplication
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.stereotype.Component
 
-@SpringBootApplication(
-    scanBasePackages = ["kenny.fitbit.importer"],
-    exclude = [
-        GraphQlAutoConfiguration::class,
-        WebMvcAutoConfiguration::class,
-        DispatcherServletAutoConfiguration::class,
-        ServletWebServerFactoryAutoConfiguration::class,
-        ErrorMvcAutoConfiguration::class,
-        RepositoryRestMvcAutoConfiguration::class
-    ]
-)
+@SpringBootApplication
 @EntityScan(basePackages = ["kenny.fitbit"])
 @EnableJpaRepositories(basePackages = ["kenny.fitbit"])
 class FitbitImporterApplication
