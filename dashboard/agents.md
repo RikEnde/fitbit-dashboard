@@ -147,6 +147,7 @@ The GraphQL backend provides these queries:
 | Data Type | Stored Unit | Display Unit | Conversion |
 |-----------|-------------|--------------|------------|
 | Distance | centimeters | kilometers | ÷ 100,000 |
+| Stride length | centimeters | inches | ÷ 2.54 |
 | Exercise duration | milliseconds | minutes | ÷ 60,000 |
 | Sleep duration | minutes | hours + minutes | formatDuration() |
 
