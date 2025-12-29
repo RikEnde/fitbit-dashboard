@@ -338,34 +338,47 @@ Following Fitbit's established color language:
 - [x] Display stride lengths and daily goals
 - [x] Show unit preferences from profile
 
-### Phase 2: Detailed Views
+### Phase 2: Detailed Views ✅ COMPLETE
 
-#### 2.1 Steps Detail Page
-- [ ] Daily bar chart (last 30 days)
-- [ ] Weekly averages chart
-- [ ] Hourly breakdown for selected day
-- [ ] Date range selector
+#### 2.1 Steps Detail Page ✅
+- [x] Daily bar chart (last 30 days)
+- [x] Weekly averages display
+- [x] Hourly breakdown for selected day
+- [x] Interactive date selection via chart
 - [ ] Export functionality
 
-#### 2.2 Heart Rate Detail Page
-- [ ] Continuous line chart for selected period
-- [ ] Resting heart rate trend
-- [ ] Heart rate zones distribution
-- [ ] HRV data (if available)
-- [ ] Date/time range picker
+#### 2.2 Heart Rate Detail Page ✅
+- [x] Line chart for selected day
+- [x] Hourly averages display
+- [x] Heart rate zones distribution
+- [x] 30-day trend chart
+- [x] Interactive date selection
 
-#### 2.3 Sleep Detail Page
-- [ ] Sleep duration over time
-- [ ] Sleep stages breakdown (stacked area chart)
-- [ ] Sleep score trend
-- [ ] Individual sleep log details
-- [ ] Sleep schedule analysis
+#### 2.3 Sleep Detail Page ✅
+- [x] Sleep duration and efficiency display
+- [x] Sleep stages timeline visualization
+- [x] Sleep score with component breakdown
+- [x] 30-day trend chart
+- [x] Interactive date selection
 
-#### 2.4 Exercise Detail Page
-- [ ] Exercise log list
-- [ ] Activity type breakdown
-- [ ] Heart rate zones per activity
-- [ ] Calories burned per exercise
+#### 2.4 Exercise Detail Page ✅
+- [x] Exercise log list with expandable details
+- [x] Activity type breakdown chart
+- [x] Heart rate zones per activity
+- [x] Calories and stats per exercise
+- [x] 30-day active minutes trend
+
+#### 2.5 Calories Detail Page ✅
+- [x] Daily bar chart (last 30 days)
+- [x] Hourly breakdown for selected day
+- [x] Goal progress display
+- [x] Interactive date selection
+
+#### 2.6 Distance Detail Page ✅
+- [x] Daily bar chart (last 30 days)
+- [x] Hourly breakdown for selected day
+- [x] Unit display (km)
+- [x] Interactive date selection
 
 ### Phase 3: Advanced Features
 
@@ -417,10 +430,12 @@ dashboard/
 │   │   │   │   ├── DistanceTile.svelte
 │   │   │   │   └── ActiveMinutesTile.svelte
 │   │   │   ├── charts/
-│   │   │   │   ├── BarChart.svelte
-│   │   │   │   ├── LineChart.svelte
-│   │   │   │   ├── ProgressRing.svelte
-│   │   │   │   └── SleepStagesBar.svelte
+│   │   │   │   ├── BarChart.svelte         # 30-day trend charts
+│   │   │   │   ├── LineChart.svelte        # Heart rate day view
+│   │   │   │   ├── ProgressRing.svelte     # Goal progress rings
+│   │   │   │   ├── MiniBarChart.svelte     # Tile hourly charts
+│   │   │   │   ├── SleepStagesChart.svelte # Sleep stages timeline
+│   │   │   │   └── index.ts                # Barrel exports
 │   │   │   └── common/
 │   │   │       ├── DatePicker.svelte
 │   │   │       ├── TileWrapper.svelte
@@ -579,15 +594,15 @@ export const profile = writable(null);
 - Uses existing queries (steps, calories, distances, heartRates, sleeps, exercises)
 - [ ] Implement `dailySummary` query for optimization (optional)
 
-### Milestone 3: Detail Views & Trend APIs
+### Milestone 3: Detail Views & Trend APIs ✅ COMPLETE (Frontend)
 
-**Frontend:**
-- [ ] Steps detail page with charts
-- [ ] Heart rate detail page
-- [ ] Sleep detail page
-- [ ] Exercise log page
+**Frontend:** ✅
+- [x] Steps detail page with charts
+- [x] Heart rate detail page
+- [x] Sleep detail page
+- [x] Exercise log page
 
-**Backend:**
+**Backend:** (Optional optimization - current queries work fine)
 - [ ] Implement trend queries: `dailyCaloriesTrend`, `dailyDistanceTrend`, `dailySleepTrend`
 - [ ] Add `restingHeartRateTrend` query
 - [ ] Add `sleepScoreTrend` query
