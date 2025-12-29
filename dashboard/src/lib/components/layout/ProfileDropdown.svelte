@@ -80,12 +80,27 @@
 		</div>
 
 		<!-- Actions -->
-		<div class="p-2">
+		<div class="p-2 space-y-1">
+			<a
+				href="/profile"
+				onclick={onClose}
+				class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-dark-border transition-colors text-gray-300"
+			>
+				<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+				</svg>
+				View Profile
+			</a>
 			<button
 				onclick={handleThemeToggle}
 				class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-dark-border transition-colors text-left"
 			>
-				<span class="text-gray-300">Theme</span>
+				<span class="text-gray-300 flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+					</svg>
+					Theme
+				</span>
 				<span class="text-sm text-gray-400">
 					{$preferences.theme === 'dark' ? 'Dark' : 'Light'}
 				</span>

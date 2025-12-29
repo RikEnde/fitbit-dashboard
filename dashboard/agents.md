@@ -80,6 +80,7 @@ Detail pages are in `src/routes/`:
 | `/exercise` | Activity list with expandable HR zones, 30-day trend |
 | `/calories` | 30-day trend, hourly breakdown, goal progress |
 | `/distance` | 30-day trend, hourly breakdown (converts cm to km) |
+| `/profile` | User info, physical stats, stride lengths, unit preferences |
 
 ## GraphQL Queries
 

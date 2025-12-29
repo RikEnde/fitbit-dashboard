@@ -19,14 +19,11 @@
 
 	// Load profile on mount
 	onMount(async () => {
-		// TODO: Get profile ID from configuration or first profile
-		const profileId = '1'; // Default profile ID
-
 		profileLoading.set(true);
 		try {
-			const result = await client.query(PROFILE_QUERY, { id: profileId }).toPromise();
-			if (result.data?.profile) {
-				profile.set(result.data.profile);
+			const result = await client.query(PROFILE_QUERY, {}).toPromise();
+			if (result.data?.profiles?.[0]) {
+				profile.set(result.data.profiles[0]);
 			} else if (result.error) {
 				profileError.set(result.error.message);
 			}

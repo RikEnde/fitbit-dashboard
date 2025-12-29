@@ -17,6 +17,7 @@ export interface Profile {
 	weightUnit: string;
 	distanceUnit: string;
 	heightUnit: string;
+	timezone: string;
 	avatar: string | null;
 }
 
