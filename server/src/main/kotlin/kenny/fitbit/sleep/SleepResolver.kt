@@ -17,7 +17,7 @@ class SleepResolver(private val sleepRepository: SleepRepository) {
         return if (range == null) {
             sleepRepository.findAll(pageable).content
         } else {
-            sleepRepository.findByStartTimeBetween(range.from, range.to, pageable).content
+            sleepRepository.findByStartTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 
@@ -47,7 +47,7 @@ class SleepScoreResolver(private val sleepScoreRepository: SleepScoreRepository)
         return if (range == null) {
             sleepScoreRepository.findAll(pageable).content
         } else {
-            sleepScoreRepository.findByTimestampBetween(range.from, range.to, pageable).content
+            sleepScoreRepository.findByTimestampBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 }

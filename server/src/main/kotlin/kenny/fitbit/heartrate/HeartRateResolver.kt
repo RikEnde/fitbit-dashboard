@@ -22,7 +22,7 @@ class HeartRateResolver(private val heartRateRepository: HeartRateRepository) {
         return if (range == null) {
             heartRateRepository.findAll(pageable).content
         } else {
-            heartRateRepository.findByTimeBetween(range.from, range.to, pageable).content
+            heartRateRepository.findByTimeBetween(range.fromLocal, range.toLocal, pageable).content
         }
     }
 
@@ -30,8 +30,8 @@ class HeartRateResolver(private val heartRateRepository: HeartRateRepository) {
     fun heartRatesPerInterval(@Argument range: DateRange): List<SumsOfHeartRates> {
         return heartRateRepository.sumByTimeBetween(
             "10 minutes",
-            fromDateTime = range.from,
-            toDateTime = range.to
+            fromDateTime = range.fromLocal,
+            toDateTime = range.toLocal
         ).map {
             SumsOfHeartRates(
                 OffsetDateTime.ofInstant(it[0] as Instant, ZoneOffset.UTC),

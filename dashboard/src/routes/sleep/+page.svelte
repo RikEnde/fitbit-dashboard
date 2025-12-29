@@ -2,7 +2,7 @@
     import {onMount} from 'svelte';
     import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
-    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors, sleepStageColors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
     import ProgressRing from '$components/charts/ProgressRing.svelte';
@@ -156,8 +156,8 @@
 		// Sleep logs are typically stored for the night ending on a given day
 		// So we look at the full day range
 		const range = {
-			from: startOfDay(subDays(date, 1)).toISOString(), // Include previous night
-			to: endOfDay(date).toISOString()
+			from: toLocalISOString(startOfDay(subDays(date, 1))), // Include previous night
+			to: toLocalISOString(endOfDay(date))
 		};
 
 		const [sleepResult, scoreResult] = await Promise.all([
@@ -190,8 +190,8 @@
 		for (let i = 29; i >= 0; i--) {
 			const date = subDays(endDate, i);
 			const range = {
-				from: startOfDay(subDays(date, 1)).toISOString(),
-				to: endOfDay(date).toISOString()
+				from: toLocalISOString(startOfDay(subDays(date, 1))),
+				to: toLocalISOString(endOfDay(date))
 			};
 
 			const result = await client.query(SLEEP_QUERY, { limit: 5, range }).toPromise();

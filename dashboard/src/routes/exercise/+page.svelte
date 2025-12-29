@@ -2,7 +2,7 @@
     import {onMount} from 'svelte';
     import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
-    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors, heartRateZoneColors} from '$utils/colors';
     import {formatDuration, formatNumber} from '$utils/formatters';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
@@ -125,8 +125,8 @@
 
 	async function fetchDayData(date: Date) {
 		const range = {
-			from: startOfDay(date).toISOString(),
-			to: endOfDay(date).toISOString()
+			from: toLocalISOString(startOfDay(date)),
+			to: toLocalISOString(endOfDay(date))
 		};
 
 		const result = await client.query(EXERCISE_QUERY, { limit: 50, range }).toPromise();
@@ -143,8 +143,8 @@
 		for (let i = 29; i >= 0; i--) {
 			const date = subDays(endDate, i);
 			const range = {
-				from: startOfDay(date).toISOString(),
-				to: endOfDay(date).toISOString()
+				from: toLocalISOString(startOfDay(date)),
+				to: toLocalISOString(endOfDay(date))
 			};
 
 			const result = await client.query(EXERCISE_QUERY, { limit: 50, range }).toPromise();
