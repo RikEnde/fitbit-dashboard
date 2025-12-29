@@ -2,8 +2,8 @@ import { gql } from '@urql/svelte';
 
 // Profile query for the avatar dropdown
 export const PROFILE_QUERY = gql`
-	query Profile($id: ID!) {
-		profile(id: $id) {
+	query Profiles {
+		profiles(limit: 1) {
 			id
 			fullName
 			displayName
@@ -20,6 +20,7 @@ export const PROFILE_QUERY = gql`
 			weightUnit
 			distanceUnit
 			heightUnit
+			timezone
 			avatar
 		}
 	}

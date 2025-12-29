@@ -49,10 +49,10 @@ export function formatWeight(kg: number, unit: 'lb' | 'kg' = 'lb'): string {
 	return `${kg.toFixed(1)} kg`;
 }
 
-// Format stride length (assumes meters input)
-export function formatStride(meters: number): string {
-	const feet = meters * 3.28084;
-	return `${feet.toFixed(1)} ft`;
+// Format stride length (input is in centimeters from Fitbit)
+export function formatStride(cm: number): string {
+	const inches = cm / 2.54;
+	return `${inches.toFixed(1)} in`;
 }
 
 // Calculate age from date of birth

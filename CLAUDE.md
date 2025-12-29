@@ -147,6 +147,7 @@ Detail pages in `dashboard/src/routes/`:
 - `/exercise` - Activity list with HR zones, 30-day trend
 - `/calories` - 30-day trend, hourly breakdown
 - `/distance` - 30-day trend, hourly breakdown (values in km)
+- `/profile` - User info, physical stats, stride lengths, unit preferences
 
 Key patterns:
 - Uses Svelte 5 runes (`$state`, `$derived`, `$props`, `$effect`)

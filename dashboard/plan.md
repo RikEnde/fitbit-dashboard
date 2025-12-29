@@ -380,6 +380,15 @@ Following Fitbit's established color language:
 - [x] Unit display (km)
 - [x] Interactive date selection
 
+#### 2.7 Profile Page ✅
+- [x] Large avatar and full name display
+- [x] Account info (member since, timezone)
+- [x] Personal info (age, gender, height, weight)
+- [x] Stride lengths (walking/running)
+- [x] Unit preferences
+- [x] Theme toggle
+- [x] Link from profile dropdown
+
 ### Phase 3: Advanced Features
 
 #### 3.1 Additional Tiles
