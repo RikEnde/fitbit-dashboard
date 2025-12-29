@@ -1,0 +1,52 @@
+[{
+  "logId" : 12345678,
+  "activityName" : "Running",
+  "activityTypeId" : 90009,
+  "activityLevel" : [{
+    "minutes" : 2,
+    "name" : "sedentary"
+  },{
+    "minutes" : 5,
+    "name" : "lightly"
+  },{
+    "minutes" : 10,
+    "name" : "fairly"
+  },{
+    "minutes" : 25,
+    "name" : "very"
+  }],
+  "averageHeartRate" : 145,
+  "calories" : 350,
+  "duration" : 2520000,
+  "activeDuration" : 2400000,
+  "steps" : 4200,
+  "logType" : "auto_detected",
+  "heartRateZones" : [{
+    "name" : "Out of Range",
+    "min" : 30,
+    "max" : 90,
+    "minutes" : 2
+  },{
+    "name" : "Fat Burn",
+    "min" : 90,
+    "max" : 126,
+    "minutes" : 8
+  },{
+    "name" : "Cardio",
+    "min" : 126,
+    "max" : 153,
+    "minutes" : 20
+  },{
+    "name" : "Peak",
+    "min" : 153,
+    "max" : 220,
+    "minutes" : 12
+  }],
+  "lastModified" : "01/01/24 15:00:00",
+  "startTime" : "01/01/24 14:00:00",
+  "originalStartTime" : "01/01/24 14:00:00",
+  "originalDuration" : 2520000,
+  "hasGps" : true,
+  "shouldFetchDetails" : false,
+  "hasActiveZoneMinutes" : true
+}]
