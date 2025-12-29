@@ -39,22 +39,13 @@ mvn -pl importer test
 mvn -pl importer compile
 ```
 
-### Dashboard (SvelteKit/TypeScript) - Primary Frontend
+### Dashboard (SvelteKit/TypeScript)
 
 ```bash
 cd dashboard
 npm run dev      # Dev server on port 3000, proxies to :8080
 npm run build    # Production build
 npm run preview  # Preview production build
-```
-
-### Client (React/TypeScript) - Legacy
-
-```bash
-cd client
-npm start    # Dev server on port 3000, proxies to :8080
-npm test     # Run tests
-npm run build
 ```
 
 ### Infrastructure
@@ -157,11 +148,12 @@ Key patterns:
 
 Data unit notes:
 - Distance values from Fitbit are stored in centimeters (divide by 100,000 for km)
+- Stride length values are stored in centimeters (divide by 2.54 for inches)
+- Exercise duration is in milliseconds (divide by 60,000 for minutes)
 
 ### Tech Stack
 
 - Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
 - PostgreSQL 17 with JPA/Hibernate
 - GraphQL + REST (Spring Data REST at `/api`)
-- SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS (primary dashboard)
-- React 18 + TypeScript + Apollo Client + Recharts (legacy client)
+- SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS
