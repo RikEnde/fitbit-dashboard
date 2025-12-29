@@ -5,13 +5,13 @@
 	import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
 	import { colors } from '$utils/colors';
 	import { formatNumber } from '$utils/formatters';
-	import { startOfDay, endOfDay, subDays, format, parseISO, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
+	import { startOfDay, endOfDay, subDays, format, parseISO } from 'date-fns';
 	import BarChart from '$components/charts/BarChart.svelte';
 	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 	import ProgressRing from '$components/charts/ProgressRing.svelte';
 
-	// Props
-	const GOAL = 10000;
+	// Constants
+	const GOAL = 2500;
 
 	// State
 	let loading = $state(true);
@@ -19,9 +19,6 @@
 
 	// Daily data for 30-day chart
 	let dailyData = $state<{ date: string; value: number }[]>([]);
-
-	// Weekly averages
-	let weeklyData = $state<{ weekNumber: string; averageSteps: number }[]>([]);
 
 	// Hourly data for selected day
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
@@ -37,28 +34,10 @@
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL).length
 	});
 
-	// GraphQL Queries
-	const DAILY_STEPS_SUM_QUERY = gql`
-		query DailyStepsSum($range: DateRange!) {
-			dailyStepsSum(range: $range) {
-				date
-				totalSteps
-			}
-		}
-	`;
-
-	const WEEKLY_STEPS_AVERAGE_QUERY = gql`
-		query WeeklyStepsAverage($range: DateRange!) {
-			weeklyStepsAverage(range: $range) {
-				weekNumber
-				averageSteps
-			}
-		}
-	`;
-
-	const HOURLY_STEPS_QUERY = gql`
-		query Steps($limit: Int, $range: DateRange) {
-			steps(limit: $limit, range: $range) {
+	// GraphQL Query
+	const CALORIES_QUERY = gql`
+		query Calories($limit: Int, $range: DateRange) {
+			calories(limit: $limit, range: $range) {
 				id
 				value
 				dateTime
@@ -66,27 +45,36 @@
 		}
 	`;
 
-	interface StepRecord {
+	interface CaloriesRecord {
 		id: string;
 		value: number;
 		dateTime: string;
 	}
 
-	function processHourlyData(steps: StepRecord[]): { label: string; value: number }[] {
+	function processHourlyData(records: CaloriesRecord[]): { label: string; value: number }[] {
 		const hourlyMap = new Map<number, number>();
 		for (let i = 0; i < 24; i++) {
 			hourlyMap.set(i, 0);
 		}
-		for (const step of steps) {
-			const hour = new Date(step.dateTime).getHours();
-			hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + step.value);
+		for (const record of records) {
+			const hour = new Date(record.dateTime).getHours();
+			hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + record.value);
 		}
 		return Array.from(hourlyMap.entries())
 			.sort((a, b) => a[0] - b[0])
 			.map(([hour, value]) => ({
 				label: `${hour.toString().padStart(2, '0')}:00`,
-				value
+				value: Math.round(value)
 			}));
+	}
+
+	function aggregateByDay(records: CaloriesRecord[]): Map<string, number> {
+		const dailyMap = new Map<string, number>();
+		for (const record of records) {
+			const date = format(new Date(record.dateTime), 'yyyy-MM-dd');
+			dailyMap.set(date, (dailyMap.get(date) ?? 0) + record.value);
+		}
+		return dailyMap;
 	}
 
 	async function fetchDailyData(endDate: Date) {
@@ -95,14 +83,13 @@
 			to: endOfDay(endDate).toISOString()
 		};
 
-		const result = await client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise();
+		const result = await client.query(CALORIES_QUERY, { limit: 50000, range }).toPromise();
 		if (result.error) {
 			throw new Error(result.error.message);
 		}
 
-		const rawData = result.data?.dailyStepsSum ?? [];
-		// Create a map for easy lookup
-		const dataMap = new Map(rawData.map((d: { date: string; totalSteps: number }) => [d.date, d.totalSteps]));
+		const records: CaloriesRecord[] = result.data?.calories ?? [];
+		const dataMap = aggregateByDay(records);
 
 		// Fill in all 30 days
 		const filledData = [];
@@ -111,26 +98,11 @@
 			const dateStr = format(date, 'yyyy-MM-dd');
 			filledData.push({
 				date: dateStr,
-				value: (dataMap.get(dateStr) as number) ?? 0
+				value: Math.round(dataMap.get(dateStr) ?? 0)
 			});
 		}
 
 		return filledData;
-	}
-
-	async function fetchWeeklyData(endDate: Date) {
-		// Get 12 weeks of data
-		const range = {
-			from: startOfWeek(subWeeks(endDate, 11)).toISOString(),
-			to: endOfWeek(endDate).toISOString()
-		};
-
-		const result = await client.query(WEEKLY_STEPS_AVERAGE_QUERY, { range }).toPromise();
-		if (result.error) {
-			throw new Error(result.error.message);
-		}
-
-		return result.data?.weeklyStepsAverage ?? [];
 	}
 
 	async function fetchHourlyData(date: Date) {
@@ -139,22 +111,14 @@
 			to: endOfDay(date).toISOString()
 		};
 
-		const [dailyResult, hourlyResult] = await Promise.all([
-			client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise(),
-			client.query(HOURLY_STEPS_QUERY, { limit: 1440, range }).toPromise()
-		]);
-
-		if (dailyResult.error) {
-			throw new Error(dailyResult.error.message);
+		const result = await client.query(CALORIES_QUERY, { limit: 1440, range }).toPromise();
+		if (result.error) {
+			throw new Error(result.error.message);
 		}
 
-		selectedDayTotal = dailyResult.data?.dailyStepsSum?.[0]?.totalSteps ?? 0;
-
-		if (hourlyResult.data?.steps) {
-			hourlyData = processHourlyData(hourlyResult.data.steps);
-		} else {
-			hourlyData = [];
-		}
+		const records: CaloriesRecord[] = result.data?.calories ?? [];
+		selectedDayTotal = Math.round(records.reduce((sum, r) => sum + r.value, 0));
+		hourlyData = processHourlyData(records);
 	}
 
 	async function fetchAllData() {
@@ -163,16 +127,7 @@
 
 		try {
 			const currentDate = $selectedDate;
-
-			const [daily, weekly] = await Promise.all([
-				fetchDailyData(currentDate),
-				fetchWeeklyData(currentDate)
-			]);
-
-			dailyData = daily;
-			weeklyData = weekly;
-
-			// Also fetch hourly data for the selected day
+			dailyData = await fetchDailyData(currentDate);
 			await fetchHourlyData(currentDate);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to fetch data';
@@ -193,9 +148,7 @@
 	onMount(() => {
 		fetchAllData();
 
-		// Re-fetch when selected date changes
 		const unsubscribe = selectedDate.subscribe((date) => {
-			// Only re-fetch hourly data, not the full 30 days
 			if (!loading) {
 				fetchHourlyData(date);
 			}
@@ -206,19 +159,19 @@
 </script>
 
 <svelte:head>
-	<title>Steps | Fitbit Dashboard</title>
+	<title>Calories | Fitbit Dashboard</title>
 </svelte:head>
 
 <div class="p-4 sm:p-6 lg:p-8">
 	<div class="mb-6">
-		<a href="/" class="text-fitbit-steps hover:underline text-sm">&larr; Back to Dashboard</a>
+		<a href="/" class="text-fitbit-calories hover:underline text-sm">&larr; Back to Dashboard</a>
 	</div>
 
 	<div class="flex items-center gap-3 mb-2">
-		<svg class="w-8 h-8 text-fitbit-steps" fill="currentColor" viewBox="0 0 24 24">
-			<path d="M13.5 5.5c1.09 0 2-.81 2-1.81s-.91-1.69-2-1.69-2 .59-2 1.59.91 1.91 2 1.91zM17.5 10.78c-1.23-.89-2.62-1.35-4.05-1.35-.71 0-1.4.11-2.05.32L10 7.5c-.2-.55-.7-.94-1.28-.94-.83 0-1.5.67-1.5 1.5 0 .19.04.38.11.55l2.44 5.94c.22.53.64.94 1.14 1.14L11 16.5v4c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-4.88l1.87-4.68c.25-.63-.02-1.34-.56-1.66z"/>
+		<svg class="w-8 h-8 text-fitbit-calories" fill="currentColor" viewBox="0 0 24 24">
+			<path d="M11 21c0-1.1-.9-2-2-2H5v-2h4c1.1 0 2-.9 2-2s-.9-2-2-2H5v-2h4c1.1 0 2-.9 2-2s-.9-2-2-2H5V5h6c1.1 0 2-.9 2-2s-.9-2-2-2H3v22h8c1.1 0 2-.9 2-2z M21 3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2s2-.9 2-2V5c0-1.1-.9-2-2-2z M17 7c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2s2-.9 2-2V9c0-1.1-.9-2-2-2z"/>
 		</svg>
-		<h1 class="text-2xl font-bold text-white">Steps</h1>
+		<h1 class="text-2xl font-bold text-white">Calories</h1>
 	</div>
 	<p class="text-gray-400 mb-8">{$formattedDate}</p>
 
@@ -247,11 +200,11 @@
 						max={GOAL}
 						size={120}
 						strokeWidth={10}
-						color={colors.steps}
+						color={colors.calories}
 					>
 						<div class="text-center">
 							<p class="text-2xl font-bold text-white">{formatNumber(selectedDayTotal)}</p>
-							<p class="text-xs text-gray-400">steps</p>
+							<p class="text-xs text-gray-400">cal</p>
 						</div>
 					</ProgressRing>
 					<div>
@@ -264,8 +217,8 @@
 
 				<!-- Hourly Breakdown -->
 				<div class="flex-1">
-					<p class="text-sm text-gray-400 mb-2">Hourly Activity</p>
-					<MiniBarChart data={hourlyData} color={colors.steps} height={80} showLabels={true} />
+					<p class="text-sm text-gray-400 mb-2">Hourly Burn</p>
+					<MiniBarChart data={hourlyData} color={colors.calories} height={80} showLabels={true} />
 				</div>
 			</div>
 		</div>
@@ -280,7 +233,7 @@
 			</div>
 			<BarChart
 				data={dailyData}
-				color={colors.steps}
+				color={colors.calories}
 				height={200}
 				goal={GOAL}
 				formatValue={formatNumber}
@@ -300,7 +253,7 @@
 				</div>
 				<div>
 					<p class="text-xs text-gray-500 uppercase tracking-wide">Best Day</p>
-					<p class="text-xl font-bold text-fitbit-steps">{formatNumber(stats.best30Days)}</p>
+					<p class="text-xl font-bold text-fitbit-calories">{formatNumber(stats.best30Days)}</p>
 				</div>
 				<div>
 					<p class="text-xs text-gray-500 uppercase tracking-wide">Days Met Goal</p>
@@ -310,36 +263,5 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- Weekly Averages -->
-		{#if weeklyData.length > 0}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Weekly Averages</h2>
-				<div class="overflow-x-auto">
-					<table class="w-full">
-						<thead>
-							<tr class="text-left text-xs text-gray-500 uppercase tracking-wide">
-								<th class="pb-3">Week</th>
-								<th class="pb-3 text-right">Average Steps</th>
-								<th class="pb-3 text-right">vs Goal</th>
-							</tr>
-						</thead>
-						<tbody class="text-white">
-							{#each weeklyData as week}
-								{@const avg = Math.round(week.averageSteps)}
-								{@const vsGoal = avg - GOAL}
-								<tr class="border-t border-dark-border">
-									<td class="py-3 text-sm">{week.weekNumber}</td>
-									<td class="py-3 text-right font-medium">{formatNumber(avg)}</td>
-									<td class="py-3 text-right text-sm {vsGoal >= 0 ? 'text-green-400' : 'text-red-400'}">
-										{vsGoal >= 0 ? '+' : ''}{formatNumber(vsGoal)}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		{/if}
 	{/if}
 </div>

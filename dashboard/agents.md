@@ -59,9 +59,27 @@ Components are organized in `src/lib/components/`:
 components/
 ├── layout/          # Header, ProfileAvatar, ProfileDropdown
 ├── tiles/           # Dashboard tiles (StepsTile, CaloriesTile, etc.)
-├── charts/          # Reusable chart components (ProgressRing, MiniBarChart)
+├── charts/          # Reusable chart components
+│   ├── ProgressRing.svelte      # Circular goal progress indicator
+│   ├── MiniBarChart.svelte      # Small hourly bar chart for tiles
+│   ├── BarChart.svelte          # Full 30-day trend bar chart with click interaction
+│   ├── LineChart.svelte         # SVG line/area chart for heart rate
+│   └── SleepStagesChart.svelte  # Sleep stages timeline visualization
 └── common/          # Shared UI components (TileWrapper, etc.)
 ```
+
+## Detail Pages
+
+Detail pages are in `src/routes/`:
+
+| Route | Description |
+|-------|-------------|
+| `/steps` | 30-day trend, hourly breakdown, weekly averages table |
+| `/heartrate` | Day line chart, zones distribution, 30-day trend |
+| `/sleep` | Stages timeline, score breakdown, 30-day trend |
+| `/exercise` | Activity list with expandable HR zones, 30-day trend |
+| `/calories` | 30-day trend, hourly breakdown, goal progress |
+| `/distance` | 30-day trend, hourly breakdown (converts cm to km) |
 
 ## GraphQL Queries
 
@@ -223,6 +241,58 @@ goToPreviousDay();
 
 2. Export from `src/lib/components/tiles/index.ts`
 3. Add to `src/routes/+page.svelte`
+
+## Creating a Detail Page
+
+Detail pages follow a common pattern. Create `src/routes/mymetric/+page.svelte`:
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { gql } from '@urql/svelte';
+  import { client } from '$graphql/client';
+  import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
+  import { colors } from '$utils/colors';
+  import { formatNumber } from '$utils/formatters';
+  import { startOfDay, endOfDay, subDays, format, parseISO } from 'date-fns';
+  import BarChart from '$components/charts/BarChart.svelte';
+  import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+  import ProgressRing from '$components/charts/ProgressRing.svelte';
+
+  const GOAL = 10000;
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let dailyData = $state<{ date: string; value: number }[]>([]);
+  let hourlyData = $state<{ label: string; value: number }[]>([]);
+  let selectedDayTotal = $state(0);
+
+  // Fetch 30-day data, aggregate by day
+  async function fetchDailyData(endDate: Date) { ... }
+
+  // Fetch hourly breakdown for selected day
+  async function fetchHourlyData(date: Date) { ... }
+
+  function handleBarClick(dateStr: string) {
+    const date = parseISO(dateStr);
+    setDate(date);
+    fetchHourlyData(date);
+  }
+
+  onMount(() => {
+    fetchAllData();
+    const unsubscribe = selectedDate.subscribe((date) => {
+      if (!loading) fetchHourlyData(date);
+    });
+    return unsubscribe;
+  });
+</script>
+```
+
+Key elements:
+- **Back link**: `<a href="/">← Back to Dashboard</a>`
+- **Day summary card**: ProgressRing + hourly MiniBarChart
+- **30-day trend**: BarChart with `onBarClick` for date selection
+- **Stats grid**: Total, average, best day, days met goal
 
 ## Color Palette
 

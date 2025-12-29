@@ -135,10 +135,18 @@ The SvelteKit dashboard in `dashboard/src/lib/`:
 
 - `components/layout/` - Header, ProfileAvatar, ProfileDropdown
 - `components/tiles/` - StepsTile, CaloriesTile, DistanceTile, HeartRateTile, SleepTile, ActiveMinutesTile
-- `components/charts/` - ProgressRing, MiniBarChart
+- `components/charts/` - ProgressRing, MiniBarChart, BarChart, LineChart, SleepStagesChart
 - `graphql/client.ts` - URQL GraphQL client
 - `stores/` - Svelte stores for dashboard state, preferences, profile
 - `utils/` - Colors, formatters, date utilities
+
+Detail pages in `dashboard/src/routes/`:
+- `/steps` - 30-day trend, hourly breakdown, weekly averages
+- `/heartrate` - Day chart, zones distribution, 30-day trend
+- `/sleep` - Stages timeline, score breakdown, 30-day trend
+- `/exercise` - Activity list with HR zones, 30-day trend
+- `/calories` - 30-day trend, hourly breakdown
+- `/distance` - 30-day trend, hourly breakdown (values in km)
 
 Key patterns:
 - Uses Svelte 5 runes (`$state`, `$derived`, `$props`, `$effect`)
