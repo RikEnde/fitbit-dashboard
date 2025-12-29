@@ -1,14 +1,14 @@
 <script lang="ts">
-	import '../app.css';
-	import Header from '$components/layout/Header.svelte';
-	import { setContextClient } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { profile, profileLoading, profileError } from '$stores/profile';
-	import { PROFILE_QUERY } from '$graphql/queries';
-	import { onMount } from 'svelte';
-	import type { Snippet } from 'svelte';
+    import '../app.css';
+    import Header from '$components/layout/Header.svelte';
+    import {setContextClient} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {profile, profileError, profileLoading} from '$stores/profile';
+    import {PROFILE_QUERY} from '$graphql/queries';
+    import type {Snippet} from 'svelte';
+    import {onMount} from 'svelte';
 
-	interface Props {
+    interface Props {
 		children: Snippet;
 	}
 

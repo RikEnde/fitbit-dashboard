@@ -1,7 +1,6 @@
-package kenny.fitbit.importer.steps
+package kenny.fitbit.steps
 
-import kenny.fitbit.importer.Importer
-import kenny.fitbit.steps.Steps
+import kenny.fitbit.Importer
 
 interface StepsImporter : Importer<Steps> {
     override fun directory(): String = "Physical Activity"

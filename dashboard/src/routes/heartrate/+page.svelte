@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
-	import { colors, heartRateZoneColors } from '$utils/colors';
-	import { startOfDay, endOfDay, subDays, format, parseISO } from 'date-fns';
-	import LineChart from '$components/charts/LineChart.svelte';
-	import BarChart from '$components/charts/BarChart.svelte';
-	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {colors, heartRateZoneColors} from '$utils/colors';
+    import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
+    import LineChart from '$components/charts/LineChart.svelte';
+    import BarChart from '$components/charts/BarChart.svelte';
+    import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
-	// State
+    // State
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 

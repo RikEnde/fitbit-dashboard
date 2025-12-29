@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { dateRange } from '$stores/dashboard';
-	import { colors } from '$utils/colors';
-	import ProgressRing from '$components/charts/ProgressRing.svelte';
-	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {dateRange} from '$stores/dashboard';
+    import {colors} from '$utils/colors';
+    import ProgressRing from '$components/charts/ProgressRing.svelte';
+    import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
-	// Distance values from Fitbit are stored in centimeters
+    // Distance values from Fitbit are stored in centimeters
 	const CM_TO_KM = 100000;
 
 	interface Props {

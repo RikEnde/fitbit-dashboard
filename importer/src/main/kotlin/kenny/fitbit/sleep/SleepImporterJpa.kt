@@ -1,10 +1,9 @@
-package kenny.fitbit.importer.sleep
+package kenny.fitbit.sleep
 
 import com.fasterxml.jackson.databind.JsonNode
 import jakarta.persistence.EntityManager
-import kenny.fitbit.importer.CsvImporter
-import kenny.fitbit.importer.JsonImporter
-import kenny.fitbit.sleep.*
+import kenny.fitbit.CsvImporter
+import kenny.fitbit.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDate

@@ -1,29 +1,27 @@
-package kenny.fitbit.importer.calories
+package kenny.fitbit.distance
 
 import com.fasterxml.jackson.databind.JsonNode
 import jakarta.persistence.EntityManager
-import kenny.fitbit.calories.Calories
-import kenny.fitbit.calories.CaloriesRepository
-import kenny.fitbit.importer.JsonImporter
+import kenny.fitbit.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDateTime
 
 @Component
-class CaloriesImporterImpl(
-    repository: CaloriesRepository,
+class DistanceImporterImpl(
+    repository: DistanceRepository,
     entityManager: EntityManager,
     transactionManager: PlatformTransactionManager
-) : JsonImporter<Calories>(repository, entityManager, transactionManager), CaloriesImporter {
+) : JsonImporter<Distance>(repository, entityManager, transactionManager), DistanceImporter {
 
-    override fun parseToEntity(jsonItem: JsonNode): Calories? {
+    override fun parseToEntity(jsonItem: JsonNode): Distance? {
         val valueStr = jsonItem.get("value")?.asText()
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
         val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
 
         return if (valueStr != null) {
             val value = valueStr.toDouble()
-            Calories(value, dateTime)
+            Distance(value, dateTime)
         } else {
             null
         }

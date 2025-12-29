@@ -1,7 +1,7 @@
-package kenny.fitbit.importer
+package kenny.fitbit
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import kenny.fitbit.importer.heartrate.HeartRateImporterImpl
+import kenny.fitbit.heartrate.HeartRateImporterImpl
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

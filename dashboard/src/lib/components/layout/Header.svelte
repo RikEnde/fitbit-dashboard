@@ -1,9 +1,19 @@
 <script lang="ts">
-	import { selectedDate, formattedDate, goToPreviousDay, goToNextDay, goToToday, setDate } from '$stores/dashboard';
-	import ProfileAvatar from './ProfileAvatar.svelte';
-	import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameDay, isSameMonth, isToday } from 'date-fns';
+    import {formattedDate, goToNextDay, goToPreviousDay, goToToday, selectedDate, setDate} from '$stores/dashboard';
+    import ProfileAvatar from './ProfileAvatar.svelte';
+    import {
+        addDays,
+        endOfMonth,
+        endOfWeek,
+        format,
+        isSameDay,
+        isSameMonth,
+        isToday,
+        startOfMonth,
+        startOfWeek
+    } from 'date-fns';
 
-	let showDatePicker = $state(false);
+    let showDatePicker = $state(false);
 	let currentMonth = $state(new Date());
 
 	function handleDateClick(date: Date) {

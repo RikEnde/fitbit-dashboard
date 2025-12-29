@@ -1,13 +1,12 @@
-package kenny.fitbit.importer.exercise
+package kenny.fitbit.exercise
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.EntityManager
-import kenny.fitbit.exercise.*
+import kenny.fitbit.CsvImporter
+import kenny.fitbit.JsonImporter
 import kenny.fitbit.heartrate.TimeInHeartRateZoneValue
 import kenny.fitbit.heartrate.TimeInHeartRateZones
-import kenny.fitbit.importer.CsvImporter
-import kenny.fitbit.importer.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
 import java.io.File

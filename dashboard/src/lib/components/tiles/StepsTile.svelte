@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { dateRange } from '$stores/dashboard';
-	import { colors } from '$utils/colors';
-	import { formatNumber } from '$utils/formatters';
-	import ProgressRing from '$components/charts/ProgressRing.svelte';
-	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {dateRange} from '$stores/dashboard';
+    import {colors} from '$utils/colors';
+    import {formatNumber} from '$utils/formatters';
+    import ProgressRing from '$components/charts/ProgressRing.svelte';
+    import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
-	interface Props {
+    interface Props {
 		goal?: number;
 	}
 

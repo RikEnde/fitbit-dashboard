@@ -1,10 +1,6 @@
-package kenny.fitbit.importer.heartrate
+package kenny.fitbit.heartrate
 
-import kenny.fitbit.heartrate.DailyHeartRateVariability
-import kenny.fitbit.heartrate.HeartRate
-import kenny.fitbit.heartrate.HeartRateVariabilityDetails
-import kenny.fitbit.heartrate.RestingHeartRate
-import kenny.fitbit.importer.Importer
+import kenny.fitbit.Importer
 
 interface HeartRateImporter : Importer<HeartRate> {
     override fun directory(): String = "Physical Activity"

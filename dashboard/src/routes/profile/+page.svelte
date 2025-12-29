@@ -1,15 +1,9 @@
 <script lang="ts">
-	import { profile } from '$stores/profile';
-	import { preferences } from '$stores/preferences';
-	import {
-		formatHeight,
-		formatWeight,
-		formatStride,
-		calculateAge,
-		formatDate
-	} from '$utils/formatters';
+    import {profile} from '$stores/profile';
+    import {preferences} from '$stores/preferences';
+    import {calculateAge, formatDate, formatHeight, formatStride, formatWeight} from '$utils/formatters';
 
-	function handleThemeToggle() {
+    function handleThemeToggle() {
 		preferences.toggleTheme();
 	}
 

@@ -1,6 +1,6 @@
-package kenny.fitbit.importer
+package kenny.fitbit
 
-import kenny.fitbit.importer.profile.AccountImporterImpl
+import kenny.fitbit.profile.AccountImporterImpl
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

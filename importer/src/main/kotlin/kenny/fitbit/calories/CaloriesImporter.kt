@@ -1,7 +1,6 @@
-package kenny.fitbit.importer.calories
+package kenny.fitbit.calories
 
-import kenny.fitbit.calories.Calories
-import kenny.fitbit.importer.Importer
+import kenny.fitbit.Importer
 
 /**
  * Interface for Calories JSON importer.

@@ -1,4 +1,4 @@
-package kenny.fitbit.importer
+package kenny.fitbit
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper

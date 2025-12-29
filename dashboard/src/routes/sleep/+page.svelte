@@ -1,16 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
-	import { colors, sleepStageColors } from '$utils/colors';
-	import { formatDuration } from '$utils/formatters';
-	import { startOfDay, endOfDay, subDays, format, parseISO } from 'date-fns';
-	import ProgressRing from '$components/charts/ProgressRing.svelte';
-	import BarChart from '$components/charts/BarChart.svelte';
-	import SleepStagesChart from '$components/charts/SleepStagesChart.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {colors, sleepStageColors} from '$utils/colors';
+    import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
+    import ProgressRing from '$components/charts/ProgressRing.svelte';
+    import BarChart from '$components/charts/BarChart.svelte';
+    import SleepStagesChart from '$components/charts/SleepStagesChart.svelte';
 
-	// Constants
+    // Constants
 	const SLEEP_GOAL = 480; // 8 hours in minutes
 
 	// State

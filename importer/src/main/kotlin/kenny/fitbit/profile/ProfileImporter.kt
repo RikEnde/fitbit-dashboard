@@ -1,7 +1,6 @@
-package kenny.fitbit.importer.profile
+package kenny.fitbit.profile
 
-import kenny.fitbit.importer.Importer
-import kenny.fitbit.profile.Profile
+import kenny.fitbit.Importer
 
 interface AccountImporter : Importer<Profile> {
     override fun directory(): String = "Personal & Account"

@@ -1,15 +1,15 @@
-package kenny.fitbit.importer
+package kenny.fitbit
 
-import kenny.fitbit.importer.calories.CaloriesImporter
-import kenny.fitbit.importer.distance.DistanceImporter
-import kenny.fitbit.importer.exercise.*
-import kenny.fitbit.importer.heartrate.DailyHeartRateVariabilityImporter
-import kenny.fitbit.importer.heartrate.HeartRateImporterImpl
-import kenny.fitbit.importer.heartrate.HeartRateVariabilityDetailsImporter
-import kenny.fitbit.importer.heartrate.RestingHeartRateImporter
-import kenny.fitbit.importer.profile.AccountImporter
-import kenny.fitbit.importer.sleep.*
-import kenny.fitbit.importer.steps.StepsImporter
+import kenny.fitbit.calories.CaloriesImporter
+import kenny.fitbit.distance.DistanceImporter
+import kenny.fitbit.exercise.*
+import kenny.fitbit.heartrate.DailyHeartRateVariabilityImporter
+import kenny.fitbit.heartrate.HeartRateImporterImpl
+import kenny.fitbit.heartrate.HeartRateVariabilityDetailsImporter
+import kenny.fitbit.heartrate.RestingHeartRateImporter
+import kenny.fitbit.profile.AccountImporter
+import kenny.fitbit.sleep.*
+import kenny.fitbit.steps.StepsImporter
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication

@@ -1,7 +1,5 @@
-package kenny.fitbit.importer.profile
+package kenny.fitbit.profile
 
-import kenny.fitbit.profile.Profile
-import kenny.fitbit.profile.ProfileRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import org.springframework.stereotype.Component

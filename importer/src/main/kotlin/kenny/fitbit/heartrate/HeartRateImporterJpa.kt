@@ -1,10 +1,9 @@
-package kenny.fitbit.importer.heartrate
+package kenny.fitbit.heartrate
 
 import com.fasterxml.jackson.databind.JsonNode
 import jakarta.persistence.EntityManager
-import kenny.fitbit.heartrate.*
-import kenny.fitbit.importer.CsvImporter
-import kenny.fitbit.importer.JsonImporter
+import kenny.fitbit.CsvImporter
+import kenny.fitbit.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
 import java.time.LocalDateTime

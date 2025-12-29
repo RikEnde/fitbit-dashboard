@@ -1,8 +1,7 @@
-package kenny.fitbit.importer.exercise
+package kenny.fitbit.exercise
 
-import kenny.fitbit.exercise.*
+import kenny.fitbit.Importer
 import kenny.fitbit.heartrate.TimeInHeartRateZones
-import kenny.fitbit.importer.Importer
 
 interface TimeInHeartRateZonesImporter : Importer<TimeInHeartRateZones> {
     override fun directory(): String = "Physical Activity"

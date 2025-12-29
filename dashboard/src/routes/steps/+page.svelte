@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gql } from '@urql/svelte';
-	import { client } from '$graphql/client';
-	import { selectedDate, setDate, formattedDate } from '$stores/dashboard';
-	import { colors } from '$utils/colors';
-	import { formatNumber } from '$utils/formatters';
-	import { startOfDay, endOfDay, subDays, format, parseISO, startOfWeek, endOfWeek, subWeeks } from 'date-fns';
-	import BarChart from '$components/charts/BarChart.svelte';
-	import MiniBarChart from '$components/charts/MiniBarChart.svelte';
-	import ProgressRing from '$components/charts/ProgressRing.svelte';
+    import {onMount} from 'svelte';
+    import {gql} from '@urql/svelte';
+    import {client} from '$graphql/client';
+    import {formattedDate, selectedDate, setDate} from '$stores/dashboard';
+    import {colors} from '$utils/colors';
+    import {formatNumber} from '$utils/formatters';
+    import {endOfDay, endOfWeek, format, parseISO, startOfDay, startOfWeek, subDays, subWeeks} from 'date-fns';
+    import BarChart from '$components/charts/BarChart.svelte';
+    import MiniBarChart from '$components/charts/MiniBarChart.svelte';
+    import ProgressRing from '$components/charts/ProgressRing.svelte';
 
-	// Props
+    // Props
 	const GOAL = 10000;
 
 	// State

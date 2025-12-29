@@ -108,7 +108,7 @@ Server-specific code in `server/src/main/kotlin/kenny/fitbit/{domain}/`:
 
 ### Importer Structure
 
-Import code is in `importer/src/main/kotlin/kenny/fitbit/importer/`:
+Import code is in `importer/src/main/kotlin/kenny/fitbit/`:
 
 Core classes:
 - `Importer.kt` - Contains `Importer<T>` interface, `JsonImporter<T>`, and `CsvImporter<T>` with built-in JPA batch persistence

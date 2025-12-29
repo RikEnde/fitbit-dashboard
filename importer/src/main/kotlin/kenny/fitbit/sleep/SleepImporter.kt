@@ -1,7 +1,6 @@
-package kenny.fitbit.importer.sleep
+package kenny.fitbit.sleep
 
-import kenny.fitbit.importer.Importer
-import kenny.fitbit.sleep.*
+import kenny.fitbit.Importer
 
 interface SleepImporter : Importer<Sleep> {
     override fun directory(): String = "Sleep"
