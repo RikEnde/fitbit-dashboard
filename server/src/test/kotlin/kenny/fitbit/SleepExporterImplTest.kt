@@ -1,6 +1,8 @@
 package kenny.fitbit
 
-import kenny.fitbit.sleep.*
+import kenny.fitbit.sleep.Sleep
+import kenny.fitbit.sleep.SleepExporterImpl
+import kenny.fitbit.sleep.SleepLevelData
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
