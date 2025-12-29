@@ -1,4 +1,9 @@
 spring:
+  main:
+    web-application-type: none
+  graphql:
+    graphiql:
+      enabled: false
   jpa:
     hibernate:
       ddl-auto: update
