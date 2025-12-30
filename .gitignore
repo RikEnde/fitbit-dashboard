@@ -59,3 +59,5 @@ pg_data/
 # Misc
 /output/
 /cleanslate.sh
+run-server.sh
+run-importer.sh

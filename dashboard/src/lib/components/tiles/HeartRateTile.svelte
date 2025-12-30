@@ -3,25 +3,27 @@
     import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
     import {dateRange} from '$stores/dashboard';
-    import {colors, heartRateZoneColors} from '$utils/colors';
+    import {colors} from '$utils/colors';
     import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
     // State
-	let currentBpm = $state(0);
 	let minBpm = $state(0);
 	let maxBpm = $state(0);
-	let avgBpm = $state(0);
+	let restingBpm = $state(0);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
 
 	// Query for heart rate data
 	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange) {
+		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
 			heartRates(limit: $limit, range: $range) {
 				id
 				bpm
 				time
+			}
+			restingHeartRate(date: $date) {
+				value
 			}
 		}
 	`;
@@ -50,38 +52,30 @@
 			}));
 	}
 
-	function getHeartRateZone(bpm: number): { name: string; color: string } {
-		if (bpm < 60) return { name: 'Resting', color: heartRateZoneColors['Out of Range'] };
-		if (bpm < 100) return { name: 'Out of Range', color: heartRateZoneColors['Out of Range'] };
-		if (bpm < 140) return { name: 'Fat Burn', color: heartRateZoneColors['Fat Burn'] };
-		if (bpm < 170) return { name: 'Cardio', color: heartRateZoneColors['Cardio'] };
-		return { name: 'Peak', color: heartRateZoneColors['Peak'] };
-	}
-
 	async function fetchData(range: { from: string; to: string }) {
 		loading = true;
 		error = null;
 
 		try {
-			const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range }).toPromise();
+			// Extract date from range for resting heart rate query (YYYY-MM-DD format)
+			const date = range.to.split('T')[0];
+			const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range, date }).toPromise();
 			if (result.error) {
 				error = result.error.message;
 				return;
 			}
 
 			const heartRates = result.data?.heartRates ?? [];
+			const restingHr = result.data?.restingHeartRate;
+			restingBpm = restingHr ? Math.round(restingHr.value) : 0;
 			if (heartRates.length > 0) {
 				const bpms = heartRates.map((hr: HeartRateRecord) => hr.bpm);
-				currentBpm = heartRates[heartRates.length - 1].bpm;
 				minBpm = Math.min(...bpms);
 				maxBpm = Math.max(...bpms);
-				avgBpm = Math.round(bpms.reduce((a: number, b: number) => a + b, 0) / bpms.length);
 				hourlyData = processHourlyData(heartRates);
 			} else {
-				currentBpm = 0;
 				minBpm = 0;
 				maxBpm = 0;
-				avgBpm = 0;
 				hourlyData = [];
 			}
 		} catch (e) {
@@ -98,7 +92,6 @@
 		return unsubscribe;
 	});
 
-	let zone = $derived(getHeartRateZone(currentBpm));
 </script>
 
 <a
@@ -132,7 +125,7 @@
 				<svg class="w-12 h-12" fill={colors.heartrate} viewBox="0 0 24 24">
 					<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 				</svg>
-				{#if currentBpm > 0}
+				{#if restingBpm > 0}
 					<div class="absolute inset-0 flex items-center justify-center animate-pulse">
 						<svg class="w-14 h-14 opacity-30" fill={colors.heartrate} viewBox="0 0 24 24">
 							<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -143,9 +136,12 @@
 
 			<!-- Stats -->
 			<div class="flex-1">
-				{#if currentBpm > 0}
-					<p class="text-3xl font-bold text-white">{currentBpm} <span class="text-lg text-gray-400">bpm</span></p>
-					<p class="text-sm mt-1" style="color: {zone.color}">{zone.name}</p>
+				{#if restingBpm > 0}
+					<p class="text-3xl font-bold text-white">{restingBpm} <span class="text-lg text-gray-400">bpm</span></p>
+					<p class="text-sm mt-1 text-gray-400">Resting</p>
+				{:else if minBpm > 0}
+					<p class="text-3xl font-bold text-white">-- <span class="text-lg text-gray-400">bpm</span></p>
+					<p class="text-sm mt-1 text-gray-400">Resting</p>
 				{:else}
 					<p class="text-xl font-bold text-gray-500">No data</p>
 				{/if}
@@ -153,15 +149,11 @@
 		</div>
 
 		<!-- Stats Row -->
-		{#if avgBpm > 0}
-			<div class="flex justify-between mt-4 text-sm">
+		{#if minBpm > 0}
+			<div class="flex justify-around mt-4 text-sm">
 				<div class="text-center">
 					<p class="text-gray-500">Min</p>
 					<p class="text-white font-medium">{minBpm}</p>
-				</div>
-				<div class="text-center">
-					<p class="text-gray-500">Avg</p>
-					<p class="text-white font-medium">{avgBpm}</p>
 				</div>
 				<div class="text-center">
 					<p class="text-gray-500">Max</p>

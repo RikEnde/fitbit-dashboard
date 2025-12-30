@@ -1,5 +1,6 @@
 # add once, near the top
 scalar DateTime               # RFC‑3339 scalar from graphql‑java‑extended‑scalars
+scalar Date                   # ISO-8601 date (YYYY-MM-DD) from graphql‑java‑extended‑scalars
 
 input DateRange {
     from: DateTime!
@@ -13,6 +14,10 @@ type Query {
     # Heart Rate Queries
     heartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [HeartRate!]!
     heartRatesPerInterval(range: DateRange!): [SumsOfHeartRates!]!
+
+    # Resting Heart Rate Queries
+    restingHeartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [RestingHeartRate!]!
+    restingHeartRate(date: Date!): RestingHeartRate
 
     # Steps Queries
     steps(limit: Int = 10, offset: Int = 0, range: DateRange): [Steps!]!
@@ -55,6 +60,13 @@ type HeartRate {
 type SumsOfHeartRates {
     timeInterval: DateTime!  # start of the bucket
     bpmSum:       Int!       # Sum bpm inside the bucket
+}
+
+type RestingHeartRate {
+    id: ID!
+    value: Float!            # resting heart rate in bpm
+    error: Float!            # measurement error margin
+    dateTime: String!
 }
 
 # Steps Type

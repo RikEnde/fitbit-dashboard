@@ -50,6 +50,7 @@ interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecification
 @Repository
 interface RestingHeartRateRepository : JpaRepository<RestingHeartRate, Long>, JpaSpecificationExecutor<RestingHeartRate> {
     fun findByDateTimeBetween(from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<RestingHeartRate>
+    fun findFirstByDateTimeBetweenOrderByDateTimeDesc(from: LocalDateTime, to: LocalDateTime): RestingHeartRate?
 }
 
 @Repository

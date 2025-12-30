@@ -106,6 +106,10 @@ Server-specific code in `server/src/main/kotlin/kenny/fitbit/{domain}/`:
 - `{Domain}Resolver.kt` - GraphQL `@Controller` with `@QueryMapping` methods
 - `{Domain}Exporter.kt` - Interface extending `Exporter<T>` for Apple Health XML export
 
+Heart rate domain has two resolvers:
+- `HeartRateResolver.kt` - Real-time heart rate readings
+- `RestingHeartRateResolver.kt` - Daily resting heart rate (single date or time series)
+
 ### Importer Structure
 
 Import code is in `importer/src/main/kotlin/kenny/fitbit/`:
@@ -142,7 +146,13 @@ curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=202
 
 ### GraphQL
 
-Schema at `server/src/main/resources/graphql/schema.graphqls`. Uses `graphql-java-extended-scalars` for `DateTime` scalar. Resolvers use pagination with `PageRequest` and date range filtering via `DateRange` input type.
+Schema at `server/src/main/resources/graphql/schema.graphqls`. Uses `graphql-java-extended-scalars` for `DateTime` and `Date` scalars. Resolvers use pagination with `PageRequest` and date range filtering via `DateRange` input type.
+
+Key queries:
+- `heartRates(limit, offset, range)` - Heart rate readings
+- `restingHeartRate(date: Date!)` - Resting heart rate for a specific date
+- `restingHeartRates(limit, offset, range)` - Resting heart rate time series
+- `steps`, `calories`, `distances`, `exercises`, `sleeps`, `sleepScores` - Other health data
 
 ### Dashboard Structure
 
@@ -157,7 +167,7 @@ The SvelteKit dashboard in `dashboard/src/lib/`:
 
 Detail pages in `dashboard/src/routes/`:
 - `/steps` - 30-day trend, hourly breakdown, weekly averages
-- `/heartrate` - Day chart, zones distribution, 30-day trend
+- `/heartrate` - Resting HR, min/max stats, day chart, zones distribution, resting HR trend (30-day/1-year toggle)
 - `/sleep` - Stages timeline, score breakdown, 30-day trend
 - `/exercise` - Activity list with HR zones, 30-day trend
 - `/calories` - 30-day trend, hourly breakdown
@@ -174,6 +184,7 @@ Data unit notes:
 - Distance values from Fitbit are stored in centimeters (divide by 100,000 for km)
 - Stride length values are stored in centimeters (divide by 2.54 for inches)
 - Exercise duration is in milliseconds (divide by 60,000 for minutes)
+- Resting heart rate is stored as a float (bpm) with an error margin field
 
 ### Tech Stack
 
