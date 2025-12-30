@@ -288,132 +288,48 @@ Following Fitbit's established color language:
 
 ## Feature Specifications
 
-### Phase 1: Core Dashboard (MVP)
+### Core Dashboard ✅
 
-#### 1.1 Main Dashboard View
-- [ ] Tile grid layout with drag-drop reordering (using svelte-grid-extended)
-- [x] Date selector in header (single day view) with calendar picker
-- [ ] Show/hide tiles menu
-- [x] Persist layout preferences in localStorage
+**Main Dashboard View:**
+- Date selector with calendar picker
+- Layout preferences persisted to localStorage
+- Responsive tile grid
 
-#### 1.2 Steps Tile
-- [x] Daily step count with goal progress ring
-- [x] Mini bar chart showing hourly breakdown
-- [x] Click to navigate to detailed Steps view
+**Tiles (all complete):**
+- Steps: daily count, goal progress ring, hourly chart
+- Heart Rate: latest reading, min/max/avg stats, hourly chart, zones
+- Sleep: duration, efficiency, stages visualization
+- Calories: daily burn, goal progress, hourly breakdown
+- Distance: km conversion, goal progress ring
+- Active Minutes: total with goal, exercise count, recent activities
+- Profile: avatar in header, dropdown with user info
 
-#### 1.3 Heart Rate Tile
-- [x] Current/latest heart rate reading
-- [x] Min/max/avg heart rate stats
-- [x] Mini bar chart of hourly averages
-- [x] Heart rate zones indicator
-- [x] Click to navigate to detailed HR view
+### Detail Pages ✅
 
-#### 1.4 Sleep Tile
-- [x] Last night's sleep duration
-- [x] Sleep efficiency percentage
-- [x] Sleep stages mini-visualization (horizontal bar)
-- [x] Click to navigate to detailed Sleep view
+All detail pages include 30-day trends, hourly breakdowns, and interactive date selection:
+- Steps: weekly averages
+- Heart Rate: zones distribution, resting HR trend
+- Sleep: stages timeline, score breakdown
+- Exercise: activity list with HR zones
+- Calories: goal progress
+- Distance: km display
+- Profile: full user info, physical stats, stride lengths
 
-#### 1.5 Calories Tile
-- [x] Daily calorie burn with goal progress
-- [x] Hourly breakdown mini bar chart
-- [x] Click for detailed view
+### Planned Features
 
-#### 1.6 Distance Tile
-- [x] Daily distance traveled (converted from cm to km)
-- [x] Goal progress ring
-- [x] Click for detailed view
+**Dashboard Enhancements:**
+- Drag-drop tile reordering (svelte-grid-extended)
+- Show/hide tiles menu
+- Dark/Light mode toggle
 
-#### 1.7 Active Minutes Tile
-- [x] Total active minutes with goal progress
-- [x] Exercise count and calories burned
-- [x] Recent activities list
+**Additional Tiles:**
+- SpO2, HRV, Respiratory rate, Body temperature, VO2 Max
 
-#### 1.8 Profile Avatar & Dropdown
-- [x] Mini avatar icon in header (32x32px circular)
-- [x] Fetch profile data on app load
-- [x] Click avatar to open dropdown popover
-- [x] Display user info: name, email, member since
-- [x] Display physical stats: height, weight, age
-- [x] Display stride lengths and daily goals
-- [x] Show unit preferences from profile
-
-### Phase 2: Detailed Views ✅ COMPLETE
-
-#### 2.1 Steps Detail Page ✅
-- [x] Daily bar chart (last 30 days)
-- [x] Weekly averages display
-- [x] Hourly breakdown for selected day
-- [x] Interactive date selection via chart
-- [ ] Export functionality
-
-#### 2.2 Heart Rate Detail Page ✅
-- [x] Line chart for selected day
-- [x] Hourly averages display
-- [x] Heart rate zones distribution
-- [x] 30-day trend chart
-- [x] Interactive date selection
-
-#### 2.3 Sleep Detail Page ✅
-- [x] Sleep duration and efficiency display
-- [x] Sleep stages timeline visualization
-- [x] Sleep score with component breakdown
-- [x] 30-day trend chart
-- [x] Interactive date selection
-
-#### 2.4 Exercise Detail Page ✅
-- [x] Exercise log list with expandable details
-- [x] Activity type breakdown chart
-- [x] Heart rate zones per activity
-- [x] Calories and stats per exercise
-- [x] 30-day active minutes trend
-
-#### 2.5 Calories Detail Page ✅
-- [x] Daily bar chart (last 30 days)
-- [x] Hourly breakdown for selected day
-- [x] Goal progress display
-- [x] Interactive date selection
-
-#### 2.6 Distance Detail Page ✅
-- [x] Daily bar chart (last 30 days)
-- [x] Hourly breakdown for selected day
-- [x] Unit display (km)
-- [x] Interactive date selection
-
-#### 2.7 Profile Page ✅
-- [x] Large avatar and full name display
-- [x] Account info (member since, timezone)
-- [x] Personal info (age, gender, height, weight)
-- [x] Stride lengths (walking/running)
-- [x] Unit preferences
-- [x] Theme toggle
-- [x] Link from profile dropdown
-
-### Phase 3: Advanced Features
-
-#### 3.1 Additional Tiles
-- [ ] SpO2 tile (blood oxygen)
-- [ ] Respiratory rate tile
-- [ ] Body temperature tile
-- [ ] VO2 Max tile
-- [ ] HRV tile
-
-#### 3.2 Insights & Trends
-- [ ] Weekly/Monthly summary view
-- [ ] Year-over-year comparisons
-- [ ] Personal records tracking
-- [ ] Correlation analysis (e.g., sleep vs. activity)
-
-#### 3.3 Data Export
-- [ ] CSV export for any metric
-- [ ] Date range selection for exports
-- [ ] Apple Health XML export (already supported by backend)
-
-#### 3.4 User Experience
-- [ ] Dark/Light mode toggle
-- [ ] Keyboard navigation
-- [ ] Print-friendly views
-- [ ] PWA support for offline access
+**Advanced Features:**
+- CSV export from dashboard
+- Weekly/Monthly summary views
+- Year-over-year comparisons
+- PWA support
 
 ---
 
@@ -439,49 +355,39 @@ dashboard/
 │   │   │   │   ├── DistanceTile.svelte
 │   │   │   │   └── ActiveMinutesTile.svelte
 │   │   │   ├── charts/
-│   │   │   │   ├── BarChart.svelte         # 30-day trend charts
-│   │   │   │   ├── LineChart.svelte        # Heart rate day view
-│   │   │   │   ├── ProgressRing.svelte     # Goal progress rings
-│   │   │   │   ├── MiniBarChart.svelte     # Tile hourly charts
-│   │   │   │   ├── SleepStagesChart.svelte # Sleep stages timeline
-│   │   │   │   └── index.ts                # Barrel exports
+│   │   │   │   ├── BarChart.svelte
+│   │   │   │   ├── LineChart.svelte
+│   │   │   │   ├── ProgressRing.svelte
+│   │   │   │   ├── MiniBarChart.svelte
+│   │   │   │   └── SleepStagesChart.svelte
 │   │   │   └── common/
-│   │   │       ├── DatePicker.svelte
-│   │   │       ├── TileWrapper.svelte
-│   │   │       └── LoadingSpinner.svelte
+│   │   │       └── TileWrapper.svelte
 │   │   ├── graphql/
-│   │   │   ├── queries.ts
 │   │   │   └── client.ts
 │   │   ├── stores/
-│   │   │   ├── profile.ts        # Svelte store for profile data
-│   │   │   ├── dashboard.ts      # Svelte store for dashboard state
-│   │   │   └── preferences.ts    # Layout & theme preferences
-│   │   ├── utils/
-│   │   │   ├── formatters.ts
-│   │   │   └── colors.ts
-│   │   └── types/
-│   │       └── index.ts
+│   │   │   ├── profile.ts
+│   │   │   ├── dashboard.ts
+│   │   │   └── preferences.ts
+│   │   └── utils/
+│   │       ├── formatters.ts
+│   │       └── colors.ts
 │   ├── routes/
-│   │   ├── +layout.svelte        # Root layout with header
+│   │   ├── +layout.svelte
 │   │   ├── +page.svelte          # Dashboard home
-│   │   ├── steps/
-│   │   │   └── +page.svelte      # Steps detail page
-│   │   ├── heartrate/
-│   │   │   └── +page.svelte      # Heart rate detail page
-│   │   ├── sleep/
-│   │   │   └── +page.svelte      # Sleep detail page
-│   │   └── exercise/
-│   │       └── +page.svelte      # Exercise detail page
+│   │   ├── steps/+page.svelte
+│   │   ├── heartrate/+page.svelte
+│   │   ├── sleep/+page.svelte
+│   │   ├── exercise/+page.svelte
+│   │   ├── calories/+page.svelte
+│   │   ├── distance/+page.svelte
+│   │   └── profile/+page.svelte
 │   ├── app.html
-│   ├── app.css                   # Global styles + Tailwind
-│   └── app.d.ts
+│   └── app.css
 ├── static/
-│   └── favicon.png
 ├── package.json
 ├── svelte.config.js
 ├── tailwind.config.js
-├── vite.config.ts
-└── README.md
+└── vite.config.ts
 ```
 
 ### Key Dependencies
@@ -565,82 +471,71 @@ export const profile = writable(null);
 
 ---
 
-## Development Milestones
+## Development Status
 
-### Milestone 1: Project Setup (Foundation) ✅ COMPLETE
+### ✅ Completed
 
-**Frontend:**
-- [x] Initialize SvelteKit project with TypeScript (Svelte 5 runes mode)
-- [x] Configure Tailwind CSS with Fitbit color palette
-- [x] Set up URQL client for GraphQL
-- [x] Create root layout with header component
-- [x] Implement responsive layout shell
-- [x] Add date selector with calendar picker
-- [x] Add profile avatar with dropdown
+**Infrastructure:**
+- SvelteKit project with TypeScript and Svelte 5 runes
+- TailwindCSS with Fitbit color palette
+- URQL GraphQL client
+- Responsive layout with header and date selector
+- Profile avatar with dropdown
+- Layout preferences persisted to localStorage
 
-**Backend:**
-- No changes needed for initial setup
+**Dashboard Tiles:**
+- Steps tile with goal progress ring and hourly chart
+- Calories tile with goal progress and hourly breakdown
+- Distance tile with km conversion and progress ring
+- Heart rate tile with min/max/avg stats and hourly chart
+- Sleep tile with duration, stages bar, and efficiency
+- Active minutes tile with exercise count and recent activities
 
-### Milestone 2: Core Tiles ✅ COMPLETE
+**Detail Pages:**
+- Steps: 30-day trend, hourly breakdown, weekly averages
+- Heart rate: day chart, zones distribution, resting HR trend
+- Sleep: stages timeline, score breakdown, 30-day trend
+- Exercise: activity list with HR zones, 30-day trend
+- Calories: 30-day trend, hourly breakdown
+- Distance: 30-day trend, hourly breakdown
+- Profile: user info, physical stats, stride lengths
 
-**Frontend:**
-- [x] Create TileWrapper component
-- [x] Build Svelte store for layout preferences (persisted to localStorage)
-- [x] Steps tile with goal progress ring and hourly bar chart
-- [x] Calories tile with goal progress and hourly breakdown
-- [x] Distance tile with km conversion (from cm) and progress ring
-- [x] Heart rate tile with min/max/avg stats and hourly chart
-- [x] Sleep tile with duration, stages bar, and efficiency
-- [x] Active minutes tile with exercise count and recent activities
-- [x] ProgressRing and MiniBarChart reusable components
+**Reusable Components:**
+- ProgressRing, MiniBarChart, BarChart, LineChart, SleepStagesChart, TileWrapper
 
-**Remaining:**
-- [ ] Implement svelte-grid-extended for drag-drop tiles
-- [ ] Create tile show/hide menu
+### 🚧 Future Enhancements
 
-**Backend:**
-- Uses existing queries (steps, calories, distances, heartRates, sleeps, exercises)
-- [ ] Implement `dailySummary` query for optimization (optional)
+**Dashboard Features:**
+- Drag-drop tile reordering (svelte-grid-extended)
+- Show/hide tiles menu
+- Dark/Light mode toggle
 
-### Milestone 3: Detail Views & Trend APIs ✅ COMPLETE (Frontend)
+**Additional Tiles:**
+- SpO2 (blood oxygen)
+- HRV (heart rate variability)
+- Respiratory rate
+- Body temperature
+- VO2 Max
 
-**Frontend:** ✅
-- [x] Steps detail page with charts
-- [x] Heart rate detail page
-- [x] Sleep detail page
-- [x] Exercise log page
+**Data Features:**
+- CSV export from dashboard
+- Weekly/Monthly summary views
+- Year-over-year comparisons
+- PWA support for offline access
 
-**Backend:** (Optional optimization - current queries work fine)
-- [ ] Implement trend queries: `dailyCaloriesTrend`, `dailyDistanceTrend`, `dailySleepTrend`
-- [ ] Add `restingHeartRateTrend` query
-- [ ] Add `sleepScoreTrend` query
-- [ ] Optimize queries for large date ranges
-
-### Milestone 4: Polish & Advanced
-
-**Frontend:**
-- [ ] Dark/Light mode toggle
-- [ ] Additional metric tiles (SpO2, HRV, Temperature)
-- [ ] Data export functionality
-- [ ] PWA configuration
-
-**Backend:**
-- [ ] Add queries for advanced metrics (SpO2, HRV, respiratory rate)
-- [ ] CSV export endpoint (complement existing Apple Health XML export)
+**Backend Optimizations (optional):**
+- `dailySummary` query for single-request dashboard loading
+- Optimized trend queries for large date ranges
 
 ---
 
 ## Open Questions
 
-1. **Goal data**: Do we have user goals stored in the database, or should we make them configurable in the UI?
+1. **Real-time updates**: Currently refresh-on-demand. Polling could be added for live data display.
 
-2. **Real-time updates**: Should the dashboard poll for updates, or is refresh-on-demand sufficient?
+2. **Multi-profile support**: Single profile currently. Could add profile switching if needed.
 
-3. **Multi-profile support**: Should the dashboard support switching between profiles?
-
-4. **Units**: Should we support metric/imperial toggle, or derive from profile settings?
-
-5. **Historical comparison**: Should tiles show comparison to yesterday/last week by default?
+3. **Historical comparison**: Could add yesterday/last week comparisons to tiles.
 
 ---
 

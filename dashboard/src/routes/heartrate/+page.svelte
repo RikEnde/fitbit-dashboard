@@ -2,11 +2,10 @@
     import {onMount} from 'svelte';
     import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
-    import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
+    import {formattedDate, selectedDate, toLocalISOString} from '$stores/dashboard';
     import {colors, heartRateZoneColors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
     import LineChart from '$components/charts/LineChart.svelte';
-    import BarChart from '$components/charts/BarChart.svelte';
     import MiniBarChart from '$components/charts/MiniBarChart.svelte';
 
     // State
@@ -18,21 +17,36 @@
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
 
 	// Stats for current day
-	let dayStats = $state({ min: 0, max: 0, avg: 0, current: 0 });
+	let dayStats = $state({ min: 0, max: 0, resting: 0 });
 
 	// Zone distribution for current day
 	let zoneDistribution = $state<{ name: string; minutes: number; color: string; percentage: number }[]>([]);
 
-	// 30-day trend data
-	let dailyTrend = $state<{ date: string; value: number; min: number; max: number }[]>([]);
+	// Trend period: '30d' or '1y'
+	let trendPeriod = $state<'30d' | '1y'>('30d');
+
+	// Trend data
+	let dailyTrend = $state<{ time: string; value: number }[]>([]);
 
 	// GraphQL Queries
 	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange) {
+		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
 			heartRates(limit: $limit, range: $range) {
 				id
 				bpm
 				time
+			}
+			restingHeartRate(date: $date) {
+				value
+			}
+		}
+	`;
+
+	const RESTING_HR_TREND_QUERY = gql`
+		query RestingHeartRates($limit: Int, $range: DateRange) {
+			restingHeartRates(limit: $limit, range: $range) {
+				value
+				dateTime
 			}
 		}
 	`;
@@ -101,13 +115,15 @@
 			from: toLocalISOString(startOfDay(date)),
 			to: toLocalISOString(endOfDay(date))
 		};
+		const dateStr = format(date, 'yyyy-MM-dd');
 
-		const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range }).toPromise();
+		const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range, date: dateStr }, { requestPolicy: 'network-only' }).toPromise();
 		if (result.error) {
 			throw new Error(result.error.message);
 		}
 
 		const heartRates: HeartRateRecord[] = result.data?.heartRates ?? [];
+		const restingHr = result.data?.restingHeartRate;
 
 		if (heartRates.length > 0) {
 			// Process for line chart (sample every few minutes for smoother chart)
@@ -121,8 +137,7 @@
 			dayStats = {
 				min: Math.min(...bpms),
 				max: Math.max(...bpms),
-				avg: Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length),
-				current: heartRates[heartRates.length - 1].bpm
+				resting: restingHr ? Math.round(restingHr.value) : 0
 			};
 
 			// Hourly data
@@ -132,45 +147,53 @@
 			zoneDistribution = calculateZoneDistribution(heartRates);
 		} else {
 			heartRateData = [];
-			dayStats = { min: 0, max: 0, avg: 0, current: 0 };
+			dayStats = { min: 0, max: 0, resting: restingHr ? Math.round(restingHr.value) : 0 };
 			hourlyData = [];
 			zoneDistribution = zones.map((z) => ({ name: z.name, minutes: 0, color: z.color, percentage: 0 }));
 		}
 	}
 
-	async function fetchTrendData(endDate: Date) {
+	async function fetchTrendData(endDate: Date, period: '30d' | '1y' = '30d') {
+		const days = period === '30d' ? 29 : 364;
+		const startDate = subDays(endDate, days);
+		const range = {
+			from: toLocalISOString(startOfDay(startDate)),
+			to: toLocalISOString(endOfDay(endDate))
+		};
+
+		const limit = period === '30d' ? 30 : 365;
+		const result = await client.query(RESTING_HR_TREND_QUERY, { limit, range }, { requestPolicy: 'network-only' }).toPromise();
+		if (result.error) {
+			throw new Error(result.error.message);
+		}
+
+		const restingHrs = result.data?.restingHeartRates ?? [];
+
+		// Create a map for quick lookup
+		const hrByDate = new Map<string, number>();
+		for (const hr of restingHrs) {
+			const date = hr.dateTime.split('T')[0];
+			hrByDate.set(date, Math.round(hr.value));
+		}
+
+		// Build trend data for all days in the period
 		const trendData: typeof dailyTrend = [];
-
-		// Fetch 30 days of data - we'll do this in batches for each day
-		for (let i = 29; i >= 0; i--) {
+		for (let i = days; i >= 0; i--) {
 			const date = subDays(endDate, i);
-			const range = {
-				from: toLocalISOString(startOfDay(date)),
-				to: toLocalISOString(endOfDay(date))
-			};
-
-			const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range }).toPromise();
-			const heartRates: HeartRateRecord[] = result.data?.heartRates ?? [];
-
-			if (heartRates.length > 0) {
-				const bpms = heartRates.map((hr) => hr.bpm);
-				trendData.push({
-					date: format(date, 'yyyy-MM-dd'),
-					value: Math.round(bpms.reduce((a, b) => a + b, 0) / bpms.length),
-					min: Math.min(...bpms),
-					max: Math.max(...bpms)
-				});
-			} else {
-				trendData.push({
-					date: format(date, 'yyyy-MM-dd'),
-					value: 0,
-					min: 0,
-					max: 0
-				});
-			}
+			const dateStr = format(date, 'yyyy-MM-dd');
+			const value = hrByDate.get(dateStr) ?? 0;
+			trendData.push({
+				time: dateStr,
+				value
+			});
 		}
 
 		dailyTrend = trendData;
+	}
+
+	async function handlePeriodChange(period: '30d' | '1y') {
+		trendPeriod = period;
+		await fetchTrendData($selectedDate, period);
 	}
 
 	async function fetchAllData() {
@@ -180,10 +203,10 @@
 		try {
 			const currentDate = $selectedDate;
 
-			// Fetch current day data and trend in parallel
+			// Fetch current day data and trend in parallel (use current trendPeriod)
 			await Promise.all([
 				fetchDayData(currentDate),
-				fetchTrendData(currentDate)
+				fetchTrendData(currentDate, trendPeriod)
 			]);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to fetch data';
@@ -192,22 +215,15 @@
 		}
 	}
 
-	function handleBarClick(dateStr: string) {
-		const date = parseISO(dateStr);
-		setDate(date);
-	}
-
-	let selectedDateStr = $derived(format($selectedDate, 'yyyy-MM-dd'));
-
 	// Stats derived from 30-day trend
 	let trendStats = $derived({
-		avgHR: dailyTrend.length > 0
+		avgResting: dailyTrend.length > 0
 			? Math.round(dailyTrend.filter(d => d.value > 0).reduce((sum, d) => sum + d.value, 0) / dailyTrend.filter(d => d.value > 0).length)
 			: 0,
-		lowestAvg: dailyTrend.length > 0
+		lowestResting: dailyTrend.length > 0
 			? Math.min(...dailyTrend.filter(d => d.value > 0).map(d => d.value))
 			: 0,
-		highestAvg: dailyTrend.length > 0
+		highestResting: dailyTrend.length > 0
 			? Math.max(...dailyTrend.filter(d => d.value > 0).map(d => d.value))
 			: 0
 	});
@@ -261,15 +277,10 @@
 			</h2>
 
 			<!-- Stats Row -->
-			<div class="grid grid-cols-4 gap-4 mb-6">
+			<div class="grid grid-cols-3 gap-4 mb-6">
 				<div class="text-center">
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Current</p>
-					<p class="text-2xl font-bold text-fitbit-heartrate">{dayStats.current || '--'}</p>
-					<p class="text-xs text-gray-500">bpm</p>
-				</div>
-				<div class="text-center">
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Average</p>
-					<p class="text-2xl font-bold text-white">{dayStats.avg || '--'}</p>
+					<p class="text-xs text-gray-500 uppercase tracking-wide">Resting</p>
+					<p class="text-2xl font-bold text-fitbit-heartrate">{dayStats.resting || '--'}</p>
 					<p class="text-xs text-gray-500">bpm</p>
 				</div>
 				<div class="text-center">
@@ -328,37 +339,50 @@
 			</div>
 		</div>
 
-		<!-- 30-Day Trend -->
+		<!-- Resting Heart Rate Trend -->
 		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-semibold text-white">Last 30 Days</h2>
-				<div class="text-sm text-gray-400">
-					Daily average heart rate
+				<h2 class="text-lg font-semibold text-white">Resting Heart Rate</h2>
+				<div class="flex gap-1 bg-dark-bg rounded-lg p-1">
+					<button
+						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '30d' ? 'bg-dark-card text-white' : 'text-gray-400 hover:text-white'}"
+						onclick={() => handlePeriodChange('30d')}
+					>
+						30 Days
+					</button>
+					<button
+						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '1y' ? 'bg-dark-card text-white' : 'text-gray-400 hover:text-white'}"
+						onclick={() => handlePeriodChange('1y')}
+					>
+						1 Year
+					</button>
 				</div>
 			</div>
 
-			<BarChart
+			<LineChart
 				data={dailyTrend}
 				color={colors.heartrate}
 				height={200}
+				showArea={true}
 				formatValue={(v) => `${v} bpm`}
-				onBarClick={handleBarClick}
-				selectedDate={selectedDateStr}
+				formatTime={(t) => format(parseISO(t), trendPeriod === '1y' ? 'MMM yyyy' : 'MMM d')}
+				minY={Math.max(0, trendStats.lowestResting - 10)}
+				maxY={trendStats.highestResting + 10}
 			/>
 
 			<!-- Stats Grid -->
 			<div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-dark-border">
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">30-Day Average</p>
-					<p class="text-xl font-bold text-white">{trendStats.avgHR} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-gray-500 uppercase tracking-wide">{trendPeriod === '30d' ? '30-Day' : '1-Year'} Average</p>
+					<p class="text-xl font-bold text-white">{trendStats.avgResting} <span class="text-sm text-gray-400">bpm</span></p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Lowest Avg Day</p>
-					<p class="text-xl font-bold text-blue-400">{trendStats.lowestAvg} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-gray-500 uppercase tracking-wide">Lowest</p>
+					<p class="text-xl font-bold text-blue-400">{trendStats.lowestResting} <span class="text-sm text-gray-400">bpm</span></p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Highest Avg Day</p>
-					<p class="text-xl font-bold text-orange-400">{trendStats.highestAvg} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-gray-500 uppercase tracking-wide">Highest</p>
+					<p class="text-xl font-bold text-orange-400">{trendStats.highestResting} <span class="text-sm text-gray-400">bpm</span></p>
 				</div>
 			</div>
 		</div>

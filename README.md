@@ -1,6 +1,21 @@
 # Fitbit Kotlin Application
 
-A Kotlin/Spring Boot application for importing, storing, and querying your Fitbit data. Includes a GraphQL API, REST API, and React frontend for visualizing health metrics.
+A Kotlin/Spring Boot application for importing, storing, and querying your Fitbit data. Includes a GraphQL API, REST API,
+and SvelteKit dashboard for visualizing health metrics.
+
+The goals of this project are two-fold.
+First, I wanted to be able to preserve and view my historical Fitbit data after moving to a tracker from another brand.
+Second, I wanted to do this as much as possible using AI tools, without writing any code by hand. 
+
+It took some planning and correcting to make the AI stick to the architecture and not always take the easiest path to 
+implement a feature.
+We have to keep in mind that a significant part of architecture is to keep the code readable and 
+maintainable by humans.
+I can imagine future architectures that are designed never to be touched by humans may favor 
+very different choices, but as of late 2025 we are not there yet. 
+
+There was a significant leap in capabilities of the AI tools between when the project was started in early 2024 and when 
+it was finished. 
 
 ## Obtaining Your Fitbit Data
 
@@ -76,15 +91,15 @@ The server will start on http://localhost:8080
 - **REST API**: http://localhost:8080/api
 - **pgAdmin** (database admin): http://localhost:5050
 
-### 5. Run the React Client (Optional)
+### 5. Run the Dashboard (Optional)
 
 ```bash
-cd client
+cd dashboard
 npm install
-npm start
+npm run dev
 ```
 
-The client runs on http://localhost:3000 and proxies API requests to the server.
+The dashboard runs on http://localhost:3000 and proxies API requests to the server.
 
 ## GraphQL API
 
@@ -230,5 +245,28 @@ curl "http://localhost:8080/api/export/steps?from=2024-01-01T00:00:00&to=2024-12
 
 Available export types: `heartrate`, `steps`, `calories`, `distance`, `sleep`
 
-The amount of heart rate data for an entire year can be too large for Apple Health to import in one go, so you may have 
-to divide the export data into chunks. See the script `export.sh` for an example. 
+The amount of heart rate data for an entire year can be too large for Apple Health to import in one go, so you may have
+to divide the export data into chunks. See the script `export.sh` for an example.
+
+## Architecture
+
+The project consists of four main modules:
+
+- **model** - Shared JPA entities and Spring Data repositories (used by server and importer)
+- **server** - REST API and GraphQL server with resolvers and exporters
+- **importer** - Data import CLI for Fitbit JSON/CSV files
+- **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
+
+```
+        model
+       /     \
+      v       v
+   server   importer
+```
+
+## Tech Stack
+
+- Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
+- PostgreSQL 17 with JPA/Hibernate
+- GraphQL + REST (Spring Data REST)
+- SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS
