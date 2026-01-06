@@ -1,8 +1,31 @@
-# Fitbit Kotlin Server - Architecture & Tech Stack
+# Fitbit Kotlin - Architecture & Tech Stack
 
 ## Overview
 
-A Spring Boot 3.4 Kotlin application for importing, storing, and querying Fitbit wearable health data through GraphQL and REST APIs. The application provides comprehensive analytics for 20+ health metrics including steps, heart rate, sleep, exercise, calories, distance, and respiratory data.
+A modular Spring Boot 3.4 Kotlin application for importing, storing, and querying Fitbit wearable health data through GraphQL and REST APIs. The application provides comprehensive analytics for 20+ health metrics including steps, heart rate, sleep, exercise, calories, distance, and respiratory data.
+
+## Module Architecture
+
+The project follows a clean multi-module Maven architecture with clear separation of concerns:
+
+```
+fitbit-parent (POM)
+├── model/       - Shared JPA entities and repositories (base module)
+├── server/      - REST API and GraphQL server
+├── importer/    - Data import CLI
+└── dashboard/   - SvelteKit web dashboard (npm project)
+```
+
+**Dependency Graph:**
+```
+        model (base)
+       /     \
+      v       v
+   server   importer
+(both depend on model, but NOT on each other)
+```
+
+The `model` module is completely independent, while `server` and `importer` both use it without circular dependencies.
 
 ## Tech Stack
 
@@ -67,29 +90,42 @@ The application follows a **layered domain-driven architecture** with clear sepa
 ## Project Structure
 
 ```
+model/src/main/kotlin/kenny/fitbit/
+├── calories/
+│   ├── CaloriesModel.kt            # JPA entity
+│   └── CaloriesRepository.kt       # Data access
+├── distance/                       # Distance entity & repository
+├── exercise/                       # Exercise entities & repository
+├── heartrate/                      # Heart rate entities & repositories
+│   ├── HeartRateModel.kt           # HeartRate, RestingHeartRate, etc.
+│   └── HeartRateRepository.kt      # Custom queries for time-series
+├── profile/                        # User profile entity & repository
+├── steps/                          # Steps entity & repository
+└── sleep/                          # Sleep entities & repositories
+
 server/src/main/kotlin/kenny/fitbit/
 ├── FitbitKotlinApplication.kt      # Entry point
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
 ├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
 ├── Exporters.kt                    # Exporter<T> interface + ExportController + AppleHealthXmlWriter
-├── calories/                       # Calories module
-│   ├── CaloriesModel.kt            # JPA entity
-│   ├── CaloriesRepository.kt       # Data access
+├── calories/
 │   ├── CaloriesResolver.kt         # GraphQL queries
 │   └── CaloriesExporter.kt         # Apple Health XML export
-├── distance/                       # Distance module
-├── exercise/                       # Exercise & activity module
-├── heartrate/                      # Heart rate & HRV module
-├── profile/                        # User profile module
-├── steps/                          # Steps module
-└── sleep/                          # Sleep & respiratory module
+├── distance/                       # Distance resolver & exporter
+├── exercise/                       # Exercise resolver & exporter
+├── heartrate/                      # Heart rate resolvers
+│   ├── HeartRateResolver.kt        # Real-time HR readings
+│   └── RestingHeartRateResolver.kt # Daily resting HR queries
+├── profile/                        # Profile resolver
+├── steps/                          # Steps resolver & exporter
+└── sleep/                          # Sleep resolver & exporter
 
-importer/src/main/kotlin/kenny/fitbit/importer/
+importer/src/main/kotlin/kenny/fitbit/
 ├── FitbitImporterApplication.kt    # Importer entry point + ImportRunner
 ├── Importer.kt                     # Importer<T> interface + JsonImporter + CsvImporter
-├── calories/                       # Calories importer
+├── calories/
 │   ├── CaloriesImporter.kt         # Import interface
-│   └── CaloriesImporterJpa.kt      # Import implementation (extends JsonImporter)
+│   └── CaloriesImporterJpa.kt      # Implementation (extends JsonImporter)
 ├── distance/                       # Distance importer
 ├── exercise/                       # Exercise & activity importers
 ├── heartrate/                      # Heart rate & HRV importers
@@ -97,15 +133,36 @@ importer/src/main/kotlin/kenny/fitbit/importer/
 ├── steps/                          # Steps importer
 └── sleep/                          # Sleep & respiratory importers
 
+dashboard/src/
+├── routes/                         # SvelteKit file-based routing
+│   ├── +layout.svelte              # Root layout with URQL client
+│   ├── +page.svelte                # Dashboard home (tile grid)
+│   ├── heartrate/+page.svelte      # Heart rate detail page
+│   ├── steps/+page.svelte          # Steps detail page
+│   ├── calories/+page.svelte       # Calories detail page
+│   ├── distance/+page.svelte       # Distance detail page
+│   ├── exercise/+page.svelte       # Exercise detail page
+│   ├── sleep/+page.svelte          # Sleep detail page
+│   └── profile/+page.svelte        # User profile page
+├── lib/
+│   ├── components/
+│   │   ├── layout/                 # Header, ProfileAvatar, ProfileDropdown
+│   │   ├── tiles/                  # StepsTile, CaloriesTile, HeartRateTile, etc.
+│   │   └── charts/                 # BarChart, LineChart, ProgressRing, etc.
+│   ├── graphql/client.ts           # URQL GraphQL client configuration
+│   ├── stores/                     # Svelte stores (dashboard, preferences, profile)
+│   └── utils/                      # Colors, formatters, date utilities
+└── app.css                         # Global Tailwind styles
+
 server/src/main/resources/
 ├── application.yml                 # Spring configuration
 ├── graphql/schema.graphqls         # GraphQL schema
-└── graphiql/index.html             # GraphiQL IDE (served via GraphiQlController)
+└── graphiql/index.html             # GraphiQL IDE
 
 docker-compose.yml                  # PostgreSQL + pgAdmin
 ```
 
-**Total:** ~45 Kotlin source files across server and importer modules
+**Total:** ~60+ Kotlin source files across model, server, and importer modules
 
 ## Core Components
 
@@ -476,26 +533,27 @@ See `dashboard/agents.md` for detailed Svelte development patterns.
 
 ## Build Note
 
-**Important:** The importer module depends on the server module. Before building the importer, install the server module first:
+Both `server` and `importer` modules depend on the shared `model` module. Build from the parent to ensure correct ordering:
 
 ```bash
-mvn -pl server install -DskipTests
-mvn -pl importer compile
-```
-
-Or build from the parent to ensure correct ordering:
-```bash
+# Build all modules
 mvn compile
+
+# Or install model first, then build others independently
+mvn -pl model install -DskipTests
+mvn -pl server compile
+mvn -pl importer compile
 ```
 
 ## Summary
 
 This is a production-ready, data-centric health analytics platform that combines:
 - Modern Spring Boot 3 + Kotlin stack
+- Clean 4-module architecture (model, server, importer, dashboard)
 - Dual GraphQL/REST API architecture
+- SvelteKit 2 dashboard with Svelte 5 runes
 - Sophisticated async file importing with format-specific parsers and built-in batch persistence
 - Optimized PostgreSQL storage
 - Advanced time-series analytics
-- Modular domain-driven design with separate server and importer modules
 
 The application is well-suited for storing and analyzing large volumes of Fitbit wearable data with performance optimizations and comprehensive query capabilities.
