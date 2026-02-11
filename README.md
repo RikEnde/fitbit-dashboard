@@ -46,7 +46,7 @@ To use this application, you first need to download your data from Fitbit:
 
 ```bash
 # Import all data types
-mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories --distance --exercise --sleep --sleepscore --profile"
+mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--all"
 
 # Or import specific data types
 mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps"
