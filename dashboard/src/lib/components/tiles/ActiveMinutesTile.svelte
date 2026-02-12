@@ -88,9 +88,9 @@
 	class="tile block cursor-pointer group"
 >
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Active Minutes</h3>
+		<h3 class="text-sm font-medium text-theme-text-secondary uppercase tracking-wide">Active Minutes</h3>
 		<svg
-			class="w-4 h-4 text-gray-500 group-hover:text-white transition-colors"
+			class="w-4 h-4 text-theme-text-muted group-hover:text-theme-text transition-colors"
 			fill="none"
 			stroke="currentColor"
 			viewBox="0 0 24 24"
@@ -101,9 +101,9 @@
 
 	{#if loading}
 		<div class="animate-pulse space-y-3">
-			<div class="h-8 bg-dark-border rounded w-1/2"></div>
-			<div class="h-4 bg-dark-border rounded w-3/4"></div>
-			<div class="h-10 bg-dark-border rounded w-full mt-3"></div>
+			<div class="h-8 bg-theme-border rounded w-1/2"></div>
+			<div class="h-4 bg-theme-border rounded w-3/4"></div>
+			<div class="h-10 bg-theme-border rounded w-full mt-3"></div>
 		</div>
 	{:else if error}
 		<div class="text-red-400 text-sm">{error}</div>
@@ -124,13 +124,13 @@
 
 			<!-- Stats -->
 			<div class="flex-1">
-				<p class="text-3xl font-bold text-white">{formatDuration(totalActiveMinutes)}</p>
-				<p class="text-sm text-gray-400 mt-1">
+				<p class="text-3xl font-bold text-theme-text">{formatDuration(totalActiveMinutes)}</p>
+				<p class="text-sm text-theme-text-secondary mt-1">
 					Goal: {formatDuration(goal)}
 					{#if percentage >= 100}
 						<span class="text-green-400 ml-1">({percentage}%)</span>
 					{:else}
-						<span class="text-gray-500 ml-1">({percentage}%)</span>
+						<span class="text-theme-text-muted ml-1">({percentage}%)</span>
 					{/if}
 				</p>
 			</div>
@@ -138,14 +138,14 @@
 
 		<!-- Activity Summary -->
 		{#if exerciseCount > 0}
-			<div class="mt-4 pt-3 border-t border-dark-border">
+			<div class="mt-4 pt-3 border-t border-theme-border">
 				<div class="flex justify-between text-sm mb-2">
-					<span class="text-gray-500">Activities</span>
-					<span class="text-white font-medium">{exerciseCount}</span>
+					<span class="text-theme-text-muted">Activities</span>
+					<span class="text-theme-text font-medium">{exerciseCount}</span>
 				</div>
 				<div class="flex justify-between text-sm">
-					<span class="text-gray-500">Calories burned</span>
-					<span class="text-white font-medium">{totalCaloriesBurned.toLocaleString()}</span>
+					<span class="text-theme-text-muted">Calories burned</span>
+					<span class="text-theme-text font-medium">{totalCaloriesBurned.toLocaleString()}</span>
 				</div>
 			</div>
 
@@ -154,15 +154,15 @@
 				<div class="mt-3 space-y-2">
 					{#each recentActivities as activity}
 						<div class="flex justify-between items-center text-xs">
-							<span class="text-gray-400 truncate flex-1">{activity.name}</span>
-							<span class="text-gray-500 ml-2">{formatDuration(activity.duration)}</span>
+							<span class="text-theme-text-secondary truncate flex-1">{activity.name}</span>
+							<span class="text-theme-text-muted ml-2">{formatDuration(activity.duration)}</span>
 						</div>
 					{/each}
 				</div>
 			{/if}
 		{:else}
-			<div class="mt-4 pt-3 border-t border-dark-border">
-				<p class="text-sm text-gray-500">No activities recorded today</p>
+			<div class="mt-4 pt-3 border-t border-theme-border">
+				<p class="text-sm text-theme-text-muted">No activities recorded today</p>
 			</div>
 		{/if}
 	{/if}
@@ -170,7 +170,7 @@
 
 <style>
 	.tile {
-		@apply bg-dark-card rounded-xl p-4 border border-dark-border transition-all duration-200;
+		@apply bg-theme-card rounded-xl p-4 border border-theme-border transition-all duration-200;
 	}
 
 	.tile:hover {

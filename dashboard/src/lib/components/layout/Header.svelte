@@ -60,7 +60,7 @@
 	});
 </script>
 
-<header class="bg-dark-card border-b border-dark-border sticky top-0 z-50">
+<header class="bg-theme-card border-b border-theme-border sticky top-0 z-50">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex items-center justify-between h-16">
 			<!-- Logo -->
@@ -79,7 +79,7 @@
 						<circle cx="18" cy="7" r="2" />
 						<circle cx="18" cy="13" r="2" />
 					</svg>
-					<span class="text-xl font-semibold text-white">Fitbit</span>
+					<span class="text-xl font-semibold text-theme-text">Fitbit</span>
 				</a>
 			</div>
 
@@ -87,7 +87,7 @@
 			<div class="flex items-center space-x-2">
 				<button
 					onclick={goToPreviousDay}
-					class="p-2 rounded-lg hover:bg-dark-border transition-colors"
+					class="p-2 rounded-lg hover:bg-theme-border transition-colors"
 					aria-label="Previous day"
 				>
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,38 +98,38 @@
 				<div class="relative date-picker-container">
 					<button
 						onclick={(e) => { e.stopPropagation(); showDatePicker = !showDatePicker; }}
-						class="px-4 py-2 rounded-lg hover:bg-dark-border transition-colors text-center min-w-[200px]"
+						class="px-4 py-2 rounded-lg hover:bg-theme-border transition-colors text-center min-w-[200px]"
 					>
-						<span class="text-sm text-gray-400">
+						<span class="text-sm text-theme-text-secondary">
 							{#if isToday($selectedDate)}
 								Today
 							{:else}
 								{format($selectedDate, 'MMM d')}
 							{/if}
 						</span>
-						<p class="text-white font-medium">{$formattedDate}</p>
+						<p class="text-theme-text font-medium">{$formattedDate}</p>
 					</button>
 
 					<!-- Date Picker Dropdown -->
 					{#if showDatePicker}
-						<div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-dark-card border border-dark-border rounded-xl shadow-xl p-4 z-50 min-w-[300px]">
+						<div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-theme-card border border-theme-border rounded-xl shadow-xl p-4 z-50 min-w-[300px]">
 							<!-- Month Navigation -->
 							<div class="flex items-center justify-between mb-4">
 								<button
 									onclick={prevMonth}
-									class="p-1 rounded hover:bg-dark-border transition-colors"
+									class="p-1 rounded hover:bg-theme-border transition-colors"
 									aria-label="Previous month"
 								>
 									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 									</svg>
 								</button>
-								<span class="text-white font-medium">
+								<span class="text-theme-text font-medium">
 									{format(currentMonth, 'MMMM yyyy')}
 								</span>
 								<button
 									onclick={nextMonth}
-									class="p-1 rounded hover:bg-dark-border transition-colors"
+									class="p-1 rounded hover:bg-theme-border transition-colors"
 									aria-label="Next month"
 								>
 									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,7 +141,7 @@
 							<!-- Day Headers -->
 							<div class="grid grid-cols-7 gap-1 mb-2">
 								{#each ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as day}
-									<div class="text-center text-xs text-gray-500 font-medium py-1">
+									<div class="text-center text-xs text-theme-text-muted font-medium py-1">
 										{day}
 									</div>
 								{/each}
@@ -154,9 +154,9 @@
 										onclick={() => handleDateClick(day)}
 										class="p-2 text-sm rounded-lg transition-colors
 											{isSameDay(day, $selectedDate) ? 'bg-fitbit-steps text-white' : ''}
-											{!isSameMonth(day, currentMonth) ? 'text-gray-600' : 'text-gray-300'}
+											{!isSameMonth(day, currentMonth) ? 'text-theme-text-dim' : 'text-theme-text-bright'}
 											{isToday(day) && !isSameDay(day, $selectedDate) ? 'ring-1 ring-fitbit-steps' : ''}
-											hover:bg-dark-border"
+											hover:bg-theme-border"
 									>
 										{format(day, 'd')}
 									</button>
@@ -164,7 +164,7 @@
 							</div>
 
 							<!-- Quick Actions -->
-							<div class="mt-4 pt-3 border-t border-dark-border flex justify-between">
+							<div class="mt-4 pt-3 border-t border-theme-border flex justify-between">
 								<button
 									onclick={() => handleDateClick(new Date())}
 									class="text-sm text-fitbit-steps hover:underline"
@@ -173,13 +173,13 @@
 								</button>
 								<button
 									onclick={() => handleDateClick(addDays(new Date(), -1))}
-									class="text-sm text-gray-400 hover:text-white"
+									class="text-sm text-theme-text-secondary hover:text-theme-text"
 								>
 									Yesterday
 								</button>
 								<button
 									onclick={() => handleDateClick(addDays(new Date(), -7))}
-									class="text-sm text-gray-400 hover:text-white"
+									class="text-sm text-theme-text-secondary hover:text-theme-text"
 								>
 									Last Week
 								</button>
@@ -190,7 +190,7 @@
 
 				<button
 					onclick={goToNextDay}
-					class="p-2 rounded-lg hover:bg-dark-border transition-colors"
+					class="p-2 rounded-lg hover:bg-theme-border transition-colors"
 					aria-label="Next day"
 				>
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

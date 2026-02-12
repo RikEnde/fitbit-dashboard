@@ -4,6 +4,7 @@
     import {setContextClient} from '@urql/svelte';
     import {client} from '$graphql/client';
     import {profile, profileError, profileLoading} from '$stores/profile';
+    import {preferences} from '$stores/preferences';
     import {PROFILE_QUERY} from '$graphql/queries';
     import type {Snippet} from 'svelte';
     import {onMount} from 'svelte';
@@ -16,6 +17,14 @@
 
 	// Set up URQL client for the entire app
 	setContextClient(client);
+
+	// Sync theme class with preferences store
+	onMount(() => {
+		const unsub = preferences.subscribe((prefs) => {
+			document.documentElement.classList.toggle('dark', prefs.theme === 'dark');
+		});
+		return unsub;
+	});
 
 	// Load profile on mount
 	onMount(async () => {
@@ -35,7 +44,7 @@
 	});
 </script>
 
-<div class="min-h-screen bg-dark-bg text-white">
+<div class="min-h-screen bg-theme-bg text-theme-text">
 	<Header />
 	<main class="max-w-7xl mx-auto">
 		{@render children()}

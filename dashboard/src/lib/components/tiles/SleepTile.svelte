@@ -104,9 +104,9 @@
 	class="tile block cursor-pointer group"
 >
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">Sleep</h3>
+		<h3 class="text-sm font-medium text-theme-text-secondary uppercase tracking-wide">Sleep</h3>
 		<svg
-			class="w-4 h-4 text-gray-500 group-hover:text-white transition-colors"
+			class="w-4 h-4 text-theme-text-muted group-hover:text-theme-text transition-colors"
 			fill="none"
 			stroke="currentColor"
 			viewBox="0 0 24 24"
@@ -117,9 +117,9 @@
 
 	{#if loading}
 		<div class="animate-pulse space-y-3">
-			<div class="h-8 bg-dark-border rounded w-1/2"></div>
-			<div class="h-4 bg-dark-border rounded w-3/4"></div>
-			<div class="h-10 bg-dark-border rounded w-full mt-3"></div>
+			<div class="h-8 bg-theme-border rounded w-1/2"></div>
+			<div class="h-4 bg-theme-border rounded w-3/4"></div>
+			<div class="h-10 bg-theme-border rounded w-full mt-3"></div>
 		</div>
 	{:else if error}
 		<div class="text-red-400 text-sm">{error}</div>
@@ -141,18 +141,18 @@
 			<!-- Stats -->
 			<div class="flex-1">
 				{#if totalSleep > 0}
-					<p class="text-3xl font-bold text-white">{formatDuration(totalSleep)}</p>
-					<p class="text-sm text-gray-400 mt-1">
+					<p class="text-3xl font-bold text-theme-text">{formatDuration(totalSleep)}</p>
+					<p class="text-sm text-theme-text-secondary mt-1">
 						Goal: {formatDuration(goal)}
 						{#if percentage >= 100}
 							<span class="text-green-400 ml-1">({percentage}%)</span>
 						{:else}
-							<span class="text-gray-500 ml-1">({percentage}%)</span>
+							<span class="text-theme-text-muted ml-1">({percentage}%)</span>
 						{/if}
 					</p>
 				{:else}
-					<p class="text-xl font-bold text-gray-500">No data</p>
-					<p class="text-sm text-gray-500 mt-1">No sleep recorded</p>
+					<p class="text-xl font-bold text-theme-text-muted">No data</p>
+					<p class="text-sm text-theme-text-muted mt-1">No sleep recorded</p>
 				{/if}
 			</div>
 		</div>
@@ -160,7 +160,7 @@
 		<!-- Sleep Stages Bar -->
 		{#if totalStageMinutes > 0}
 			<div class="mt-4">
-				<p class="text-xs text-gray-500 mb-2">Sleep Stages</p>
+				<p class="text-xs text-theme-text-muted mb-2">Sleep Stages</p>
 				<div class="flex h-3 rounded-full overflow-hidden">
 					<div
 						class="transition-all"
@@ -183,7 +183,7 @@
 						title="Deep: {sleepStages.deep}m"
 					></div>
 				</div>
-				<div class="flex justify-between mt-2 text-xs text-gray-500">
+				<div class="flex justify-between mt-2 text-xs text-theme-text-muted">
 					<span style="color: {sleepStageColors.deep}">Deep {sleepStages.deep}m</span>
 					<span style="color: {sleepStageColors.light}">Light {sleepStages.light}m</span>
 					<span style="color: {sleepStageColors.rem}">REM {sleepStages.rem}m</span>
@@ -193,8 +193,8 @@
 
 		<!-- Efficiency -->
 		{#if efficiency > 0}
-			<div class="mt-3 pt-3 border-t border-dark-border flex justify-between items-center">
-				<span class="text-xs text-gray-500">Sleep Efficiency</span>
+			<div class="mt-3 pt-3 border-t border-theme-border flex justify-between items-center">
+				<span class="text-xs text-theme-text-muted">Sleep Efficiency</span>
 				<span class="text-sm font-medium" class:text-green-400={efficiency >= 85} class:text-yellow-400={efficiency >= 70 && efficiency < 85} class:text-red-400={efficiency < 70}>{efficiency}%</span>
 			</div>
 		{/if}
@@ -203,7 +203,7 @@
 
 <style>
 	.tile {
-		@apply bg-dark-card rounded-xl p-4 border border-dark-border transition-all duration-200;
+		@apply bg-theme-card rounded-xl p-4 border border-theme-border transition-all duration-200;
 	}
 
 	.tile:hover {

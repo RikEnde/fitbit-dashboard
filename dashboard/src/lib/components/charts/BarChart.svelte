@@ -47,11 +47,11 @@
 
 <div class="w-full">
 	{#if data.length === 0}
-		<div class="w-full flex items-center justify-center text-gray-500 text-sm" style="height: {height}px;">
+		<div class="w-full flex items-center justify-center text-theme-text-muted text-sm" style="height: {height}px;">
 			No data available
 		</div>
 	{:else if !hasData}
-		<div class="w-full flex items-center justify-center text-gray-500 text-sm" style="height: {height}px;">
+		<div class="w-full flex items-center justify-center text-theme-text-muted text-sm" style="height: {height}px;">
 			No activity recorded
 		</div>
 	{:else}
@@ -63,7 +63,7 @@
 					class="absolute left-0 right-0 border-t-2 border-dashed border-gray-500 opacity-50 pointer-events-none"
 					style="top: {goalY}px;"
 				>
-					<span class="absolute -top-5 right-0 text-xs text-gray-400">
+					<span class="absolute -top-5 right-0 text-xs text-theme-text-secondary">
 						Goal: {formatValue(goal)}
 					</span>
 				</div>
@@ -81,13 +81,13 @@
 						onclick={() => handleBarClick(point.date)}
 					>
 						<!-- Tooltip on hover -->
-						<div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-dark-card border border-dark-border rounded px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+						<div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-theme-card border border-theme-border rounded px-2 py-1 text-xs text-theme-text opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
 							{formatDateLabel(point.date)}: {formatValue(point.value)}
 						</div>
 
 						<!-- Bar -->
 						<div
-							class="w-full rounded-t transition-all duration-200 {isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-dark-bg' : ''}"
+							class="w-full rounded-t transition-all duration-200 {isSelected ? 'ring-2 ring-theme-text ring-offset-2 ring-offset-theme-bg' : ''}"
 							style="height: {Math.max(barHeight, point.value > 0 ? 4 : 0)}px; background-color: {meetsGoal ? '#22C55E' : color}; opacity: {isSelected ? 1 : 0.8};"
 						></div>
 					</button>
@@ -99,7 +99,7 @@
 				{#each data as point, i}
 					{#if i === 0 || i === Math.floor(data.length / 2) || i === data.length - 1}
 						<div class="flex-1 text-center">
-							<span class="text-[10px] text-gray-500">{formatDateLabel(point.date)}</span>
+							<span class="text-[10px] text-theme-text-muted">{formatDateLabel(point.date)}</span>
 						</div>
 					{:else}
 						<div class="flex-1"></div>

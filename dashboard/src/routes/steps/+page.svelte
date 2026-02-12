@@ -218,25 +218,25 @@
 		<svg class="w-8 h-8 text-fitbit-steps" fill="currentColor" viewBox="0 0 24 24">
 			<path d="M13.5 5.5c1.09 0 2-.81 2-1.81s-.91-1.69-2-1.69-2 .59-2 1.59.91 1.91 2 1.91zM17.5 10.78c-1.23-.89-2.62-1.35-4.05-1.35-.71 0-1.4.11-2.05.32L10 7.5c-.2-.55-.7-.94-1.28-.94-.83 0-1.5.67-1.5 1.5 0 .19.04.38.11.55l2.44 5.94c.22.53.64.94 1.14 1.14L11 16.5v4c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-4.88l1.87-4.68c.25-.63-.02-1.34-.56-1.66z"/>
 		</svg>
-		<h1 class="text-2xl font-bold text-white">Steps</h1>
+		<h1 class="text-2xl font-bold text-theme-text">Steps</h1>
 	</div>
-	<p class="text-gray-400 mb-8">{$formattedDate}</p>
+	<p class="text-theme-text-secondary mb-8">{$formattedDate}</p>
 
 	{#if loading}
 		<div class="space-y-6">
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 animate-pulse">
-				<div class="h-6 bg-dark-border rounded w-1/4 mb-4"></div>
-				<div class="h-48 bg-dark-border rounded"></div>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 animate-pulse">
+				<div class="h-6 bg-theme-border rounded w-1/4 mb-4"></div>
+				<div class="h-48 bg-theme-border rounded"></div>
 			</div>
 		</div>
 	{:else if error}
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<p class="text-red-400">{error}</p>
 		</div>
 	{:else}
 		<!-- Selected Day Summary -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-			<h2 class="text-lg font-semibold text-white mb-4">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+			<h2 class="text-lg font-semibold text-theme-text mb-4">
 				{format($selectedDate, 'EEEE, MMMM d')}
 			</h2>
 			<div class="flex flex-col md:flex-row gap-6">
@@ -250,13 +250,13 @@
 						color={colors.steps}
 					>
 						<div class="text-center">
-							<p class="text-2xl font-bold text-white">{formatNumber(selectedDayTotal)}</p>
-							<p class="text-xs text-gray-400">steps</p>
+							<p class="text-2xl font-bold text-theme-text">{formatNumber(selectedDayTotal)}</p>
+							<p class="text-xs text-theme-text-secondary">steps</p>
 						</div>
 					</ProgressRing>
 					<div>
-						<p class="text-sm text-gray-400">Goal: {formatNumber(GOAL)}</p>
-						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-gray-500'}">
+						<p class="text-sm text-theme-text-secondary">Goal: {formatNumber(GOAL)}</p>
+						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-theme-text-muted'}">
 							{percentage}% {percentage >= 100 ? 'complete!' : 'of goal'}
 						</p>
 					</div>
@@ -264,17 +264,17 @@
 
 				<!-- Hourly Breakdown -->
 				<div class="flex-1">
-					<p class="text-sm text-gray-400 mb-2">Hourly Activity</p>
+					<p class="text-sm text-theme-text-secondary mb-2">Hourly Activity</p>
 					<MiniBarChart data={hourlyData} color={colors.steps} height={80} showLabels={true} />
 				</div>
 			</div>
 		</div>
 
 		<!-- 30-Day Trend -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-semibold text-white">Last 30 Days</h2>
-				<div class="text-sm text-gray-400">
+				<h2 class="text-lg font-semibold text-theme-text">Last 30 Days</h2>
+				<div class="text-sm text-theme-text-secondary">
 					Click a bar to view details
 				</div>
 			</div>
@@ -289,22 +289,22 @@
 			/>
 
 			<!-- Stats Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-dark-border">
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-theme-border">
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-					<p class="text-xl font-bold text-white">{formatNumber(stats.total30Days)}</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Total</p>
+					<p class="text-xl font-bold text-theme-text">{formatNumber(stats.total30Days)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Daily Average</p>
-					<p class="text-xl font-bold text-white">{formatNumber(stats.average30Days)}</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Daily Average</p>
+					<p class="text-xl font-bold text-theme-text">{formatNumber(stats.average30Days)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Best Day</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Best Day</p>
 					<p class="text-xl font-bold text-fitbit-steps">{formatNumber(stats.best30Days)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Days Met Goal</p>
-					<p class="text-xl font-bold {stats.daysMetGoal > 0 ? 'text-green-400' : 'text-white'}">
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Days Met Goal</p>
+					<p class="text-xl font-bold {stats.daysMetGoal > 0 ? 'text-green-400' : 'text-theme-text'}">
 						{stats.daysMetGoal} / 30
 					</p>
 				</div>
@@ -313,22 +313,22 @@
 
 		<!-- Weekly Averages -->
 		{#if weeklyData.length > 0}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Weekly Averages</h2>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6">
+				<h2 class="text-lg font-semibold text-theme-text mb-4">Weekly Averages</h2>
 				<div class="overflow-x-auto">
 					<table class="w-full">
 						<thead>
-							<tr class="text-left text-xs text-gray-500 uppercase tracking-wide">
+							<tr class="text-left text-xs text-theme-text-muted uppercase tracking-wide">
 								<th class="pb-3">Week</th>
 								<th class="pb-3 text-right">Average Steps</th>
 								<th class="pb-3 text-right">vs Goal</th>
 							</tr>
 						</thead>
-						<tbody class="text-white">
+						<tbody class="text-theme-text">
 							{#each weeklyData as week}
 								{@const avg = Math.round(week.averageSteps)}
 								{@const vsGoal = avg - GOAL}
-								<tr class="border-t border-dark-border">
+								<tr class="border-t border-theme-border">
 									<td class="py-3 text-sm">{week.weekNumber}</td>
 									<td class="py-3 text-right font-medium">{formatNumber(avg)}</td>
 									<td class="py-3 text-right text-sm {vsGoal >= 0 ? 'text-green-400' : 'text-red-400'}">

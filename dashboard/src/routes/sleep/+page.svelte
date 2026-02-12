@@ -279,35 +279,35 @@
 		<svg class="w-8 h-8 text-fitbit-sleep" fill="currentColor" viewBox="0 0 24 24">
 			<path d="M9.27 4.49c-1.63 7.54 3.75 12.41 7.66 13.8C15.54 19.38 13.81 20 12 20c-4.41 0-8-3.59-8-8 0-3.45 2.2-6.4 5.27-7.51m2.21-2.49C6.1 2.05 2 6.02 2 12c0 5.52 4.48 10 10 10 3.72 0 6.97-2.04 8.69-5.07-6.51-.87-11.15-6.49-9.21-12.93z"/>
 		</svg>
-		<h1 class="text-2xl font-bold text-white">Sleep</h1>
+		<h1 class="text-2xl font-bold text-theme-text">Sleep</h1>
 	</div>
-	<p class="text-gray-400 mb-8">{$formattedDate}</p>
+	<p class="text-theme-text-secondary mb-8">{$formattedDate}</p>
 
 	{#if loading}
 		<div class="space-y-6">
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 animate-pulse">
-				<div class="h-6 bg-dark-border rounded w-1/4 mb-4"></div>
-				<div class="h-48 bg-dark-border rounded"></div>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 animate-pulse">
+				<div class="h-6 bg-theme-border rounded w-1/4 mb-4"></div>
+				<div class="h-48 bg-theme-border rounded"></div>
 			</div>
 		</div>
 	{:else if error}
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<p class="text-red-400">{error}</p>
 		</div>
 	{:else if !sleepLog}
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
-			<p class="text-gray-400 text-center py-12">No sleep data recorded for this date</p>
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
+			<p class="text-theme-text-secondary text-center py-12">No sleep data recorded for this date</p>
 		</div>
 	{:else}
 		<!-- Sleep Summary Card -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
 			<div class="flex justify-between items-start mb-4">
-				<h2 class="text-lg font-semibold text-white">
+				<h2 class="text-lg font-semibold text-theme-text">
 					{format(parseISO(sleepLog.dateOfSleep), 'EEEE, MMMM d')}
 				</h2>
 				{#if sleepScore}
 					<div class="text-right">
-						<p class="text-xs text-gray-500 uppercase">Sleep Score</p>
+						<p class="text-xs text-theme-text-muted uppercase">Sleep Score</p>
 						<p class="text-3xl font-bold {getScoreColor(sleepScore.overallScore)}">{sleepScore.overallScore}</p>
 					</div>
 				{/if}
@@ -324,16 +324,16 @@
 						color={colors.sleep}
 					>
 						<div class="text-center">
-							<p class="text-xl font-bold text-white">{formatSleepDuration(sleepLog.minutesAsleep)}</p>
-							<p class="text-xs text-gray-400">asleep</p>
+							<p class="text-xl font-bold text-theme-text">{formatSleepDuration(sleepLog.minutesAsleep)}</p>
+							<p class="text-xs text-theme-text-secondary">asleep</p>
 						</div>
 					</ProgressRing>
 					<div class="space-y-1">
-						<p class="text-sm text-gray-400">Goal: {formatSleepDuration(SLEEP_GOAL)}</p>
-						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-gray-500'}">
+						<p class="text-sm text-theme-text-secondary">Goal: {formatSleepDuration(SLEEP_GOAL)}</p>
+						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-theme-text-muted'}">
 							{percentage}% {percentage >= 100 ? 'achieved' : 'of goal'}
 						</p>
-						<p class="text-xs text-gray-500 mt-2">
+						<p class="text-xs text-theme-text-muted mt-2">
 							{format(parseISO(sleepLog.startTime), 'h:mm a')} - {format(parseISO(sleepLog.endTime), 'h:mm a')}
 						</p>
 					</div>
@@ -341,20 +341,20 @@
 
 				<!-- Stats Grid -->
 				<div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Time in Bed</p>
-						<p class="text-lg font-bold text-white">{formatSleepDuration(sleepLog.timeInBed)}</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Time in Bed</p>
+						<p class="text-lg font-bold text-theme-text">{formatSleepDuration(sleepLog.timeInBed)}</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Time Awake</p>
-						<p class="text-lg font-bold text-white">{formatSleepDuration(sleepLog.minutesAwake)}</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Time Awake</p>
+						<p class="text-lg font-bold text-theme-text">{formatSleepDuration(sleepLog.minutesAwake)}</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Fell Asleep In</p>
-						<p class="text-lg font-bold text-white">{sleepLog.minutesToFallAsleep}m</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Fell Asleep In</p>
+						<p class="text-lg font-bold text-theme-text">{sleepLog.minutesToFallAsleep}m</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Efficiency</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Efficiency</p>
 						<p class="text-lg font-bold {sleepLog.efficiency >= 85 ? 'text-green-400' : sleepLog.efficiency >= 70 ? 'text-yellow-400' : 'text-red-400'}">
 							{sleepLog.efficiency}%
 						</p>
@@ -365,8 +365,8 @@
 
 		<!-- Sleep Stages Timeline -->
 		{#if sleepLog.levelData && sleepLog.levelData.length > 0}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Sleep Stages</h2>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+				<h2 class="text-lg font-semibold text-theme-text mb-4">Sleep Stages</h2>
 				<SleepStagesChart
 					data={sleepLog.levelData}
 					startTime={sleepLog.startTime}
@@ -375,38 +375,38 @@
 				/>
 
 				<!-- Stage Summary -->
-				<div class="grid grid-cols-4 gap-4 mt-6 pt-4 border-t border-dark-border">
+				<div class="grid grid-cols-4 gap-4 mt-6 pt-4 border-t border-theme-border">
 					<div class="text-center">
 						<div class="flex items-center justify-center gap-2 mb-1">
 							<div class="w-3 h-3 rounded" style="background-color: {sleepStageColors.awake}"></div>
-							<span class="text-xs text-gray-400">Awake</span>
+							<span class="text-xs text-theme-text-secondary">Awake</span>
 						</div>
-						<p class="text-lg font-bold text-white">{sleepStages.awake}m</p>
-						<p class="text-xs text-gray-500">{totalStageMinutes > 0 ? Math.round((sleepStages.awake / totalStageMinutes) * 100) : 0}%</p>
+						<p class="text-lg font-bold text-theme-text">{sleepStages.awake}m</p>
+						<p class="text-xs text-theme-text-muted">{totalStageMinutes > 0 ? Math.round((sleepStages.awake / totalStageMinutes) * 100) : 0}%</p>
 					</div>
 					<div class="text-center">
 						<div class="flex items-center justify-center gap-2 mb-1">
 							<div class="w-3 h-3 rounded" style="background-color: {sleepStageColors.rem}"></div>
-							<span class="text-xs text-gray-400">REM</span>
+							<span class="text-xs text-theme-text-secondary">REM</span>
 						</div>
-						<p class="text-lg font-bold text-white">{sleepStages.rem}m</p>
-						<p class="text-xs text-gray-500">{totalStageMinutes > 0 ? Math.round((sleepStages.rem / totalStageMinutes) * 100) : 0}%</p>
+						<p class="text-lg font-bold text-theme-text">{sleepStages.rem}m</p>
+						<p class="text-xs text-theme-text-muted">{totalStageMinutes > 0 ? Math.round((sleepStages.rem / totalStageMinutes) * 100) : 0}%</p>
 					</div>
 					<div class="text-center">
 						<div class="flex items-center justify-center gap-2 mb-1">
 							<div class="w-3 h-3 rounded" style="background-color: {sleepStageColors.light}"></div>
-							<span class="text-xs text-gray-400">Light</span>
+							<span class="text-xs text-theme-text-secondary">Light</span>
 						</div>
-						<p class="text-lg font-bold text-white">{sleepStages.light}m</p>
-						<p class="text-xs text-gray-500">{totalStageMinutes > 0 ? Math.round((sleepStages.light / totalStageMinutes) * 100) : 0}%</p>
+						<p class="text-lg font-bold text-theme-text">{sleepStages.light}m</p>
+						<p class="text-xs text-theme-text-muted">{totalStageMinutes > 0 ? Math.round((sleepStages.light / totalStageMinutes) * 100) : 0}%</p>
 					</div>
 					<div class="text-center">
 						<div class="flex items-center justify-center gap-2 mb-1">
 							<div class="w-3 h-3 rounded" style="background-color: {sleepStageColors.deep}"></div>
-							<span class="text-xs text-gray-400">Deep</span>
+							<span class="text-xs text-theme-text-secondary">Deep</span>
 						</div>
-						<p class="text-lg font-bold text-white">{sleepStages.deep}m</p>
-						<p class="text-xs text-gray-500">{totalStageMinutes > 0 ? Math.round((sleepStages.deep / totalStageMinutes) * 100) : 0}%</p>
+						<p class="text-lg font-bold text-theme-text">{sleepStages.deep}m</p>
+						<p class="text-xs text-theme-text-muted">{totalStageMinutes > 0 ? Math.round((sleepStages.deep / totalStageMinutes) * 100) : 0}%</p>
 					</div>
 				</div>
 			</div>
@@ -414,34 +414,34 @@
 
 		<!-- Sleep Score Breakdown -->
 		{#if sleepScore}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Sleep Score Breakdown</h2>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+				<h2 class="text-lg font-semibold text-theme-text mb-4">Sleep Score Breakdown</h2>
 				<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-					<div class="text-center p-4 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase mb-2">Duration</p>
+					<div class="text-center p-4 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase mb-2">Duration</p>
 						<p class="text-2xl font-bold {getScoreColor(sleepScore.durationScore ?? 0)}">{sleepScore.durationScore ?? '--'}</p>
 					</div>
-					<div class="text-center p-4 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase mb-2">Composition</p>
+					<div class="text-center p-4 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase mb-2">Composition</p>
 						<p class="text-2xl font-bold {getScoreColor(sleepScore.compositionScore ?? 0)}">{sleepScore.compositionScore ?? '--'}</p>
 					</div>
-					<div class="text-center p-4 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase mb-2">Revitalization</p>
+					<div class="text-center p-4 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase mb-2">Revitalization</p>
 						<p class="text-2xl font-bold {getScoreColor(sleepScore.revitalizationScore)}">{sleepScore.revitalizationScore}</p>
 					</div>
-					<div class="text-center p-4 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase mb-2">Resting HR</p>
-						<p class="text-2xl font-bold text-fitbit-heartrate">{sleepScore.restingHeartRate} <span class="text-sm text-gray-400">bpm</span></p>
+					<div class="text-center p-4 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase mb-2">Resting HR</p>
+						<p class="text-2xl font-bold text-fitbit-heartrate">{sleepScore.restingHeartRate} <span class="text-sm text-theme-text-secondary">bpm</span></p>
 					</div>
 				</div>
 			</div>
 		{/if}
 
 		<!-- 30-Day Trend -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-semibold text-white">Last 30 Days</h2>
-				<div class="text-sm text-gray-400">
+				<h2 class="text-lg font-semibold text-theme-text">Last 30 Days</h2>
+				<div class="text-sm text-theme-text-secondary">
 					Sleep duration trend
 				</div>
 			</div>
@@ -457,22 +457,22 @@
 			/>
 
 			<!-- Stats Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-dark-border">
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-theme-border">
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Avg Sleep</p>
-					<p class="text-xl font-bold text-white">{formatSleepDuration(trendStats.avgSleep)}</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Avg Sleep</p>
+					<p class="text-xl font-bold text-theme-text">{formatSleepDuration(trendStats.avgSleep)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Avg Efficiency</p>
-					<p class="text-xl font-bold {trendStats.avgEfficiency >= 85 ? 'text-green-400' : 'text-white'}">{trendStats.avgEfficiency}%</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Avg Efficiency</p>
+					<p class="text-xl font-bold {trendStats.avgEfficiency >= 85 ? 'text-green-400' : 'text-theme-text'}">{trendStats.avgEfficiency}%</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Best Night</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Best Night</p>
 					<p class="text-xl font-bold text-fitbit-sleep">{formatSleepDuration(trendStats.bestSleep)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Met Goal</p>
-					<p class="text-xl font-bold {trendStats.daysMetGoal > 0 ? 'text-green-400' : 'text-white'}">
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Met Goal</p>
+					<p class="text-xl font-bold {trendStats.daysMetGoal > 0 ? 'text-green-400' : 'text-theme-text'}">
 						{trendStats.daysMetGoal} / 30
 					</p>
 				</div>

@@ -254,50 +254,50 @@
 		<svg class="w-8 h-8 text-fitbit-heartrate" fill="currentColor" viewBox="0 0 24 24">
 			<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 		</svg>
-		<h1 class="text-2xl font-bold text-white">Heart Rate</h1>
+		<h1 class="text-2xl font-bold text-theme-text">Heart Rate</h1>
 	</div>
-	<p class="text-gray-400 mb-8">{$formattedDate}</p>
+	<p class="text-theme-text-secondary mb-8">{$formattedDate}</p>
 
 	{#if loading}
 		<div class="space-y-6">
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 animate-pulse">
-				<div class="h-6 bg-dark-border rounded w-1/4 mb-4"></div>
-				<div class="h-48 bg-dark-border rounded"></div>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 animate-pulse">
+				<div class="h-6 bg-theme-border rounded w-1/4 mb-4"></div>
+				<div class="h-48 bg-theme-border rounded"></div>
 			</div>
 		</div>
 	{:else if error}
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<p class="text-red-400">{error}</p>
 		</div>
 	{:else}
 		<!-- Selected Day Summary -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-			<h2 class="text-lg font-semibold text-white mb-4">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+			<h2 class="text-lg font-semibold text-theme-text mb-4">
 				{format($selectedDate, 'EEEE, MMMM d')}
 			</h2>
 
 			<!-- Stats Row -->
 			<div class="grid grid-cols-3 gap-4 mb-6">
 				<div class="text-center">
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Resting</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Resting</p>
 					<p class="text-2xl font-bold text-fitbit-heartrate">{dayStats.resting || '--'}</p>
-					<p class="text-xs text-gray-500">bpm</p>
+					<p class="text-xs text-theme-text-muted">bpm</p>
 				</div>
 				<div class="text-center">
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Min</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Min</p>
 					<p class="text-2xl font-bold text-blue-400">{dayStats.min || '--'}</p>
-					<p class="text-xs text-gray-500">bpm</p>
+					<p class="text-xs text-theme-text-muted">bpm</p>
 				</div>
 				<div class="text-center">
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Max</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Max</p>
 					<p class="text-2xl font-bold text-orange-400">{dayStats.max || '--'}</p>
-					<p class="text-xs text-gray-500">bpm</p>
+					<p class="text-xs text-theme-text-muted">bpm</p>
 				</div>
 			</div>
 
 			<!-- Heart Rate Chart -->
 			<div class="mb-6">
-				<p class="text-sm text-gray-400 mb-2">Heart Rate Throughout the Day</p>
+				<p class="text-sm text-theme-text-secondary mb-2">Heart Rate Throughout the Day</p>
 				<LineChart
 					data={heartRateData}
 					color={colors.heartrate}
@@ -311,27 +311,27 @@
 
 			<!-- Hourly Average Bar Chart -->
 			<div>
-				<p class="text-sm text-gray-400 mb-2">Hourly Averages</p>
+				<p class="text-sm text-theme-text-secondary mb-2">Hourly Averages</p>
 				<MiniBarChart data={hourlyData} color={colors.heartrate} height={60} showLabels={true} />
 			</div>
 		</div>
 
 		<!-- Heart Rate Zones -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-			<h2 class="text-lg font-semibold text-white mb-4">Heart Rate Zones</h2>
-			<p class="text-sm text-gray-400 mb-4">Time spent in each zone today</p>
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+			<h2 class="text-lg font-semibold text-theme-text mb-4">Heart Rate Zones</h2>
+			<p class="text-sm text-theme-text-secondary mb-4">Time spent in each zone today</p>
 
 			<div class="space-y-3">
 				{#each zoneDistribution as zone}
 					<div class="flex items-center gap-4">
-						<div class="w-24 text-sm text-gray-300">{zone.name}</div>
-						<div class="flex-1 h-6 bg-dark-border rounded-full overflow-hidden">
+						<div class="w-24 text-sm text-theme-text-bright">{zone.name}</div>
+						<div class="flex-1 h-6 bg-theme-border rounded-full overflow-hidden">
 							<div
 								class="h-full rounded-full transition-all duration-500"
 								style="width: {zone.percentage}%; background-color: {zone.color};"
 							></div>
 						</div>
-						<div class="w-20 text-right text-sm text-gray-400">
+						<div class="w-20 text-right text-sm text-theme-text-secondary">
 							{zone.minutes} min ({Math.round(zone.percentage)}%)
 						</div>
 					</div>
@@ -340,18 +340,18 @@
 		</div>
 
 		<!-- Resting Heart Rate Trend -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-semibold text-white">Resting Heart Rate</h2>
-				<div class="flex gap-1 bg-dark-bg rounded-lg p-1">
+				<h2 class="text-lg font-semibold text-theme-text">Resting Heart Rate</h2>
+				<div class="flex gap-1 bg-theme-bg rounded-lg p-1">
 					<button
-						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '30d' ? 'bg-dark-card text-white' : 'text-gray-400 hover:text-white'}"
+						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '30d' ? 'bg-theme-card text-theme-text' : 'text-theme-text-secondary hover:text-theme-text'}"
 						onclick={() => handlePeriodChange('30d')}
 					>
 						30 Days
 					</button>
 					<button
-						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '1y' ? 'bg-dark-card text-white' : 'text-gray-400 hover:text-white'}"
+						class="px-3 py-1 text-sm rounded-md transition-colors {trendPeriod === '1y' ? 'bg-theme-card text-theme-text' : 'text-theme-text-secondary hover:text-theme-text'}"
 						onclick={() => handlePeriodChange('1y')}
 					>
 						1 Year
@@ -371,18 +371,18 @@
 			/>
 
 			<!-- Stats Grid -->
-			<div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-dark-border">
+			<div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-theme-border">
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">{trendPeriod === '30d' ? '30-Day' : '1-Year'} Average</p>
-					<p class="text-xl font-bold text-white">{trendStats.avgResting} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">{trendPeriod === '30d' ? '30-Day' : '1-Year'} Average</p>
+					<p class="text-xl font-bold text-theme-text">{trendStats.avgResting} <span class="text-sm text-theme-text-secondary">bpm</span></p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Lowest</p>
-					<p class="text-xl font-bold text-blue-400">{trendStats.lowestResting} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Lowest</p>
+					<p class="text-xl font-bold text-blue-400">{trendStats.lowestResting} <span class="text-sm text-theme-text-secondary">bpm</span></p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Highest</p>
-					<p class="text-xl font-bold text-orange-400">{trendStats.highestResting} <span class="text-sm text-gray-400">bpm</span></p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Highest</p>
+					<p class="text-xl font-bold text-orange-400">{trendStats.highestResting} <span class="text-sm text-theme-text-secondary">bpm</span></p>
 				</div>
 			</div>
 		</div>

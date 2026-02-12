@@ -35,9 +35,9 @@
 		style="--tile-color: {color}"
 	>
 		<div class="flex items-center justify-between mb-3">
-			<h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">{title}</h3>
+			<h3 class="text-sm font-medium text-theme-text-secondary uppercase tracking-wide">{title}</h3>
 			<svg
-				class="w-4 h-4 text-gray-500 group-hover:text-white transition-colors"
+				class="w-4 h-4 text-theme-text-muted group-hover:text-theme-text transition-colors"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -48,8 +48,8 @@
 
 		{#if loading}
 			<div class="animate-pulse space-y-3">
-				<div class="h-8 bg-dark-border rounded w-1/2"></div>
-				<div class="h-4 bg-dark-border rounded w-3/4"></div>
+				<div class="h-8 bg-theme-border rounded w-1/2"></div>
+				<div class="h-4 bg-theme-border rounded w-3/4"></div>
 			</div>
 		{:else if error}
 			<div class="text-red-400 text-sm">{error}</div>
@@ -60,13 +60,13 @@
 {:else}
 	<div class="tile {sizeClasses[size]}" style="--tile-color: {color}">
 		<div class="flex items-center justify-between mb-3">
-			<h3 class="text-sm font-medium text-gray-400 uppercase tracking-wide">{title}</h3>
+			<h3 class="text-sm font-medium text-theme-text-secondary uppercase tracking-wide">{title}</h3>
 		</div>
 
 		{#if loading}
 			<div class="animate-pulse space-y-3">
-				<div class="h-8 bg-dark-border rounded w-1/2"></div>
-				<div class="h-4 bg-dark-border rounded w-3/4"></div>
+				<div class="h-8 bg-theme-border rounded w-1/2"></div>
+				<div class="h-4 bg-theme-border rounded w-3/4"></div>
 			</div>
 		{:else if error}
 			<div class="text-red-400 text-sm">{error}</div>

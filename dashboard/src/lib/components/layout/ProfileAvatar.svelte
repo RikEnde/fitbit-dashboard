@@ -26,11 +26,11 @@
 <div class="relative profile-container">
 	<button
 		onclick={toggleDropdown}
-		class="w-8 h-8 rounded-full overflow-hidden border-2 border-dark-border hover:border-fitbit-steps transition-colors focus:outline-none focus:ring-2 focus:ring-fitbit-steps focus:ring-offset-2 focus:ring-offset-dark-bg"
+		class="w-8 h-8 rounded-full overflow-hidden border-2 border-theme-border hover:border-fitbit-steps transition-colors focus:outline-none focus:ring-2 focus:ring-fitbit-steps focus:ring-offset-2 focus:ring-offset-theme-bg"
 		aria-label="Open profile menu"
 	>
 		{#if $profileLoading}
-			<div class="w-full h-full bg-dark-border animate-pulse"></div>
+			<div class="w-full h-full bg-theme-border animate-pulse"></div>
 		{:else if $profile?.avatar}
 			<img
 				src="data:image/jpeg;base64,{$profile.avatar}"

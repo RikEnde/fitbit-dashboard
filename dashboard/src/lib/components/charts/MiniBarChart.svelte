@@ -24,11 +24,11 @@
 
 <div class="w-full" style="height: {height}px;">
 	{#if data.length === 0}
-		<div class="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+		<div class="w-full h-full flex items-center justify-center text-theme-text-muted text-xs">
 			No data
 		</div>
 	{:else if !hasData}
-		<div class="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+		<div class="w-full h-full flex items-center justify-center text-theme-text-muted text-xs">
 			No activity
 		</div>
 	{:else}
@@ -44,7 +44,7 @@
 						style="height: {barHeightPx}px; background-color: {color}; min-height: {point.value > 0 ? '2px' : '0'};"
 					></div>
 					{#if showLabels && i % 4 === 0}
-						<span class="text-[8px] text-gray-500 mt-1">{point.label}</span>
+						<span class="text-[8px] text-theme-text-muted mt-1">{point.label}</span>
 					{/if}
 				</div>
 			{/each}
