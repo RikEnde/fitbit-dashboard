@@ -106,13 +106,13 @@
 
 <div class="w-full">
 	{#if data.length === 0}
-		<div class="w-full flex items-center justify-center text-gray-500 text-sm" style="height: {height}px;">
+		<div class="w-full flex items-center justify-center text-theme-text-muted text-sm" style="height: {height}px;">
 			No sleep stage data available
 		</div>
 	{:else}
 		<div class="relative" style="height: {height}px;">
 			<!-- Stage labels on the left -->
-			<div class="absolute left-0 top-0 bottom-10 w-12 flex flex-col justify-between text-[10px] text-gray-500">
+			<div class="absolute left-0 top-0 bottom-10 w-12 flex flex-col justify-between text-[10px] text-theme-text-muted">
 				<span style="color: {sleepStageColors.awake}">Awake</span>
 				<span style="color: {sleepStageColors.rem}">REM</span>
 				<span style="color: {sleepStageColors.light}">Light</span>
@@ -129,7 +129,7 @@
 							y1={20 + i * stageHeight + stageHeight / 2}
 							x2="100%"
 							y2={20 + i * stageHeight + stageHeight / 2}
-							stroke="#3d3d5c"
+							stroke="var(--theme-border)"
 							stroke-dasharray="2,4"
 						/>
 					{/each}
@@ -163,7 +163,7 @@
 				</svg>
 
 				<!-- Time labels -->
-				<div class="flex justify-between text-[10px] text-gray-500 mt-1">
+				<div class="flex justify-between text-[10px] text-theme-text-muted mt-1">
 					<span>{timeLabels.start}</span>
 					<span>{timeLabels.end}</span>
 				</div>

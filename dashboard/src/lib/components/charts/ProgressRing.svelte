@@ -18,7 +18,7 @@
 		size = 120,
 		strokeWidth = 8,
 		color = '#00B0B9',
-		backgroundColor = '#3d3d5c',
+		backgroundColor = 'var(--theme-border)',
 		showPercentage = false,
 		children
 	}: Props = $props();

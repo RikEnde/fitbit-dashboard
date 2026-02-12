@@ -14,11 +14,17 @@ export default {
 					heartrate: '#EF4444',
 					sleep: '#6366F1'
 				},
-				// Dark mode background colors
-				dark: {
-					bg: '#1a1a2e',
-					card: '#252542',
-					border: '#3d3d5c'
+				// Theme colors (resolved via CSS variables for light/dark mode)
+				theme: {
+					bg: 'var(--theme-bg)',
+					card: 'var(--theme-card)',
+					border: 'var(--theme-border)',
+					hover: 'var(--theme-hover)',
+					text: 'var(--theme-text)',
+					'text-secondary': 'var(--theme-text-secondary)',
+					'text-muted': 'var(--theme-text-muted)',
+					'text-dim': 'var(--theme-text-dim)',
+					'text-bright': 'var(--theme-text-bright)'
 				}
 			}
 		}

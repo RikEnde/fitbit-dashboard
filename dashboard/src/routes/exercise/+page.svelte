@@ -231,25 +231,25 @@
 		<svg class="w-8 h-8 text-fitbit-active" fill="currentColor" viewBox="0 0 24 24">
 			<path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1l-5.2 2.2v4.7h2v-3.4l1.8-.7-1.6 8.1-4.9-1-.4 2 7 1.4z"/>
 		</svg>
-		<h1 class="text-2xl font-bold text-white">Exercise</h1>
+		<h1 class="text-2xl font-bold text-theme-text">Exercise</h1>
 	</div>
-	<p class="text-gray-400 mb-8">{$formattedDate}</p>
+	<p class="text-theme-text-secondary mb-8">{$formattedDate}</p>
 
 	{#if loading}
 		<div class="space-y-6">
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 animate-pulse">
-				<div class="h-6 bg-dark-border rounded w-1/4 mb-4"></div>
-				<div class="h-48 bg-dark-border rounded"></div>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 animate-pulse">
+				<div class="h-6 bg-theme-border rounded w-1/4 mb-4"></div>
+				<div class="h-48 bg-theme-border rounded"></div>
 			</div>
 		</div>
 	{:else if error}
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<p class="text-red-400">{error}</p>
 		</div>
 	{:else}
 		<!-- Day Summary -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-			<h2 class="text-lg font-semibold text-white mb-4">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+			<h2 class="text-lg font-semibold text-theme-text mb-4">
 				{format($selectedDate, 'EEEE, MMMM d')}
 			</h2>
 
@@ -264,13 +264,13 @@
 						color={colors.active}
 					>
 						<div class="text-center">
-							<p class="text-xl font-bold text-white">{dayStats.totalActiveMinutes}</p>
-							<p class="text-xs text-gray-400">minutes</p>
+							<p class="text-xl font-bold text-theme-text">{dayStats.totalActiveMinutes}</p>
+							<p class="text-xs text-theme-text-secondary">minutes</p>
 						</div>
 					</ProgressRing>
 					<div class="space-y-1">
-						<p class="text-sm text-gray-400">Goal: {ACTIVE_MINUTES_GOAL} min</p>
-						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-gray-500'}">
+						<p class="text-sm text-theme-text-secondary">Goal: {ACTIVE_MINUTES_GOAL} min</p>
+						<p class="text-sm {percentage >= 100 ? 'text-green-400' : 'text-theme-text-muted'}">
 							{percentage}% {percentage >= 100 ? 'achieved' : 'of goal'}
 						</p>
 					</div>
@@ -278,21 +278,21 @@
 
 				<!-- Stats Grid -->
 				<div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Activities</p>
-						<p class="text-lg font-bold text-white">{dayStats.exerciseCount}</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Activities</p>
+						<p class="text-lg font-bold text-theme-text">{dayStats.exerciseCount}</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Calories</p>
-						<p class="text-lg font-bold text-white">{formatNumber(dayStats.totalCalories)}</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Calories</p>
+						<p class="text-lg font-bold text-theme-text">{formatNumber(dayStats.totalCalories)}</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Steps</p>
-						<p class="text-lg font-bold text-white">{formatNumber(dayStats.totalSteps)}</p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Steps</p>
+						<p class="text-lg font-bold text-theme-text">{formatNumber(dayStats.totalSteps)}</p>
 					</div>
-					<div class="text-center p-3 bg-dark-bg rounded-lg">
-						<p class="text-xs text-gray-500 uppercase">Avg HR</p>
-						<p class="text-lg font-bold text-fitbit-heartrate">{dayStats.avgHeartRate || '--'} <span class="text-xs text-gray-400">bpm</span></p>
+					<div class="text-center p-3 bg-theme-bg rounded-lg">
+						<p class="text-xs text-theme-text-muted uppercase">Avg HR</p>
+						<p class="text-lg font-bold text-fitbit-heartrate">{dayStats.avgHeartRate || '--'} <span class="text-xs text-theme-text-secondary">bpm</span></p>
 					</div>
 				</div>
 			</div>
@@ -300,18 +300,18 @@
 
 		<!-- Exercise Log -->
 		{#if exercises.length > 0}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Activities</h2>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+				<h2 class="text-lg font-semibold text-theme-text mb-4">Activities</h2>
 
 				<div class="space-y-3">
 					{#each exercises as exercise}
 						{@const isExpanded = expandedId === exercise.id}
 						{@const durationMin = Math.round(exercise.activeDuration / 60000)}
-						<div class="bg-dark-bg rounded-lg overflow-hidden">
+						<div class="bg-theme-bg rounded-lg overflow-hidden">
 							<!-- Exercise Header -->
 							<button
 								type="button"
-								class="w-full p-4 flex items-center justify-between hover:bg-dark-border/50 transition-colors"
+								class="w-full p-4 flex items-center justify-between hover:bg-theme-border/50 transition-colors"
 								onclick={() => toggleExpand(exercise.id)}
 							>
 								<div class="flex items-center gap-3">
@@ -321,17 +321,17 @@
 										</svg>
 									</div>
 									<div class="text-left">
-										<p class="font-medium text-white">{exercise.activityName}</p>
-										<p class="text-xs text-gray-500">{formatTime(exercise.startTime)}</p>
+										<p class="font-medium text-theme-text">{exercise.activityName}</p>
+										<p class="text-xs text-theme-text-muted">{formatTime(exercise.startTime)}</p>
 									</div>
 								</div>
 								<div class="flex items-center gap-4">
 									<div class="text-right">
-										<p class="font-medium text-white">{formatDuration(durationMin)}</p>
-										<p class="text-xs text-gray-500">{exercise.calories} cal</p>
+										<p class="font-medium text-theme-text">{formatDuration(durationMin)}</p>
+										<p class="text-xs text-theme-text-muted">{exercise.calories} cal</p>
 									</div>
 									<svg
-										class="w-5 h-5 text-gray-500 transition-transform {isExpanded ? 'rotate-180' : ''}"
+										class="w-5 h-5 text-theme-text-muted transition-transform {isExpanded ? 'rotate-180' : ''}"
 										fill="none"
 										stroke="currentColor"
 										viewBox="0 0 24 24"
@@ -343,46 +343,46 @@
 
 							<!-- Expanded Details -->
 							{#if isExpanded}
-								<div class="px-4 pb-4 border-t border-dark-border">
+								<div class="px-4 pb-4 border-t border-theme-border">
 									<!-- Stats Row -->
 									<div class="grid grid-cols-3 gap-4 py-4">
 										{#if exercise.steps}
 											<div class="text-center">
-												<p class="text-xs text-gray-500">Steps</p>
-												<p class="font-medium text-white">{formatNumber(exercise.steps)}</p>
+												<p class="text-xs text-theme-text-muted">Steps</p>
+												<p class="font-medium text-theme-text">{formatNumber(exercise.steps)}</p>
 											</div>
 										{/if}
 										{#if exercise.averageHeartRate}
 											<div class="text-center">
-												<p class="text-xs text-gray-500">Avg Heart Rate</p>
+												<p class="text-xs text-theme-text-muted">Avg Heart Rate</p>
 												<p class="font-medium text-fitbit-heartrate">{exercise.averageHeartRate} bpm</p>
 											</div>
 										{/if}
 										{#if exercise.elevationGain}
 											<div class="text-center">
-												<p class="text-xs text-gray-500">Elevation</p>
-												<p class="font-medium text-white">{Math.round(exercise.elevationGain)} ft</p>
+												<p class="text-xs text-theme-text-muted">Elevation</p>
+												<p class="font-medium text-theme-text">{Math.round(exercise.elevationGain)} ft</p>
 											</div>
 										{/if}
 									</div>
 
 									<!-- Heart Rate Zones -->
 									{#if exercise.heartRateZones && exercise.heartRateZones.length > 0}
-										<div class="pt-4 border-t border-dark-border">
-											<p class="text-sm text-gray-400 mb-3">Heart Rate Zones</p>
+										<div class="pt-4 border-t border-theme-border">
+											<p class="text-sm text-theme-text-secondary mb-3">Heart Rate Zones</p>
 											<div class="space-y-2">
 												{#each exercise.heartRateZones.filter(z => z.minutes > 0) as zone}
 													{@const totalZoneMinutes = exercise.heartRateZones.reduce((s, z) => s + z.minutes, 0)}
 													{@const zonePct = totalZoneMinutes > 0 ? (zone.minutes / totalZoneMinutes) * 100 : 0}
 													<div class="flex items-center gap-3">
-														<div class="w-20 text-xs text-gray-400">{zone.name}</div>
-														<div class="flex-1 h-4 bg-dark-border rounded-full overflow-hidden">
+														<div class="w-20 text-xs text-theme-text-secondary">{zone.name}</div>
+														<div class="flex-1 h-4 bg-theme-border rounded-full overflow-hidden">
 															<div
 																class="h-full rounded-full"
 																style="width: {zonePct}%; background-color: {getZoneColor(zone.name)};"
 															></div>
 														</div>
-														<div class="w-16 text-right text-xs text-gray-400">{zone.minutes} min</div>
+														<div class="w-16 text-right text-xs text-theme-text-secondary">{zone.minutes} min</div>
 													</div>
 												{/each}
 											</div>
@@ -395,27 +395,27 @@
 				</div>
 			</div>
 		{:else}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-				<p class="text-gray-400 text-center py-8">No activities recorded for this day</p>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+				<p class="text-theme-text-secondary text-center py-8">No activities recorded for this day</p>
 			</div>
 		{/if}
 
 		<!-- Activity Type Breakdown -->
 		{#if activityBreakdown.length > 1}
-			<div class="bg-dark-card rounded-xl border border-dark-border p-6 mb-6">
-				<h2 class="text-lg font-semibold text-white mb-4">Activity Breakdown</h2>
+			<div class="bg-theme-card rounded-xl border border-theme-border p-6 mb-6">
+				<h2 class="text-lg font-semibold text-theme-text mb-4">Activity Breakdown</h2>
 				<div class="space-y-3">
 					{#each activityBreakdown as activity}
 						{@const maxMinutes = Math.max(...activityBreakdown.map(a => a.minutes))}
 						<div class="flex items-center gap-4">
-							<div class="w-32 text-sm text-gray-300 truncate">{activity.name}</div>
-							<div class="flex-1 h-6 bg-dark-border rounded-full overflow-hidden">
+							<div class="w-32 text-sm text-theme-text-bright truncate">{activity.name}</div>
+							<div class="flex-1 h-6 bg-theme-border rounded-full overflow-hidden">
 								<div
 									class="h-full rounded-full bg-fitbit-active"
 									style="width: {(activity.minutes / maxMinutes) * 100}%;"
 								></div>
 							</div>
-							<div class="w-24 text-right text-sm text-gray-400">
+							<div class="w-24 text-right text-sm text-theme-text-secondary">
 								{activity.minutes} min · {activity.count}x
 							</div>
 						</div>
@@ -425,10 +425,10 @@
 		{/if}
 
 		<!-- 30-Day Trend -->
-		<div class="bg-dark-card rounded-xl border border-dark-border p-6">
+		<div class="bg-theme-card rounded-xl border border-theme-border p-6">
 			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-semibold text-white">Last 30 Days</h2>
-				<div class="text-sm text-gray-400">
+				<h2 class="text-lg font-semibold text-theme-text">Last 30 Days</h2>
+				<div class="text-sm text-theme-text-secondary">
 					Active minutes per day
 				</div>
 			</div>
@@ -444,22 +444,22 @@
 			/>
 
 			<!-- Stats Grid -->
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-dark-border">
+			<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-theme-border">
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Total Workouts</p>
-					<p class="text-xl font-bold text-white">{trendStats.totalExercises}</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Total Workouts</p>
+					<p class="text-xl font-bold text-theme-text">{trendStats.totalExercises}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Total Minutes</p>
-					<p class="text-xl font-bold text-white">{formatNumber(trendStats.totalMinutes)}</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Total Minutes</p>
+					<p class="text-xl font-bold text-theme-text">{formatNumber(trendStats.totalMinutes)}</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Daily Average</p>
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Daily Average</p>
 					<p class="text-xl font-bold text-fitbit-active">{trendStats.avgMinutesPerDay} min</p>
 				</div>
 				<div>
-					<p class="text-xs text-gray-500 uppercase tracking-wide">Active Days</p>
-					<p class="text-xl font-bold {trendStats.daysWithExercise > 0 ? 'text-green-400' : 'text-white'}">
+					<p class="text-xs text-theme-text-muted uppercase tracking-wide">Active Days</p>
+					<p class="text-xl font-bold {trendStats.daysWithExercise > 0 ? 'text-green-400' : 'text-theme-text'}">
 						{trendStats.daysWithExercise} / 30
 					</p>
 				</div>

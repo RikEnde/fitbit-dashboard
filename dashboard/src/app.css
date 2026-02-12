@@ -9,34 +9,58 @@
 	--color-active: #22C55E;
 	--color-heartrate: #EF4444;
 	--color-sleep: #6366F1;
+
+	/* Light mode theme colors */
+	--theme-bg: #f0f2f5;
+	--theme-card: #ffffff;
+	--theme-border: #e5e7eb;
+	--theme-hover: #d1d5db;
+	--theme-text: #111827;
+	--theme-text-secondary: #4b5563;
+	--theme-text-muted: #6b7280;
+	--theme-text-dim: #9ca3af;
+	--theme-text-bright: #374151;
 }
 
-/* Custom scrollbar for dark mode */
+.dark {
+	--theme-bg: #1a1a2e;
+	--theme-card: #252542;
+	--theme-border: #3d3d5c;
+	--theme-hover: #4d4d6c;
+	--theme-text: #ffffff;
+	--theme-text-secondary: #9ca3af;
+	--theme-text-muted: #6b7280;
+	--theme-text-dim: #4b5563;
+	--theme-text-bright: #d1d5db;
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-	background: #1a1a2e;
+	background: var(--theme-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-	background: #3d3d5c;
+	background: var(--theme-border);
 	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #4d4d6c;
+	background: var(--theme-hover);
 }
 
 /* Tile hover effect */
 .tile {
-	@apply bg-dark-card rounded-xl p-4 border border-dark-border transition-all duration-200;
+	@apply bg-theme-card rounded-xl p-4 border border-theme-border transition-all duration-200;
 }
 
 .tile:hover {
-	@apply border-gray-500 shadow-lg;
+	@apply shadow-lg;
+	border-color: var(--theme-text-muted);
 }
 
 /* Progress ring animation */

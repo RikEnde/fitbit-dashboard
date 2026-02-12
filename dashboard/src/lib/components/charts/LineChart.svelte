@@ -152,7 +152,7 @@
 	aria-label="Heart rate chart"
 >
 	{#if !hasData}
-		<div class="w-full flex items-center justify-center text-gray-500 text-sm" style="height: {height}px;">
+		<div class="w-full flex items-center justify-center text-theme-text-muted text-sm" style="height: {height}px;">
 			No data available
 		</div>
 	{:else}
@@ -164,14 +164,14 @@
 					y1={label.y}
 					x2={paddingLeft + chartWidth}
 					y2={label.y}
-					stroke="#3d3d5c"
+					stroke="var(--theme-border)"
 					stroke-dasharray="4,4"
 				/>
 				<text
 					x={paddingLeft - 8}
 					y={label.y + 4}
 					text-anchor="end"
-					class="text-[10px] fill-gray-500"
+					class="text-[10px] fill-theme-text-muted"
 				>
 					{label.value}
 				</text>
@@ -203,7 +203,7 @@
 					cy={hoverPoint.y}
 					r="6"
 					fill={color}
-					stroke="white"
+					stroke="var(--theme-text)"
 					stroke-width="2"
 				/>
 				<!-- Tooltip -->
@@ -214,13 +214,13 @@
 						width="80"
 						height="24"
 						rx="4"
-						fill="#252542"
-						stroke="#3d3d5c"
+						fill="var(--theme-card)"
+						stroke="var(--theme-border)"
 					/>
 					<text
 						text-anchor="middle"
 						y="4"
-						class="text-xs fill-white font-medium"
+						class="text-xs fill-theme-text font-medium"
 					>
 						{formatValue(hoverPoint.value)} · {formatTime(hoverPoint.time)}
 					</text>
@@ -233,7 +233,7 @@
 					x={label.x}
 					y={height - 8}
 					text-anchor="middle"
-					class="text-[10px] fill-gray-500"
+					class="text-[10px] fill-theme-text-muted"
 				>
 					{label.time}
 				</text>

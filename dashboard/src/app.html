@@ -1,13 +1,19 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<script>
+			try {
+				const prefs = JSON.parse(localStorage.getItem('fitbit-dashboard-preferences'));
+				if (!prefs || prefs.theme === 'dark') document.documentElement.classList.add('dark');
+			} catch { document.documentElement.classList.add('dark'); }
+		</script>
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Fitbit Dashboard</title>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover" class="bg-dark-bg text-white min-h-screen">
+	<body data-sveltekit-preload-data="hover" class="bg-theme-bg text-theme-text min-h-screen">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
