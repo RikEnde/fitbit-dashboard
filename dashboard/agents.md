@@ -57,6 +57,7 @@ Components are organized in `src/lib/components/`:
 
 ```
 components/
+├── Login.svelte     # Login form (validates credentials against server)
 ├── layout/          # Header, ProfileAvatar, ProfileDropdown
 ├── tiles/           # Dashboard tiles (StepsTile, CaloriesTile, etc.)
 ├── charts/          # Reusable chart components
@@ -155,6 +156,7 @@ The GraphQL backend provides these queries:
 
 Stores are in `src/lib/stores/`:
 
+- **auth.ts**: Credentials store (sessionStorage), derived `Authorization: Basic` header, `login()`/`logout()` functions
 - **dashboard.ts**: Selected date, date range, navigation helpers
 - **preferences.ts**: User preferences (visible tiles, layout)
 - **profile.ts**: User profile data
@@ -327,6 +329,16 @@ The chart uses pixel heights. Ensure parent has explicit height and data has non
 
 The API stores dates without timezone. Ensure you're querying the correct date range and the user's Fitbit data exists for that date.
 
+## Authentication
+
+The dashboard requires login. The `+layout.svelte` gates the entire app behind `Login.svelte`:
+
+- If no credentials in `sessionStorage` -> show login form
+- Login validates credentials via raw fetch to `/graphql` with `{ __typename }`
+- On success, credentials stored in `auth.ts` store (sessionStorage, cleared on tab close)
+- URQL `client.ts` sends `Authorization: Basic` header on every GraphQL request
+- Profile is loaded reactively when credentials change
+
 ## Running the Dashboard
 
 ```bash
@@ -334,7 +346,7 @@ cd dashboard
 npm run dev    # http://localhost:3000
 ```
 
-The backend must be running on port 8080:
+The backend must be running on port 8080 with `FITBIT_API_USER` and `FITBIT_API_PASSWORD` env vars set:
 ```bash
 mvn -pl server spring-boot:run
 ```

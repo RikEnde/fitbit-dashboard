@@ -8,9 +8,6 @@ input DateRange {
 }
 
 type Query {
-    # Health Check
-    healthStatus: HealthStatus!
-
     # Heart Rate Queries
     heartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [HeartRate!]!
     heartRatesPerInterval(range: DateRange!): [SumsOfHeartRates!]!
@@ -42,11 +39,6 @@ type Query {
     # Profile Queries
     profiles(limit: Int = 10, offset: Int = 0): [Profile!]!
     profile(id: ID!): Profile
-}
-
-type HealthStatus {
-    status: String!
-    message: String!
 }
 
 # Heart Rate Types

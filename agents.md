@@ -39,6 +39,7 @@ The `model` module is completely independent, while `server` and `importer` both
 ### Key Dependencies
 - **Spring Boot Data JPA** - ORM and database access
 - **Spring Boot Web** - REST/MVC support
+- **Spring Boot Security** - HTTP Basic Authentication
 - **Spring Data REST** - Auto-generated REST endpoints
 - **Spring GraphQL** - GraphQL API implementation
 - **Kotlinx Coroutines 1.10.1** - Asynchronous file processing
@@ -50,6 +51,7 @@ The `model` module is completely independent, while `server` and `importer` both
 - **JUnit 5** - Testing framework
 - **Spring Boot Test** - Integration testing
 - **Spring GraphQL Test** - GraphQL query testing
+- **Spring Security Test** - Security testing utilities
 - **Docker Compose** - Containerized database deployment
 
 ## Architecture
@@ -104,7 +106,8 @@ model/src/main/kotlin/kenny/fitbit/
 └── sleep/                          # Sleep entities & repositories
 
 server/src/main/kotlin/kenny/fitbit/
-├── FitbitKotlinApplication.kt      # Entry point
+├── FitbitKotlinApplication.kt      # Entry point (@ConfigurationPropertiesScan)
+├── SecurityConfig.kt               # Spring Security: HTTP Basic Auth, SecurityFilterChain
 ├── GraphQLConfig.kt                # GraphQL scalar configuration
 ├── GraphiQlConfiguration.kt        # Custom GraphiQL controller
 ├── Exporters.kt                    # Exporter<T> interface + ExportController + AppleHealthXmlWriter
@@ -149,8 +152,9 @@ dashboard/src/
 │   │   ├── layout/                 # Header, ProfileAvatar, ProfileDropdown
 │   │   ├── tiles/                  # StepsTile, CaloriesTile, HeartRateTile, etc.
 │   │   └── charts/                 # BarChart, LineChart, ProgressRing, etc.
-│   ├── graphql/client.ts           # URQL GraphQL client configuration
-│   ├── stores/                     # Svelte stores (dashboard, preferences, profile)
+│   ├── components/Login.svelte     # Login form (validates credentials against server)
+│   ├── graphql/client.ts           # URQL GraphQL client (sends Basic Auth header)
+│   ├── stores/                     # Svelte stores (dashboard, preferences, profile, auth)
 │   └── utils/                      # Colors, formatters, date utilities
 └── app.css                         # Global Tailwind styles
 
@@ -227,13 +231,10 @@ CsvImporter<T> (abstract class)
 
 ### 3. GraphQL API
 
-**Endpoint:** `/graphql` (with GraphiQL at `/graphiql`)
+**Endpoint:** `/graphql` (with GraphiQL at `/graphiql`) - requires HTTP Basic Auth
 
 **Key Queries:**
 ```graphql
-# Health check
-healthStatus
-
 # Time-series data with pagination
 heartRates(limit: Int!, offset: Int!, range: DateRange)
 steps(limit: Int!, offset: Int!, range: DateRange)
@@ -424,9 +425,9 @@ query {
 }
 ```
 
-### REST API Example
-```
-GET /api/steps?page=0&size=20&sort=dateTime,desc
+### REST API Example (requires auth)
+```bash
+curl -u $FITBIT_API_USER:$FITBIT_API_PASSWORD "http://localhost:8080/api/steps?page=0&size=20&sort=dateTime,desc"
 ```
 
 ## Special Features
@@ -454,18 +455,24 @@ GET /api/steps?page=0&size=20&sort=dateTime,desc
 - CSV parsing for aggregate data
 - Flexible schema mapping
 
-## Security Considerations
+## Security & Authentication
 
-**Current State:**
-- No authentication/authorization on API endpoints
-- Database credentials in application.yml (consider using environment variables for production)
-- Docker Compose uses `.env` file for PostgreSQL credentials
+All API endpoints (`/graphql`, `/graphiql`, `/api/**`) require HTTP Basic Authentication via Spring Security.
 
-**Recommended Enhancements:**
-- Spring Security integration
-- JWT-based authentication
-- Environment variable configuration for sensitive data
-- API rate limiting
+**Implementation:**
+- `SecurityConfig.kt` - `SecurityFilterChain` with HTTP Basic, stateless sessions, CSRF disabled
+- `SecurityProperties` - Credentials bound from `fitbit.security.username/password` in `application.yml`
+- `InMemoryUserDetailsManager` with BCrypt-encoded password
+- Credentials configured via env vars (`FITBIT_API_USER`, `FITBIT_API_PASSWORD`) with no defaults - server fails to start without them
+- `.envrc` (gitignored) holds the actual credentials
+
+**Dashboard auth flow:**
+- `auth.ts` store holds credentials in `sessionStorage` (cleared on tab close)
+- `Login.svelte` validates credentials via test fetch before storing
+- URQL `client.ts` sends `Authorization: Basic` header on every request
+- `+layout.svelte` gates the app behind the login screen
+
+See `security.md` for full details.
 
 ## Deployment
 
@@ -509,7 +516,7 @@ mvn -pl importer test -Dtest=AccountImporterImplTest
 
 ## Future Enhancements
 
-1. **Security:** Implement authentication and authorization
+1. **HTTPS:** TLS/SSL for encrypted data in transit (planned, see `plan.md`)
 2. **Real-time:** WebSocket support for live data streaming
 3. **Analytics:** Machine learning insights from health data
 4. **Export:** CSV and PDF report exports (Apple Health XML export implemented)

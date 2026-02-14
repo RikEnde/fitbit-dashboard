@@ -66,9 +66,9 @@ docker-compose up -d
 # Access points:
 # - PostgreSQL: localhost:5432
 # - pgAdmin: localhost:5050
-# - Server API: localhost:8080
-# - GraphiQL: localhost:8080/graphiql
-# - REST API: localhost:8080/api
+# - Server API: localhost:8080 (requires auth)
+# - GraphiQL: localhost:8080/graphiql (requires auth)
+# - REST API: localhost:8080/api (requires auth)
 ```
 
 ## Architecture
@@ -140,8 +140,8 @@ The `Exporter<T>` interface in `Exporters.kt` provides Apple Health XML export:
 - Paginated queries to handle large datasets
 
 ```bash
-# Export heart rate data for a year
-curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
+# Export heart rate data for a year (requires auth)
+curl -u $FITBIT_API_USER:$FITBIT_API_PASSWORD "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
 ```
 
 ### GraphQL
@@ -154,6 +154,25 @@ Key queries:
 - `restingHeartRates(limit, offset, range)` - Resting heart rate time series
 - `steps`, `calories`, `distances`, `exercises`, `sleeps`, `sleepScores` - Other health data
 
+### Security & Authentication
+
+All API endpoints (`/graphql`, `/graphiql`, `/api/**`) require HTTP Basic Authentication via Spring Security. See `security.md` for full details.
+
+Key files:
+- `server/src/main/kotlin/kenny/fitbit/SecurityConfig.kt` - SecurityFilterChain, user config
+- `dashboard/src/lib/stores/auth.ts` - Credentials store (sessionStorage)
+- `dashboard/src/lib/components/Login.svelte` - Login form
+
+Credentials are configured via environment variables (`FITBIT_API_USER`, `FITBIT_API_PASSWORD`) in `.envrc` (gitignored). No defaults - server fails to start without them.
+
+```bash
+# Authenticated curl
+curl -u $FITBIT_API_USER:$FITBIT_API_PASSWORD http://localhost:8080/api
+
+# Export with auth
+curl -u $FITBIT_API_USER:$FITBIT_API_PASSWORD "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
+```
+
 ### Dashboard Structure
 
 The SvelteKit dashboard in `dashboard/src/lib/`:
@@ -161,8 +180,9 @@ The SvelteKit dashboard in `dashboard/src/lib/`:
 - `components/layout/` - Header, ProfileAvatar, ProfileDropdown
 - `components/tiles/` - StepsTile, CaloriesTile, DistanceTile, HeartRateTile, SleepTile, ActiveMinutesTile
 - `components/charts/` - ProgressRing, MiniBarChart, BarChart, LineChart, SleepStagesChart
-- `graphql/client.ts` - URQL GraphQL client
-- `stores/` - Svelte stores for dashboard state, preferences, profile
+- `components/Login.svelte` - Login form (validates credentials against server)
+- `graphql/client.ts` - URQL GraphQL client (sends Basic Auth header)
+- `stores/` - Svelte stores for dashboard state, preferences, profile, auth
 - `utils/` - Colors, formatters, date utilities
 
 Detail pages in `dashboard/src/routes/`:

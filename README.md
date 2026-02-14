@@ -8,14 +8,23 @@ First, I wanted to be able to preserve and view my historical Fitbit data after 
 Second, I wanted to do this as much as possible using AI tools, without writing any code by hand. 
 
 It took some planning and correcting to make the AI stick to the architecture and not always take the easiest path to 
-implement a feature.
-We have to keep in mind that a significant part of architecture is to keep the code readable and 
-maintainable by humans.
-I can imagine future architectures that are designed never to be touched by humans may favor 
+implement a feature. We have to keep in mind that a significant part of architecture is to keep the code readable and 
+maintainable by humans. I can imagine future architectures that are designed never to be touched by humans may favor 
 very different choices, but as of late 2025 we are not there yet. 
 
-There was a significant leap in capabilities of the AI tools between when the project was started in early 2024 and when 
-it was finished. 
+There was a significant leap in capabilities of the AI tools between when the project was started in early 2025 and when 
+it was finished. By spring 2025 the tools were just starting to become useful, and by the end of the year it was clear 
+that being a "programmer", either as a profession or as an identity, is going to way of weavers and blacksmiths. 
+
+## Disclaimer
+
+If you decide to run this application for yourself, do not expose it to the internet. This is your personal data. 
+Fitbit records when you sleep, when you exercise, your GPS locations (though we are not importing that data). I think 
+it should be obvious why you need to keep this private. The security / authentication serves only to support multiple 
+users, it is not designed to protect your data when exposed to the internet.
+
+I accept no responsibility for any consequences of using this software or the information in this documentation.
+
 
 ## Obtaining Your Fitbit Data
 
