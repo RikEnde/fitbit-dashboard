@@ -1,6 +1,6 @@
 package kenny.fitbit
 
-import org.springframework.boot.context.properties.ConfigurationProperties
+import kenny.fitbit.auth.UserCredentialsRepository
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.Customizer
@@ -9,32 +9,30 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
-
-@ConfigurationProperties(prefix = "fitbit.security")
-data class SecurityProperties(
-    val username: String,
-    val password: String
-)
 
 @Configuration
 @EnableWebSecurity
-class SecurityConfig(private val securityProperties: SecurityProperties) {
+class SecurityConfig {
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
     @Bean
-    fun userDetailsService(passwordEncoder: PasswordEncoder): UserDetailsService {
-        val user = User.builder()
-            .username(securityProperties.username)
-            .password(passwordEncoder.encode(securityProperties.password))
-            .roles("USER")
-            .build()
-        return InMemoryUserDetailsManager(user)
+    fun userDetailsService(userCredentialsRepository: UserCredentialsRepository): UserDetailsService {
+        return UserDetailsService { username ->
+            val credentials = userCredentialsRepository.findByProfile_Username(username)
+                ?: throw UsernameNotFoundException("User not found: $username")
+
+            User.builder()
+                .username(username)
+                .password(credentials.hash)
+                .roles("USER")
+                .build()
+        }
     }
 
     @Bean

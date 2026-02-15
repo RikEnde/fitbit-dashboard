@@ -3,6 +3,7 @@ package kenny.fitbit
 import com.fasterxml.jackson.databind.ObjectMapper
 import kenny.fitbit.calories.CaloriesImporterImpl
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,6 +15,11 @@ class CaloriesImporterImplTest {
 
     @Autowired
     private lateinit var caloriesImporter: CaloriesImporterImpl
+
+    @BeforeEach
+    fun setUp() {
+        caloriesImporter.profile = testProfile()
+    }
 
     @Test
     fun `file pattern excludes imported files`() {

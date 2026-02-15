@@ -1,5 +1,6 @@
 package kenny.fitbit.exercise
 
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
 import org.springframework.graphql.data.method.annotation.Argument
@@ -8,16 +9,20 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.stereotype.Controller
 
 @Controller
-class ExerciseResolver(private val exerciseRepository: ExerciseRepository) {
+class ExerciseResolver(
+    private val exerciseRepository: ExerciseRepository,
+    private val authService: AuthenticatedProfileService
+) {
 
     @QueryMapping
     fun exercises(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Exercise> {
+        val profile = authService.getProfile()
         val pageable = PageRequest.of(offset / limit, limit)
-        
+
         return if (range == null) {
-            exerciseRepository.findAll(pageable).content
+            exerciseRepository.findByProfile(profile, pageable).content
         } else {
-            exerciseRepository.findByStartTimeBetween(range.fromLocal, range.toLocal, pageable).content
+            exerciseRepository.findByProfileAndStartTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 

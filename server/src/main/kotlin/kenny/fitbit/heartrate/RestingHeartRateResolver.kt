@@ -1,5 +1,6 @@
 package kenny.fitbit.heartrate
 
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -10,7 +11,10 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 @Controller
-class RestingHeartRateResolver(private val restingHeartRateRepository: RestingHeartRateRepository) {
+class RestingHeartRateResolver(
+    private val restingHeartRateRepository: RestingHeartRateRepository,
+    private val authService: AuthenticatedProfileService
+) {
 
     @QueryMapping
     fun restingHeartRates(
@@ -18,22 +22,24 @@ class RestingHeartRateResolver(private val restingHeartRateRepository: RestingHe
         @Argument offset: Int,
         @Argument range: DateRange?
     ): List<RestingHeartRate> {
+        val profile = authService.getProfile()
         val pageable = PageRequest.of(
             offset / limit, limit,
             Sort.by("dateTime").descending()
         )
 
         return if (range == null) {
-            restingHeartRateRepository.findAll(pageable).content
+            restingHeartRateRepository.findByProfile(profile, pageable).content
         } else {
-            restingHeartRateRepository.findByDateTimeBetween(range.fromLocal, range.toLocal, pageable).content
+            restingHeartRateRepository.findByProfileAndDateTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 
     @QueryMapping
     fun restingHeartRate(@Argument date: LocalDate): RestingHeartRate? {
+        val profile = authService.getProfile()
         val startOfDay = date.atStartOfDay()
         val endOfDay = date.atTime(LocalTime.MAX)
-        return restingHeartRateRepository.findFirstByDateTimeBetweenOrderByDateTimeDesc(startOfDay, endOfDay)
+        return restingHeartRateRepository.findFirstByProfileAndDateTimeBetweenOrderByDateTimeDesc(profile, startOfDay, endOfDay)
     }
 }

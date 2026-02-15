@@ -7,7 +7,10 @@ import kenny.fitbit.heartrate.DailyHeartRateVariabilityImporter
 import kenny.fitbit.heartrate.HeartRateImporterImpl
 import kenny.fitbit.heartrate.HeartRateVariabilityDetailsImporter
 import kenny.fitbit.heartrate.RestingHeartRateImporter
+import kenny.fitbit.importlog.ImportLog
+import kenny.fitbit.importlog.ImportLogRepository
 import kenny.fitbit.profile.AccountImporter
+import kenny.fitbit.profile.Profile
 import kenny.fitbit.sleep.*
 import kenny.fitbit.steps.StepsImporter
 import org.springframework.boot.ApplicationArguments
@@ -17,6 +20,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.runApplication
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.stereotype.Component
+import java.io.File
+import java.time.LocalDateTime
 
 @SpringBootApplication
 @EntityScan(basePackages = ["kenny.fitbit"])
@@ -51,149 +56,105 @@ class ImportRunner(
     val computedTemperatureImporter: ComputedTemperatureImporter,
     val respiratoryRateSummaryImporter: RespiratoryRateSummaryImporter,
     val dailySpO2Importer: DailySpO2Importer,
-    val accountImporter: AccountImporter
+    val accountImporter: AccountImporter,
+    val importLogRepository: ImportLogRepository
 ) : ApplicationRunner {
+
+    private val dataDir = "../data"
+
+    private val allImporters: List<Importer<*>>
+        get() = listOf(
+            heartRateImporter, stepsImporter, caloriesImporter, distanceImporter,
+            restingHeartRateImporter, exerciseImporter, timeInHeartRateZonesImporter,
+            activityMinutesImporter, activeZoneMinutesImporter, demographicVO2MaxImporter,
+            runVO2MaxImporter, activityGoalImporter, sleepImporter, deviceTemperatureImporter,
+            dailyRespiratoryRateImporter, dailyHeartRateVariabilityImporter,
+            heartRateVariabilityDetailsImporter, minuteSpO2Importer, sleepScoreImporter,
+            computedTemperatureImporter, respiratoryRateSummaryImporter, dailySpO2Importer,
+            accountImporter
+        )
 
     override fun run(args: ApplicationArguments) {
         val all = args.containsOption("all")
         fun hasOption(option: String) = all || args.containsOption(option)
 
-        if (hasOption("heartrate")) {
-            println("Importing heart rate data...")
-            val count = heartRateImporter.import()
-            println("Imported $count heart rate files")
+        // Scan data directory for user directories
+        val dataDirFile = File(dataDir)
+        val userDirs = dataDirFile.listFiles { file -> file.isDirectory }
+            ?.map { it.name }
+            ?.sorted()
+            ?: emptyList()
+
+        if (userDirs.isEmpty()) {
+            println("No user directories found in $dataDir")
+            return
         }
 
-        if (hasOption("steps")) {
-            println("Importing steps data...")
-            val count = stepsImporter.import()
-            println("Imported $count steps files")
-        }
+        println("Found ${userDirs.size} user directories: $userDirs")
 
-        if (hasOption("calories")) {
-            println("Importing calories data...")
-            val count = caloriesImporter.import()
-            println("Imported $count calories files")
-        }
+        for (userDirName in userDirs) {
+            println("\n=== Importing data for user: $userDirName ===")
 
-        if (hasOption("distance")) {
-            println("Importing distance data...")
-            val count = distanceImporter.import()
-            println("Imported $count distance files")
-        }
+            // Set userDir on all importers
+            allImporters.forEach { it.userDir = userDirName }
 
-        if (hasOption("restingheartrate")) {
-            println("Importing resting heart rate data...")
-            val count = restingHeartRateImporter.import()
-            println("Imported $count resting heart rate files")
-        }
-
-        if (hasOption("exercise")) {
-            println("Importing exercise data...")
-            val count = exerciseImporter.import()
-            println("Imported $count exercise files")
-        }
-
-        if (hasOption("timeinzone")) {
-            println("Importing timeinzone data...")
-            val count = timeInHeartRateZonesImporter.import()
-            println("Imported $count timeinzone files")
-        }
-
-        if (hasOption("activityminutes")) {
-            println("Importing activity minutes data...")
-            val count = activityMinutesImporter.import()
-            println("Imported $count activity minutes files")
-        }
-
-        if (hasOption("activezoneminutes")) {
-            println("Importing active zone minutes data...")
-            val count = activeZoneMinutesImporter.import()
-            println("Imported $count active zone minutes files")
-        }
-
-        if (hasOption("vo2max")) {
-            println("Importing demographic VO2 max data...")
-            val count = demographicVO2MaxImporter.import()
-            println("Imported $count demographic VO2 max files")
-        }
-
-        if (hasOption("runvo2max")) {
-            println("Importing run VO2 max data...")
-            val count = runVO2MaxImporter.import()
-            println("Imported $count run VO2 max files")
-        }
-
-        if (hasOption("activitygoals")) {
-            println("Importing activity goals data...")
-            val count = activityGoalImporter.import()
-            println("Imported $count activity goals files")
-        }
-
-        if (hasOption("sleep")) {
-            println("Importing sleep data...")
-            val count = sleepImporter.import()
-            println("Imported $count sleep files")
-        }
-
-        if (hasOption("devicetemperature")) {
-            println("Importing device temperature data...")
-            val count = deviceTemperatureImporter.import()
-            println("Imported $count device temperature files")
-        }
-
-        if (hasOption("respiratoryrate")) {
-            println("Importing daily respiratory rate data...")
-            val count = dailyRespiratoryRateImporter.import()
-            println("Imported $count daily respiratory rate files")
-        }
-
-        if (hasOption("hrv")) {
-            println("Importing daily heart rate variability data...")
-            val count = dailyHeartRateVariabilityImporter.import()
-            println("Imported $count daily heart rate variability files")
-        }
-
-        if (hasOption("hrvdetails")) {
-            println("Importing heart rate variability details data...")
-            val count = heartRateVariabilityDetailsImporter.import()
-            println("Imported $count heart rate variability details files")
-        }
-
-        if (hasOption("minutespo2")) {
-            println("Importing minute SpO2 data...")
-            val count = minuteSpO2Importer.import()
-            println("Imported $count minute SpO2 files")
-        }
-
-        if (hasOption("sleepscore")) {
-            println("Importing sleep score data...")
-            val count = sleepScoreImporter.import()
-            println("Imported $count sleep score files")
-        }
-
-        if (hasOption("computedtemperature")) {
-            println("Importing computed temperature data...")
-            val count = computedTemperatureImporter.import()
-            println("Imported $count computed temperature files")
-        }
-
-        if (hasOption("respiratoryratesummary")) {
-            println("Importing respiratory rate summary data...")
-            val count = respiratoryRateSummaryImporter.import()
-            println("Imported $count respiratory rate summary files")
-        }
-
-        if (hasOption("dailyspo2")) {
-            println("Importing daily SpO2 data...")
-            val count = dailySpO2Importer.import()
-            println("Imported $count daily SpO2 files")
-        }
-
-        if (hasOption("profile")) {
+            // Always import profile first to establish the profile reference
             println("Importing profile data...")
-            val count = accountImporter.import()
-            println("Imported $count profile files")
+            val profileCount = accountImporter.import()
+            println("Imported $profileCount profile files")
+
+            val profile = accountImporter.profile
+            if (profile == null) {
+                println("WARNING: No profile imported for user $userDirName, skipping stats")
+                continue
+            }
+
+            // Set profile on all importers
+            allImporters.forEach { it.profile = profile }
+
+            // Import each stat type and log results
+            importStat("heartrate", hasOption("heartrate"), heartRateImporter, profile)
+            importStat("steps", hasOption("steps"), stepsImporter, profile)
+            importStat("calories", hasOption("calories"), caloriesImporter, profile)
+            importStat("distance", hasOption("distance"), distanceImporter, profile)
+            importStat("restingheartrate", hasOption("restingheartrate"), restingHeartRateImporter, profile)
+            importStat("exercise", hasOption("exercise"), exerciseImporter, profile)
+            importStat("timeinzone", hasOption("timeinzone"), timeInHeartRateZonesImporter, profile)
+            importStat("activityminutes", hasOption("activityminutes"), activityMinutesImporter, profile)
+            importStat("activezoneminutes", hasOption("activezoneminutes"), activeZoneMinutesImporter, profile)
+            importStat("vo2max", hasOption("vo2max"), demographicVO2MaxImporter, profile)
+            importStat("runvo2max", hasOption("runvo2max"), runVO2MaxImporter, profile)
+            importStat("activitygoals", hasOption("activitygoals"), activityGoalImporter, profile)
+            importStat("sleep", hasOption("sleep"), sleepImporter, profile)
+            importStat("devicetemperature", hasOption("devicetemperature"), deviceTemperatureImporter, profile)
+            importStat("respiratoryrate", hasOption("respiratoryrate"), dailyRespiratoryRateImporter, profile)
+            importStat("hrv", hasOption("hrv"), dailyHeartRateVariabilityImporter, profile)
+            importStat("hrvdetails", hasOption("hrvdetails"), heartRateVariabilityDetailsImporter, profile)
+            importStat("minutespo2", hasOption("minutespo2"), minuteSpO2Importer, profile)
+            importStat("sleepscore", hasOption("sleepscore"), sleepScoreImporter, profile)
+            importStat("computedtemperature", hasOption("computedtemperature"), computedTemperatureImporter, profile)
+            importStat("respiratoryratesummary", hasOption("respiratoryratesummary"), respiratoryRateSummaryImporter, profile)
+            importStat("dailyspo2", hasOption("dailyspo2"), dailySpO2Importer, profile)
+        }
+    }
+
+    private fun importStat(statType: String, enabled: Boolean, importer: Importer<*>, profile: Profile) {
+        if (!enabled) return
+
+        println("Importing $statType data...")
+        val count = importer.import()
+        println("Imported $count $statType files")
+
+        if (count > 0 && importer.maxDate != null) {
+            importLogRepository.save(
+                ImportLog(
+                    profile = profile,
+                    statType = statType,
+                    latestDataDate = importer.maxDate!!,
+                    importedAt = LocalDateTime.now(),
+                    fileCount = count
+                )
+            )
         }
     }
 }

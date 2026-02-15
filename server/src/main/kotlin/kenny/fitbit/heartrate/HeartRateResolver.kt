@@ -1,5 +1,6 @@
 package kenny.fitbit.heartrate
 
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -11,25 +12,30 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 @Controller
-class HeartRateResolver(private val heartRateRepository: HeartRateRepository) {
+class HeartRateResolver(
+    private val heartRateRepository: HeartRateRepository,
+    private val authService: AuthenticatedProfileService
+) {
 
     @QueryMapping
     fun heartRates(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<HeartRate> {
-
+        val profile = authService.getProfile()
         val pageable = PageRequest.of(offset / limit, limit,
             Sort.by("time").ascending())
 
         return if (range == null) {
-            heartRateRepository.findAll(pageable).content
+            heartRateRepository.findByProfile(profile, pageable).content
         } else {
-            heartRateRepository.findByTimeBetween(range.fromLocal, range.toLocal, pageable).content
+            heartRateRepository.findByProfileAndTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 
     @QueryMapping
     fun heartRatesPerInterval(@Argument range: DateRange): List<SumsOfHeartRates> {
+        val profile = authService.getProfile()
         return heartRateRepository.sumByTimeBetween(
-            "10 minutes",
+            profileId = profile.id,
+            duration = "10 minutes",
             fromDateTime = range.fromLocal,
             toDateTime = range.toLocal
         ).map {

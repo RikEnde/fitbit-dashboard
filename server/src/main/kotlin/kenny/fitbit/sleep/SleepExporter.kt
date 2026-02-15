@@ -1,6 +1,7 @@
 package kenny.fitbit.sleep
 
 import kenny.fitbit.AppleHealthRecord
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.Exporter
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -24,17 +25,19 @@ interface SleepExporter : Exporter<SleepLevelData> {
 
 @Component
 class SleepExporterImpl(
-    private val sleepRepository: SleepRepository
+    private val sleepRepository: SleepRepository,
+    private val authService: AuthenticatedProfileService
 ) : SleepExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<SleepLevelData> {
+        val profile = authService.getProfile()
         val allSleepData = mutableListOf<SleepLevelData>()
         var page = 0
         val pageSize = 100  // Smaller page size since each Sleep has many level entries
 
         do {
             val pageRequest = PageRequest.of(page, pageSize)
-            val sleepPage = sleepRepository.findByStartTimeBetween(from, to, pageRequest)
+            val sleepPage = sleepRepository.findByProfileAndStartTimeBetween(profile, from, to, pageRequest)
 
             for (sleep in sleepPage.content) {
                 allSleepData.addAll(sleep.levelData)

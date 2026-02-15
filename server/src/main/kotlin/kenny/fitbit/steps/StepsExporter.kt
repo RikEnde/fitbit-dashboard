@@ -1,6 +1,7 @@
 package kenny.fitbit.steps
 
 import kenny.fitbit.AppleHealthRecord
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.Exporter
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -13,17 +14,19 @@ interface StepsExporter : Exporter<Steps> {
 
 @Component
 class StepsExporterImpl(
-    private val repository: StepsRepository
+    private val repository: StepsRepository,
+    private val authService: AuthenticatedProfileService
 ) : StepsExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<Steps> {
+        val profile = authService.getProfile()
         val allData = mutableListOf<Steps>()
         var page = 0
         val pageSize = 10000
 
         do {
             val pageRequest = PageRequest.of(page, pageSize)
-            val result = repository.findByDateTimeBetween(from, to, pageRequest)
+            val result = repository.findByProfileAndDateTimeBetween(profile, from, to, pageRequest)
             allData.addAll(result.content)
             page++
         } while (result.hasNext())

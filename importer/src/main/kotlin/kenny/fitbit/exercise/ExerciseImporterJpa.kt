@@ -23,6 +23,8 @@ class ExerciseImporterImpl(
 
     override val batchSize: Int = 2000
 
+    override fun entityDate(entity: Exercise): LocalDate = entity.startTime.toLocalDate()
+
     override fun parseToEntity(jsonItem: JsonNode): Exercise? {
         val logId = jsonItem.get("logId")?.asLong() ?: return null
         val activityName = jsonItem.get("activityName")?.asText() ?: ""
@@ -63,7 +65,8 @@ class ExerciseImporterImpl(
             elevationGain = elevationGain,
             hasGps = hasGps,
             shouldFetchDetails = shouldFetchDetails,
-            hasActiveZoneMinutes = hasActiveZoneMinutes
+            hasActiveZoneMinutes = hasActiveZoneMinutes,
+            profile = profile!!
         )
 
         // Process heart rate zones
@@ -113,6 +116,8 @@ class ActivityMinutesImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<ActivityMinutes>(repository, entityManager, transactionManager), ActivityMinutesImporter {
 
+    override fun entityDate(entity: ActivityMinutes): LocalDate = entity.dateTime.toLocalDate()
+
     // Track the current file being processed
     private val currentFile = ThreadLocal<String>()
 
@@ -146,7 +151,8 @@ class ActivityMinutesImporterImpl(
             return ActivityMinutes(
                 dateTime = dateTime,
                 value = value,
-                intensity = intensity
+                intensity = intensity,
+                profile = profile!!
             )
         }
         return null
@@ -161,6 +167,8 @@ class ActiveZoneMinutesImporterImpl(
 ) : CsvImporter<ActivityMinutes>(repository, entityManager, transactionManager), ActiveZoneMinutesImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: ActivityMinutes): LocalDate = entity.dateTime.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
@@ -185,7 +193,8 @@ class ActiveZoneMinutesImporterImpl(
         return ActivityMinutes(
             dateTime = dateTime,
             value = totalMinutes,
-            intensity = intensity
+            intensity = intensity,
+            profile = profile!!
         )
     }
 }
@@ -196,6 +205,8 @@ class DemographicVO2MaxImporterImpl(
     entityManager: EntityManager,
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<DemographicVO2Max>(repository, entityManager, transactionManager), DemographicVO2MaxImporter {
+
+    override fun entityDate(entity: DemographicVO2Max): LocalDate = entity.dateTime.toLocalDate()
 
     override fun parseToEntity(jsonItem: JsonNode): DemographicVO2Max? {
         val valueNode = jsonItem.get("value") ?: return null
@@ -214,7 +225,8 @@ class DemographicVO2MaxImporterImpl(
                 demographicVO2MaxError = demographicVO2MaxError,
                 filteredDemographicVO2Max = filteredDemographicVO2Max,
                 filteredDemographicVO2MaxError = filteredDemographicVO2MaxError,
-                dateTime = dateTime
+                dateTime = dateTime,
+                profile = profile!!
             )
         } else null
     }
@@ -226,6 +238,8 @@ class RunVO2MaxImporterImpl(
     entityManager: EntityManager,
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<RunVO2Max>(repository, entityManager, transactionManager), RunVO2MaxImporter {
+
+    override fun entityDate(entity: RunVO2Max): LocalDate = entity.dateTime.toLocalDate()
 
     override fun parseToEntity(jsonItem: JsonNode): RunVO2Max? {
         val valueNode = jsonItem.get("value") ?: return null
@@ -246,7 +260,8 @@ class RunVO2MaxImporterImpl(
                 runVO2MaxError = runVO2MaxError,
                 filteredRunVO2Max = filteredRunVO2Max,
                 filteredRunVO2MaxError = filteredRunVO2MaxError,
-                dateTime = dateTime
+                dateTime = dateTime,
+                profile = profile!!
             )
         } else null
     }
@@ -263,6 +278,8 @@ class ActivityGoalImporterImpl(
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: ActivityGoal): LocalDate = entity.createdOn.toLocalDate()
 
     override fun parseRow(values: List<String>, headers: List<String>): ActivityGoal? {
         if (values.size < 10) return null
@@ -296,7 +313,8 @@ class ActivityGoalImporterImpl(
             startDate = startDate,
             endDate = endDate,
             createdOn = createdOn,
-            editedOn = editedOn
+            editedOn = editedOn,
+            profile = profile!!
         )
     }
 }
@@ -308,6 +326,8 @@ class TimeInHeartRateZonesImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<TimeInHeartRateZones>(repository, entityManager, transactionManager), TimeInHeartRateZonesImporter {
 
+    override fun entityDate(entity: TimeInHeartRateZones): LocalDate = entity.dateTime.toLocalDate()
+
     override fun parseToEntity(jsonItem: JsonNode): TimeInHeartRateZones? {
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
         val valueNode = jsonItem.get("value")
@@ -315,7 +335,7 @@ class TimeInHeartRateZonesImporterImpl(
 
         if (dateTimeStr != null && valuesInZonesNode != null) {
             val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
-            val timeInHeartRateZones = TimeInHeartRateZones(dateTime)
+            val timeInHeartRateZones = TimeInHeartRateZones(dateTime, profile = profile!!)
 
             valuesInZonesNode.fields().forEach { (zoneName, minutesNode) ->
                 val minutes = minutesNode.asDouble()

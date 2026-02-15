@@ -6,6 +6,7 @@ import kenny.fitbit.CsvImporter
 import kenny.fitbit.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -16,6 +17,8 @@ class HeartRateImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<HeartRate>(repository, entityManager, transactionManager), HeartRateImporter {
 
+    override fun entityDate(entity: HeartRate): LocalDate = entity.time.toLocalDate()
+
     override fun parseToEntity(jsonItem: JsonNode): HeartRate? {
         val bpm = jsonItem.get("value")?.get("bpm")?.asInt()
         val confidence = jsonItem.get("value")?.get("confidence")?.asInt()
@@ -23,7 +26,7 @@ class HeartRateImporterImpl(
         val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
 
         return if (bpm != null && confidence != null) {
-            HeartRate(bpm, confidence, dateTime)
+            HeartRate(bpm, confidence, dateTime, profile!!)
         } else {
             null
         }
@@ -37,6 +40,8 @@ class RestingHeartRateImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<RestingHeartRate>(repository, entityManager, transactionManager), RestingHeartRateImporter {
 
+    override fun entityDate(entity: RestingHeartRate): LocalDate = entity.dateTime.toLocalDate()
+
     override fun parseToEntity(jsonItem: JsonNode): RestingHeartRate? {
         val valueNode = jsonItem.get("value")
         val value = valueNode?.get("value")?.asDouble()
@@ -45,7 +50,7 @@ class RestingHeartRateImporterImpl(
         val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
 
         return if (value != null && error != null) {
-            RestingHeartRate(value, error, dateTime)
+            RestingHeartRate(value, error, dateTime, profile!!)
         } else {
             null
         }
@@ -60,6 +65,8 @@ class DailyHeartRateVariabilityImporterImpl(
 ) : CsvImporter<DailyHeartRateVariability>(repository, entityManager, transactionManager), DailyHeartRateVariabilityImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: DailyHeartRateVariability): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -77,7 +84,8 @@ class DailyHeartRateVariabilityImporterImpl(
             timestamp = timestamp,
             rmssd = rmssd,
             nremhr = nremhr,
-            entropy = entropy
+            entropy = entropy,
+            profile = profile!!
         )
     }
 }
@@ -90,6 +98,8 @@ class HeartRateVariabilityDetailsImporterImpl(
 ) : CsvImporter<HeartRateVariabilityDetails>(repository, entityManager, transactionManager), HeartRateVariabilityDetailsImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: HeartRateVariabilityDetails): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -109,7 +119,8 @@ class HeartRateVariabilityDetailsImporterImpl(
             rmssd = rmssd,
             coverage = coverage,
             lowFrequency = lowFrequency,
-            highFrequency = highFrequency
+            highFrequency = highFrequency,
+            profile = profile!!
         )
     }
 }

@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.LocalDateTime
 
 @SpringBootTest
+@Import(TestConfig::class)
 class StepsExporterImplTest {
 
     @Autowired
@@ -19,7 +21,8 @@ class StepsExporterImplTest {
     fun `toRecord maps steps to HealthKit record`() {
         val steps = Steps(
             value = 1500,
-            dateTime = LocalDateTime.of(2024, 6, 15, 14, 0, 0)
+            dateTime = LocalDateTime.of(2024, 6, 15, 14, 0, 0),
+            profile = TestConfig.testProfile()
         )
 
         val record = stepsExporter.toRecord(steps)

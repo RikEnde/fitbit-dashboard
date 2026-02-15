@@ -1,5 +1,6 @@
 package kenny.fitbit.steps
 
+import kenny.fitbit.profile.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -18,23 +19,27 @@ interface StepsRepository :
     JpaRepository<Steps, Long>,
     JpaSpecificationExecutor<Steps> {
 
-    fun findByDateTimeBetween(
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<Steps>
+
+    fun findByProfileAndDateTimeBetween(
+        profile: Profile,
         from: LocalDateTime,
         to:   LocalDateTime,
         pageable: Pageable
     ): Page<Steps>
 
-    /** day→sum */
     @Query(
         """
         SELECT CAST(s.dateTime AS date)                           AS day,
                SUM(s.value)                                       AS totalSteps
         FROM   Steps s
-        WHERE  s.dateTime BETWEEN :from AND :to
+        WHERE  s.profile = :profile
+        AND    s.dateTime BETWEEN :from AND :to
         GROUP  BY CAST(s.dateTime AS date)
         """
     )
     fun sumStepsPerDayBetween(
+        profile: Profile,
         from: LocalDateTime,
         to:   LocalDateTime
     ): List<Array<Any>>
@@ -50,17 +55,20 @@ interface StepsRepository :
             SELECT CAST(s2.dateTime AS date) AS day,
                    SUM(s2.value)             AS totalSteps
             FROM   Steps s2
-            WHERE  s2.dateTime BETWEEN :from AND :to
+            WHERE  s2.profile = :profile
+            AND    s2.dateTime BETWEEN :from AND :to
             GROUP  BY CAST(s2.dateTime AS date)
           ) daily
       ON  CAST(s.dateTime AS date) = daily.day
-    WHERE  s.dateTime BETWEEN :from AND :to
+    WHERE  s.profile = :profile
+    AND    s.dateTime BETWEEN :from AND :to
     GROUP  BY
            CAST(EXTRACT(YEAR  FROM s.dateTime) AS integer),
            CAST(EXTRACT(WEEK FROM s.dateTime) AS integer)
     """
     )
     fun avgStepsPerWeekBetween(
+        profile: Profile,
         from: LocalDateTime,
         to:   LocalDateTime
     ): List<Array<Any>>

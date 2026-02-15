@@ -1,6 +1,7 @@
 package kenny.fitbit.steps
 
 import jakarta.persistence.*
+import kenny.fitbit.profile.Profile
 import java.time.LocalDateTime
 
 @Entity
@@ -16,6 +17,10 @@ data class Steps(
 
     @Column(nullable = false)
     val dateTime: LocalDateTime,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

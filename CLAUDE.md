@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working with data
+
+When import or runtime behavior doesn't match expectations, consider that the test data or real data may be incorrect before changing code. Ask the user to verify the data first.
+
 ## Build and Run Commands
 
 ### Server (Kotlin/Spring Boot)

@@ -3,6 +3,7 @@ package kenny.fitbit
 import com.fasterxml.jackson.databind.ObjectMapper
 import kenny.fitbit.distance.DistanceImporterImpl
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,6 +15,11 @@ class DistanceImporterImplTest {
 
     @Autowired
     private lateinit var distanceImporter: DistanceImporterImpl
+
+    @BeforeEach
+    fun setUp() {
+        distanceImporter.profile = testProfile()
+    }
 
     @Test
     fun `file pattern excludes imported files`() {

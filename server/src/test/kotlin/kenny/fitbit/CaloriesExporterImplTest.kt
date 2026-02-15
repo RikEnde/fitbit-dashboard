@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.LocalDateTime
 
 @SpringBootTest
+@Import(TestConfig::class)
 class CaloriesExporterImplTest {
 
     @Autowired
@@ -19,7 +21,8 @@ class CaloriesExporterImplTest {
     fun `toRecord maps calories to HealthKit record`() {
         val calories = Calories(
             value = 125.5,
-            dateTime = LocalDateTime.of(2024, 6, 15, 12, 0, 0)
+            dateTime = LocalDateTime.of(2024, 6, 15, 12, 0, 0),
+            profile = TestConfig.testProfile()
         )
 
         val record = caloriesExporter.toRecord(calories)

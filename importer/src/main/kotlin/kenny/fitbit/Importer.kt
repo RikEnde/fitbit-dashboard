@@ -3,6 +3,7 @@ package kenny.fitbit
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.EntityManager
+import kenny.fitbit.profile.Profile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import org.springframework.transaction.support.TransactionTemplate
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
@@ -23,6 +25,12 @@ import java.time.format.DateTimeFormatter
 interface Importer<T> {
     val dataDir: String
         get() = "../data"
+
+    var userDir: String?
+
+    var profile: Profile?
+
+    var maxDate: LocalDate?
 
     /**
      * Subdirectory within dataDir where files are located.
@@ -35,6 +43,11 @@ interface Importer<T> {
     fun filePattern(): String
 
     /**
+     * Extract the date from an entity for tracking the most recent data date.
+     */
+    fun entityDate(entity: T): LocalDate? = null
+
+    /**
      * Main entry point - import all matching files.
      * Returns the number of files processed.
      */
@@ -44,7 +57,8 @@ interface Importer<T> {
      * Find all files matching the pattern in the directory.
      */
     fun files(): List<File> {
-        val dir = File(dataDir, directory())
+        val baseDir = if (userDir != null) File(dataDir, userDir) else File(dataDir)
+        val dir = File(baseDir, directory())
         val pattern = filePattern().toRegex()
 
         val files = dir.listFiles { file ->
@@ -69,6 +83,10 @@ abstract class JsonImporter<T>(
 ) : Importer<T> {
 
     private val transactionTemplate = TransactionTemplate(transactionManager)
+
+    override var userDir: String? = null
+    override var profile: Profile? = null
+    override var maxDate: LocalDate? = null
 
     /**
      * Number of entities to batch before persisting.
@@ -107,7 +125,16 @@ abstract class JsonImporter<T>(
         }
     }
 
+    private fun updateMaxDate(entity: T) {
+        val date = entityDate(entity) ?: return
+        val current = maxDate
+        if (current == null || date > current) {
+            maxDate = date
+        }
+    }
+
     override fun import(): Int {
+        maxDate = null
         beforeImport()
 
         val files = files()
@@ -153,6 +180,7 @@ abstract class JsonImporter<T>(
                     val entity = parseToEntity(item)
                     if (entity != null) {
                         batch.add(entity)
+                        updateMaxDate(entity)
                         count++
 
                         if (batch.size >= batchSize) {
@@ -185,6 +213,10 @@ abstract class CsvImporter<T>(
 ) : Importer<T> {
 
     private val transactionTemplate = TransactionTemplate(transactionManager)
+
+    override var userDir: String? = null
+    override var profile: Profile? = null
+    override var maxDate: LocalDate? = null
 
     /**
      * Number of entities to batch before persisting.
@@ -229,7 +261,16 @@ abstract class CsvImporter<T>(
         }
     }
 
+    private fun updateMaxDate(entity: T) {
+        val date = entityDate(entity) ?: return
+        val current = maxDate
+        if (current == null || date > current) {
+            maxDate = date
+        }
+    }
+
     override fun import(): Int {
+        maxDate = null
         val files = files()
         val size = files.size
         val semaphore = Semaphore(maxConcurrentFiles)
@@ -274,6 +315,7 @@ abstract class CsvImporter<T>(
                     val entity = parseRow(values, headers)
                     if (entity != null) {
                         batch.add(entity)
+                        updateMaxDate(entity)
                         lineCount++
 
                         if (batch.size >= batchSize) {
