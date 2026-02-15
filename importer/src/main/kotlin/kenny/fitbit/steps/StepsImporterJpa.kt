@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager
 import kenny.fitbit.JsonImporter
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Component
@@ -14,6 +15,8 @@ class StepsImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<Steps>(repository, entityManager, transactionManager), StepsImporter {
 
+    override fun entityDate(entity: Steps): LocalDate = entity.dateTime.toLocalDate()
+
     override fun parseToEntity(jsonItem: JsonNode): Steps? {
         val valueStr = jsonItem.get("value")?.asText()
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
@@ -21,7 +24,7 @@ class StepsImporterImpl(
 
         return if (valueStr != null) {
             val value = valueStr.toInt()
-            Steps(value, dateTime)
+            Steps(value, dateTime, profile!!)
         } else {
             null
         }

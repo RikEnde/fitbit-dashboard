@@ -1,6 +1,7 @@
 package kenny.fitbit.calories
 
 import kenny.fitbit.AppleHealthRecord
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.Exporter
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -13,17 +14,19 @@ interface CaloriesExporter : Exporter<Calories> {
 
 @Component
 class CaloriesExporterImpl(
-    private val repository: CaloriesRepository
+    private val repository: CaloriesRepository,
+    private val authService: AuthenticatedProfileService
 ) : CaloriesExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<Calories> {
+        val profile = authService.getProfile()
         val allData = mutableListOf<Calories>()
         var page = 0
         val pageSize = 10000
 
         do {
             val pageRequest = PageRequest.of(page, pageSize)
-            val result = repository.findByDateTimeBetween(from, to, pageRequest)
+            val result = repository.findByProfileAndDateTimeBetween(profile, from, to, pageRequest)
             allData.addAll(result.content)
             page++
         } while (result.hasNext())

@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.LocalDateTime
 
 @SpringBootTest
+@Import(TestConfig::class)
 class HeartRateExporterImplTest {
 
     @Autowired
@@ -20,7 +22,8 @@ class HeartRateExporterImplTest {
         val heartRate = HeartRate(
             bpm = 72,
             confidence = 3,
-            time = LocalDateTime.of(2024, 6, 15, 10, 30, 0)
+            time = LocalDateTime.of(2024, 6, 15, 10, 30, 0),
+            profile = TestConfig.testProfile()
         )
 
         val record = heartRateExporter.toRecord(heartRate)

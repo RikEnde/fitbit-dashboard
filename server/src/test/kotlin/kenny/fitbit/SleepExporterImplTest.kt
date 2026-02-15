@@ -8,17 +8,20 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.LocalDateTime
 
 @SpringBootTest
+@Import(TestConfig::class)
 class SleepExporterImplTest {
 
     @Autowired
     private lateinit var sleepExporter: SleepExporterImpl
 
+    private val testProfile = TestConfig.testProfile()
+
     @Test
     fun `mapFitbitLevelToAppleHealth maps sleep stages correctly`() {
-        // Apple Health sleep values: 0=InBed, 1=AsleepUnspecified, 2=Awake, 3=Core, 4=Deep, 5=REM
         assertEquals(2, sleepExporter.mapFitbitLevelToAppleHealth("wake"))
         assertEquals(2, sleepExporter.mapFitbitLevelToAppleHealth("awake"))
         assertEquals(3, sleepExporter.mapFitbitLevelToAppleHealth("light"))
@@ -45,7 +48,8 @@ class SleepExporterImplTest {
             type = "stages",
             infoCode = 0,
             logType = "auto_detected",
-            mainSleep = true
+            mainSleep = true,
+            profile = testProfile
         )
 
         val sleepLevelData = SleepLevelData(
@@ -79,7 +83,8 @@ class SleepExporterImplTest {
             type = "stages",
             infoCode = 0,
             logType = "auto_detected",
-            mainSleep = true
+            mainSleep = true,
+            profile = testProfile
         )
 
         val sleepLevelData = SleepLevelData(

@@ -1,9 +1,9 @@
 import {gql} from '@urql/svelte';
 
-// Profile query for the avatar dropdown
+// Profile query for the authenticated user
 export const PROFILE_QUERY = gql`
-	query Profiles {
-		profiles(limit: 1) {
+	query Profile {
+		profile {
 			id
 			fullName
 			displayName
@@ -23,6 +23,13 @@ export const PROFILE_QUERY = gql`
 			timezone
 			avatar
 		}
+	}
+`;
+
+// Latest date with data
+export const LATEST_DATA_DATE_QUERY = gql`
+	query LatestDataDate {
+		latestDataDate
 	}
 `;
 

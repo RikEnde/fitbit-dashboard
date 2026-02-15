@@ -16,6 +16,9 @@ type Query {
     restingHeartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [RestingHeartRate!]!
     restingHeartRate(date: Date!): RestingHeartRate
 
+    # Latest data date
+    latestDataDate: Date
+
     # Steps Queries
     steps(limit: Int = 10, offset: Int = 0, range: DateRange): [Steps!]!
     dailyStepsSum(range: DateRange!): [DailyStepsSum!]!
@@ -37,8 +40,7 @@ type Query {
     sleepScores(limit: Int = 10, offset: Int = 0, range: DateRange): [SleepScore!]!
 
     # Profile Queries
-    profiles(limit: Int = 10, offset: Int = 0): [Profile!]!
-    profile(id: ID!): Profile
+    profile: Profile!
 }
 
 # Heart Rate Types

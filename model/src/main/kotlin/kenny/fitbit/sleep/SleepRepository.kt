@@ -1,9 +1,11 @@
 package kenny.fitbit.sleep
 
+import kenny.fitbit.profile.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -14,10 +16,13 @@ interface SleepRepository :
 
     fun findByLogId(logId: Long): Sleep?
 
-    @org.springframework.data.jpa.repository.Query("SELECT s.logId FROM Sleep s")
-    fun findAllLogIds(): Set<Long>
+    @Query("SELECT s.logId FROM Sleep s WHERE s.profile = :profile")
+    fun findAllLogIdsByProfile(profile: Profile): Set<Long>
 
-    fun findByStartTimeBetween(
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<Sleep>
+
+    fun findByProfileAndStartTimeBetween(
+        profile: Profile,
         from: LocalDateTime,
         to: LocalDateTime,
         pageable: Pageable
@@ -31,7 +36,10 @@ interface SleepScoreRepository :
 
     fun findBySleepLogEntryId(sleepLogEntryId: Long): SleepScore?
 
-    fun findByTimestampBetween(
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<SleepScore>
+
+    fun findByProfileAndTimestampBetween(
+        profile: Profile,
         from: LocalDateTime,
         to: LocalDateTime,
         pageable: Pageable

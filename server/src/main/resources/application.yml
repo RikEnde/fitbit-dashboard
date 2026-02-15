@@ -37,8 +37,3 @@ spring:
 
 server:
   port: 8080
-
-fitbit:
-  security:
-    username: ${FITBIT_API_USER}
-    password: ${FITBIT_API_PASSWORD}

@@ -1,5 +1,6 @@
 package kenny.fitbit.sleep
 
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
 import org.springframework.graphql.data.method.annotation.Argument
@@ -8,16 +9,20 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.stereotype.Controller
 
 @Controller
-class SleepResolver(private val sleepRepository: SleepRepository) {
+class SleepResolver(
+    private val sleepRepository: SleepRepository,
+    private val authService: AuthenticatedProfileService
+) {
 
     @QueryMapping
     fun sleeps(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Sleep> {
+        val profile = authService.getProfile()
         val pageable = PageRequest.of(offset / limit, limit)
-        
+
         return if (range == null) {
-            sleepRepository.findAll(pageable).content
+            sleepRepository.findByProfile(profile, pageable).content
         } else {
-            sleepRepository.findByStartTimeBetween(range.fromLocal, range.toLocal, pageable).content
+            sleepRepository.findByProfileAndStartTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 
@@ -38,16 +43,20 @@ class SleepResolver(private val sleepRepository: SleepRepository) {
 }
 
 @Controller
-class SleepScoreResolver(private val sleepScoreRepository: SleepScoreRepository) {
+class SleepScoreResolver(
+    private val sleepScoreRepository: SleepScoreRepository,
+    private val authService: AuthenticatedProfileService
+) {
 
     @QueryMapping
     fun sleepScores(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<SleepScore> {
+        val profile = authService.getProfile()
         val pageable = PageRequest.of(offset / limit, limit)
-        
+
         return if (range == null) {
-            sleepScoreRepository.findAll(pageable).content
+            sleepScoreRepository.findByProfile(profile, pageable).content
         } else {
-            sleepScoreRepository.findByTimestampBetween(range.fromLocal, range.toLocal, pageable).content
+            sleepScoreRepository.findByProfileAndTimestampBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 }

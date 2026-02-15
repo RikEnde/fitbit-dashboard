@@ -1,6 +1,7 @@
 package kenny.fitbit.heartrate
 
 import jakarta.persistence.*
+import kenny.fitbit.profile.Profile
 import java.time.LocalDateTime
 
 @Entity
@@ -20,6 +21,10 @@ data class HeartRate(
     @Column(nullable = false)
     val time: LocalDateTime,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -35,6 +40,10 @@ data class HeartRate(
 data class TimeInHeartRateZones(
     @Column(nullable = false)
     val dateTime: LocalDateTime,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @OneToMany(mappedBy = "timeInHeartRateZones", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val zoneValues: MutableList<TimeInHeartRateZoneValue> = mutableListOf(),
@@ -84,6 +93,10 @@ data class RestingHeartRate(
     @Column(nullable = false)
     val dateTime: LocalDateTime,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -108,6 +121,10 @@ data class DailyHeartRateVariability(
 
     @Column(nullable = false)
     val entropy: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -136,6 +153,10 @@ data class HeartRateVariabilityDetails(
 
     @Column(nullable = false)
     val highFrequency: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

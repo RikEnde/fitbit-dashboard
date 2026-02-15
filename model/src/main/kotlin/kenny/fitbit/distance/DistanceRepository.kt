@@ -1,5 +1,6 @@
 package kenny.fitbit.distance
 
+import kenny.fitbit.profile.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -12,7 +13,10 @@ interface DistanceRepository :
     JpaRepository<Distance, Long>,
     JpaSpecificationExecutor<Distance> {
 
-    fun findByDateTimeBetween(
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<Distance>
+
+    fun findByProfileAndDateTimeBetween(
+        profile: Profile,
         from: LocalDateTime,
         to:   LocalDateTime,
         pageable: Pageable

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.LocalDate
 
 /**
  * Profile importer with custom implementation.
@@ -17,6 +18,10 @@ import java.nio.file.Paths
 class AccountImporterImpl(
     private val profileRepository: ProfileRepository
 ) : AccountImporter {
+
+    override var userDir: String? = null
+    override var profile: Profile? = null
+    override var maxDate: LocalDate? = null
 
     val maxConcurrentFiles: Int
         get() = 10
@@ -64,23 +69,23 @@ class AccountImporterImpl(
             val rowData = header.zip(data).toMap()
 
             // Read the avatar image
-            val avatarPath = Paths.get(dataDir, avatarpath())
-            val avatarBytes = if (Files.exists(avatarPath)) {
-                Files.readAllBytes(avatarPath)
+            val avatarBasePath = if (userDir != null) Paths.get(dataDir, userDir, avatarpath()) else Paths.get(dataDir, avatarpath())
+            val avatarBytes = if (Files.exists(avatarBasePath)) {
+                Files.readAllBytes(avatarBasePath)
             } else {
-                println("Avatar image not found at $avatarPath")
+                println("Avatar image not found at $avatarBasePath")
                 null
             }
 
-            // Create and save the profile entity
-            val profile = Profile(
+            // Create and save the profile entity, using directory name as username
+            val importedProfile = Profile(
                 id = rowData["id"] ?: "",
                 fullName = rowData["full_name"] ?: "",
                 firstName = rowData["first_name"] ?: "",
                 lastName = rowData["last_name"] ?: "",
                 displayNameSetting = rowData["display_name_setting"] ?: "",
                 displayName = rowData["display_name"] ?: "",
-                username = rowData["username"],
+                username = userDir ?: rowData["username"],
                 emailAddress = rowData["email_address"] ?: "",
                 dateOfBirth = rowData["date_of_birth"] ?: "",
                 child = rowData["child"]?.toBoolean() ?: false,
@@ -108,8 +113,9 @@ class AccountImporterImpl(
                 avatar = avatarBytes
             )
 
-            profileRepository.save(profile)
-            println("Saved profile with ID: ${profile.id}")
+            profileRepository.save(importedProfile)
+            profile = importedProfile
+            println("Saved profile with ID: ${importedProfile.id}, username: ${importedProfile.username}")
 
         } catch (e: Exception) {
             println("Error parsing file ${file.name}: ${e.message}")

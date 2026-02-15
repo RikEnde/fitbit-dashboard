@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ProfileRepository : JpaRepository<Profile, String>, JpaSpecificationExecutor<Profile>
+interface ProfileRepository : JpaRepository<Profile, String>, JpaSpecificationExecutor<Profile> {
+    fun findByUsername(username: String): Profile?
+}

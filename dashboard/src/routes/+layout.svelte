@@ -7,7 +7,8 @@
     import {credentials} from '$stores/auth';
     import {profile, profileError, profileLoading} from '$stores/profile';
     import {preferences} from '$stores/preferences';
-    import {PROFILE_QUERY} from '$graphql/queries';
+    import {PROFILE_QUERY, LATEST_DATA_DATE_QUERY} from '$graphql/queries';
+    import {setDate} from '$stores/dashboard';
     import type {Snippet} from 'svelte';
     import {onMount} from 'svelte';
 
@@ -35,8 +36,14 @@
 			profileLoading.set(true);
 			try {
 				const result = await client.query(PROFILE_QUERY, {}).toPromise();
-				if (result.data?.profiles?.[0]) {
-					profile.set(result.data.profiles[0]);
+				if (result.data?.profile) {
+					profile.set(result.data.profile);
+
+					// Set selected date to the most recent date with data
+					const dateResult = await client.query(LATEST_DATA_DATE_QUERY, {}).toPromise();
+					if (dateResult.data?.latestDataDate) {
+						setDate(new Date(dateResult.data.latestDataDate + 'T12:00:00'));
+					}
 				} else if (result.error) {
 					profileError.set(result.error.message);
 				}

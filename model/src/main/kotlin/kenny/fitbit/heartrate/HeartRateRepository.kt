@@ -1,5 +1,6 @@
 package kenny.fitbit.heartrate
 
+import kenny.fitbit.profile.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -16,7 +17,8 @@ data class SumsOfHeartRates(
 
 @Repository
 interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecificationExecutor<HeartRate> {
-    fun findByTimeBetween(from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRate>
+    fun findByProfileAndTimeBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRate>
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<HeartRate>
 
     @Query(
         value = """
@@ -34,23 +36,25 @@ interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecification
         LEFT JOIN heart_rates hr
           ON hr.time >= b.bucket_start
          AND hr.time < b.bucket_start + CAST(:duration AS interval)
+         AND hr.profile_id = :profileId
         GROUP BY b.bucket_start
         ORDER BY b.bucket_start
     """,
         nativeQuery = true
     )
     fun sumByTimeBetween(
+        @Param("profileId") profileId: String,
         @Param("duration") duration: String = "10 minutes",
         @Param("fromDateTime") fromDateTime: LocalDateTime,
         @Param("toDateTime") toDateTime: LocalDateTime
     ): List<Array<Any>>
-
 }
 
 @Repository
 interface RestingHeartRateRepository : JpaRepository<RestingHeartRate, Long>, JpaSpecificationExecutor<RestingHeartRate> {
-    fun findByDateTimeBetween(from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<RestingHeartRate>
-    fun findFirstByDateTimeBetweenOrderByDateTimeDesc(from: LocalDateTime, to: LocalDateTime): RestingHeartRate?
+    fun findByProfileAndDateTimeBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<RestingHeartRate>
+    fun findFirstByProfileAndDateTimeBetweenOrderByDateTimeDesc(profile: Profile, from: LocalDateTime, to: LocalDateTime): RestingHeartRate?
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<RestingHeartRate>
 }
 
 @Repository
@@ -58,4 +62,3 @@ interface DailyHeartRateVariabilityRepository : JpaRepository<DailyHeartRateVari
 
 @Repository
 interface HeartRateVariabilityDetailsRepository : JpaRepository<HeartRateVariabilityDetails, Long>, JpaSpecificationExecutor<HeartRateVariabilityDetails>
-

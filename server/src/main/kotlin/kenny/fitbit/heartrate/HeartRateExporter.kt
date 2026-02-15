@@ -1,6 +1,7 @@
 package kenny.fitbit.heartrate
 
 import kenny.fitbit.AppleHealthRecord
+import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.Exporter
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Component
@@ -13,17 +14,19 @@ interface HeartRateExporter : Exporter<HeartRate> {
 
 @Component
 class HeartRateExporterImpl(
-    private val repository: HeartRateRepository
+    private val repository: HeartRateRepository,
+    private val authService: AuthenticatedProfileService
 ) : HeartRateExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<HeartRate> {
+        val profile = authService.getProfile()
         val allData = mutableListOf<HeartRate>()
         var page = 0
         val pageSize = 10000
 
         do {
             val pageRequest = PageRequest.of(page, pageSize)
-            val result = repository.findByTimeBetween(from, to, pageRequest)
+            val result = repository.findByProfileAndTimeBetween(profile, from, to, pageRequest)
             allData.addAll(result.content)
             page++
         } while (result.hasNext())

@@ -23,6 +23,8 @@ class SleepImporterImpl(
 
     override val batchSize: Int = 1000  // Smaller batch for cascade entities
 
+    override fun entityDate(entity: Sleep): LocalDate = entity.dateOfSleep.toLocalDate()
+
     // Thread-safe set to track log IDs (from DB + being imported) to prevent duplicates
     // Fitbit's monthly exports overlap at boundaries. Sleep sessions near month transitions
     // appear in both months' files. We need a workaround to prevent duplicate keys
@@ -32,7 +34,7 @@ class SleepImporterImpl(
     override fun beforeImport() {
         println("Loading existing sleep log IDs for duplicate detection...")
         seenLogIds.clear()
-        seenLogIds.addAll(sleepRepository.findAllLogIds())
+        seenLogIds.addAll(sleepRepository.findAllLogIdsByProfile(profile!!))
         importing = true
         println("Found ${seenLogIds.size} existing sleep records")
     }
@@ -81,7 +83,8 @@ class SleepImporterImpl(
             type = type,
             infoCode = infoCode,
             logType = logType,
-            mainSleep = mainSleep
+            mainSleep = mainSleep,
+            profile = profile!!
         )
 
         // Process level summaries
@@ -157,6 +160,8 @@ class SleepScoreImporterImpl(
 
     override val batchSize: Int = 10000
 
+    override fun entityDate(entity: SleepScore): LocalDate = entity.timestamp.toLocalDate()
+
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("MM/dd/yy HH:mm:ss")
 
@@ -184,7 +189,8 @@ class SleepScoreImporterImpl(
             durationScore = durationScore,
             deepSleepInMinutes = deepSleepInMinutes,
             restingHeartRate = restingHeartRate,
-            restlessness = restlessness
+            restlessness = restlessness,
+            profile = profile!!
         )
     }
 }
@@ -197,6 +203,8 @@ class DeviceTemperatureImporterImpl(
 ) : CsvImporter<DeviceTemperature>(repository, entityManager, transactionManager), DeviceTemperatureImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: DeviceTemperature): LocalDate = entity.recordedTime.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
@@ -213,7 +221,8 @@ class DeviceTemperatureImporterImpl(
         return DeviceTemperature(
             recordedTime = recordedTime,
             temperature = temperature,
-            sensorType = sensorType
+            sensorType = sensorType,
+            profile = profile!!
         )
     }
 }
@@ -226,6 +235,8 @@ class DailyRespiratoryRateImporterImpl(
 ) : CsvImporter<DailyRespiratoryRate>(repository, entityManager, transactionManager), DailyRespiratoryRateImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: DailyRespiratoryRate): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -240,7 +251,8 @@ class DailyRespiratoryRateImporterImpl(
 
         return DailyRespiratoryRate(
             timestamp = timestamp,
-            dailyRespiratoryRate = dailyRespiratoryRate
+            dailyRespiratoryRate = dailyRespiratoryRate,
+            profile = profile!!
         )
     }
 }
@@ -253,6 +265,8 @@ class MinuteSpO2ImporterImpl(
 ) : CsvImporter<MinuteSpO2>(repository, entityManager, transactionManager), MinuteSpO2Importer {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: MinuteSpO2): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -267,7 +281,8 @@ class MinuteSpO2ImporterImpl(
 
         return MinuteSpO2(
             timestamp = timestamp,
-            value = value
+            value = value,
+            profile = profile!!
         )
     }
 }
@@ -280,6 +295,8 @@ class ComputedTemperatureImporterImpl(
 ) : CsvImporter<ComputedTemperature>(repository, entityManager, transactionManager), ComputedTemperatureImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: ComputedTemperature): LocalDate = entity.sleepStart.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatterBuilder()
@@ -314,7 +331,8 @@ class ComputedTemperatureImporterImpl(
             baselineRelativeSampleSum = baselineRelativeSampleSum,
             baselineRelativeSampleSumOfSquares = baselineRelativeSampleSumOfSquares,
             baselineRelativeNightlyStandardDeviation = baselineRelativeNightlyStandardDeviation,
-            baselineRelativeSampleStandardDeviation = baselineRelativeSampleStandardDeviation
+            baselineRelativeSampleStandardDeviation = baselineRelativeSampleStandardDeviation,
+            profile = profile!!
         )
     }
 }
@@ -327,6 +345,8 @@ class DailySpO2ImporterImpl(
 ) : CsvImporter<DailySpO2>(repository, entityManager, transactionManager), DailySpO2Importer {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: DailySpO2): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -345,7 +365,8 @@ class DailySpO2ImporterImpl(
             timestamp = timestamp,
             averageValue = averageValue,
             lowerBound = lowerBound,
-            upperBound = upperBound
+            upperBound = upperBound,
+            profile = profile!!
         )
     }
 }
@@ -358,6 +379,8 @@ class RespiratoryRateSummaryImporterImpl(
 ) : CsvImporter<RespiratoryRateSummary>(repository, entityManager, transactionManager), RespiratoryRateSummaryImporter {
 
     override val batchSize: Int = 10000
+
+    override fun entityDate(entity: RespiratoryRateSummary): LocalDate = entity.timestamp.toLocalDate()
 
     override fun getDateTimeFormatter(): DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
@@ -394,7 +417,8 @@ class RespiratoryRateSummaryImporterImpl(
             lightSleepSignalToNoise = lightSleepSignalToNoise,
             remSleepBreathingRate = remSleepBreathingRate,
             remSleepStandardDeviation = remSleepStandardDeviation,
-            remSleepSignalToNoise = remSleepSignalToNoise
+            remSleepSignalToNoise = remSleepSignalToNoise,
+            profile = profile!!
         )
     }
 }

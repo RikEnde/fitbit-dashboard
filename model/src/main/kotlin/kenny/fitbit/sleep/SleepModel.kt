@@ -1,6 +1,7 @@
 package kenny.fitbit.sleep
 
 import jakarta.persistence.*
+import kenny.fitbit.profile.Profile
 import java.time.LocalDateTime
 
 @Entity
@@ -56,6 +57,10 @@ data class Sleep(
 
     @Column(nullable = false)
     val mainSleep: Boolean,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val levelSummaries: MutableList<SleepLevelSummary> = mutableListOf(),
@@ -173,6 +178,10 @@ data class SleepScore(
     @Column(nullable = false)
     val restlessness: Double,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -195,6 +204,10 @@ data class DeviceTemperature(
     @Column(nullable = false)
     val sensorType: String,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -214,6 +227,10 @@ data class DailyRespiratoryRate(
     @Column(nullable = false)
     val dailyRespiratoryRate: Double,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -232,6 +249,10 @@ data class MinuteSpO2(
 
     @Column(nullable = false)
     val value: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -273,6 +294,10 @@ data class ComputedTemperature(
 
     @Column(nullable = false)
     val baselineRelativeSampleStandardDeviation: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -326,6 +351,10 @@ data class RespiratoryRateSummary(
     @Column(nullable = true)
     val remSleepSignalToNoise: Double,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -350,6 +379,10 @@ data class DailySpO2(
 
     @Column(nullable = false)
     val upperBound: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

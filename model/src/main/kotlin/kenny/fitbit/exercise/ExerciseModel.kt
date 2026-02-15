@@ -1,6 +1,7 @@
 package kenny.fitbit.exercise
 
 import jakarta.persistence.*
+import kenny.fitbit.profile.Profile
 import java.time.LocalDateTime
 
 @Entity
@@ -62,6 +63,10 @@ data class Exercise(
 
     @Column(nullable = false)
     val hasActiveZoneMinutes: Boolean = false,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val heartRateZones: MutableList<HeartRateZone> = mutableListOf(),
@@ -133,6 +138,10 @@ data class ActivityMinutes(
     @Column(nullable = false)
     val intensity: String,  // "sedentary", "light", "moderate", "active"
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -160,6 +169,10 @@ data class DemographicVO2Max(
 
     @Column(nullable = false)
     val dateTime: LocalDateTime,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -192,6 +205,10 @@ data class RunVO2Max(
 
     @Column(nullable = false)
     val dateTime: LocalDateTime,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -235,6 +252,10 @@ data class ActivityGoal(
 
     @Column(nullable = true)
     val editedOn: LocalDateTime?,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    val profile: Profile,
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
