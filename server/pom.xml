@@ -155,7 +155,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>kenny.fitbit.FitbitKotlinApplicationKt</mainClass>
+                    <mainClass>kenny.fitbit.FitbitServerApplicationKt</mainClass>
                     <executable>true</executable>
                 </configuration>
             </plugin>

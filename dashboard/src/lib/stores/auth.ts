@@ -39,6 +39,7 @@ export function login(username: string, password: string) {
 export function logout() {
 	if (browser) {
 		sessionStorage.removeItem('fitbit-auth');
+		window.location.href = '/';
 	}
 	credentials.set(null);
 }
