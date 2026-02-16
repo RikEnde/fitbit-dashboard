@@ -80,13 +80,19 @@ class ImportRunner(
 
         // Scan data directory for user directories
         val dataDirFile = File(dataDir)
+        val selectedUser = args.getOptionValues("user")?.firstOrNull()
         val userDirs = dataDirFile.listFiles { file -> file.isDirectory }
             ?.map { it.name }
+            ?.filter { selectedUser == null || it == selectedUser }
             ?.sorted()
             ?: emptyList()
 
         if (userDirs.isEmpty()) {
-            println("No user directories found in $dataDir")
+            if (selectedUser != null) {
+                println("User directory '$selectedUser' not found in $dataDir")
+            } else {
+                println("No user directories found in $dataDir")
+            }
             return
         }
 

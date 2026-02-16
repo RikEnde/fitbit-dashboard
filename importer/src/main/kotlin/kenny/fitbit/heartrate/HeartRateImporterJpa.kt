@@ -49,7 +49,7 @@ class RestingHeartRateImporterImpl(
         val dateTimeStr = jsonItem.get("dateTime")?.asText()
         val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
 
-        return if (value != null && error != null) {
+        return if (value != null && value != 0.0 && error != null) {
             RestingHeartRate(value, error, dateTime, profile!!)
         } else {
             null

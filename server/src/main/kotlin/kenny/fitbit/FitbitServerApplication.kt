@@ -6,8 +6,8 @@ import org.springframework.boot.runApplication
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
-class FitbitKotlinApplication
+class FitbitServerApplication
 
 fun main(args: Array<String>) {
-    runApplication<FitbitKotlinApplication>(*args)
+    runApplication<FitbitServerApplication>(*args)
 }

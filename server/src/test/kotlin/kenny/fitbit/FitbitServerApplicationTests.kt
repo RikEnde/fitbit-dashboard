@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import
 
 @SpringBootTest
 @Import(TestConfig::class)
-class FitbitKotlinApplicationTests {
+class FitbitServerApplicationTests {
 
     @Test
     fun contextLoads() {
