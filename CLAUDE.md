@@ -47,7 +47,7 @@ mvn -pl importer compile                 # Compile only
 
 ```bash
 cd dashboard
-npm run dev      # Dev server on port 3000, proxies /graphql to :8080
+npm run dev      # Dev server on port 3000, proxies /graphql and /api to :8080
 npm run build    # Production build
 npm run preview  # Preview production build
 ```
@@ -135,6 +135,8 @@ The `Exporter<T>` interface in `Exporters.kt` provides Apple Health XML export:
 - REST endpoints at `/api/export/{type}?from=...&to=...`
 - Types: heartrate, steps, calories, distance, sleep
 - Paginated queries to handle large datasets
+- Dashboard UI: Profile dropdown → "Export to Apple Health" opens an export dialog (select data type + date range)
+- Only Apple Health XML format is currently supported
 
 ```bash
 # Export heart rate data for a year (requires auth)

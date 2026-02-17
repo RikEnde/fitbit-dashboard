@@ -6,9 +6,10 @@
 
     interface Props {
 		onClose: () => void;
+		onExport: () => void;
 	}
 
-	let { onClose }: Props = $props();
+	let { onClose, onExport }: Props = $props();
 
 	function handleThemeToggle() {
 		preferences.toggleTheme();
@@ -99,6 +100,15 @@
 				<span class="text-sm text-theme-text-secondary">
 					{$preferences.theme === 'dark' ? 'Light' : 'Dark'}
 				</span>
+			</button>
+			<button
+				onclick={() => { onClose(); onExport(); }}
+				class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-theme-border transition-colors text-theme-text-bright"
+			>
+				<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+				</svg>
+				Export to Apple Health
 			</button>
 			<button
 				onclick={() => { onClose(); logout(); }}

@@ -1,8 +1,10 @@
 <script lang="ts">
     import {profile, profileLoading} from '$stores/profile';
     import ProfileDropdown from './ProfileDropdown.svelte';
+    import ExportDialog from '$components/ExportDialog.svelte';
 
-    let showDropdown = false;
+    let showDropdown = $state(false);
+    let showExportDialog = $state(false);
 
 	function toggleDropdown() {
 		showDropdown = !showDropdown;
@@ -45,6 +47,10 @@
 	</button>
 
 	{#if showDropdown}
-		<ProfileDropdown onClose={closeDropdown} />
+		<ProfileDropdown onClose={closeDropdown} onExport={() => { showExportDialog = true; }} />
 	{/if}
 </div>
+
+{#if showExportDialog}
+	<ExportDialog onClose={() => { showExportDialog = false; }} />
+{/if}
