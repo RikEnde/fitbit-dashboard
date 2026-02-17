@@ -35,20 +35,21 @@ To use this application, you first need to download your data from Fitbit:
 3. Or navigate directly to: https://www.fitbit.com/settings/data/export
 4. Click **Request Data** to export your complete Fitbit history
 5. Fitbit will email you when your data is ready (this can take a few hours to days)
-6. Download the ZIP file and extract it to a `data` directory in the parent folder of this project:
+6. Download the ZIP file and extract it to a `data` directory in the parent folder of this project. Each user's data goes in a subdirectory named after the user (the directory name becomes the username):
    ```
    ../data/
-   ├── Personal & Account/
-   │   ├── Profile.csv
-   │   └── Media/
-   ├── Physical Activity/
-   │   ├── heart_rate-2024-01-01.json
-   │   ├── steps-2024-01-01.json
-   │   └── ...
-   ├── Sleep/
-   │   ├── sleep-2024-01-01.json
-   │   └── ...
-   └── ...
+   └── YourName/
+       ├── Personal & Account/
+       │   ├── Profile.csv
+       │   └── Media/
+       ├── Physical Activity/
+       │   ├── heart_rate-2024-01-01.json
+       │   ├── steps-2024-01-01.json
+       │   └── ...
+       ├── Sleep/
+       │   ├── sleep-2024-01-01.json
+       │   └── ...
+       └── ...
    ```
 
 ### Import Your Fitbit Data
@@ -242,14 +243,26 @@ The application also exposes a REST API at `/api` using Spring Data REST, provid
 
 ## Data Export
 
-Export your data to Apple Health XML format (compatible with iOS "Health Data Importer" app):
+Only Apple Health XML format is currently supported. 
+
+The Apple Health API, also known as HealthKit is only available on iOS, so we can't directly upload the data. This 
+application can export the stats to files in the Apple Health XML format, which you can import into Apple Health using 
+one of several available (paid) apps in the app store. I'm not affiliated with any of them. They're fine, the ones I 
+tested all worked. 
+
+### Via Dashboard
+
+Log in to the dashboard, click your profile avatar, and select **Export to Apple Health**. Choose a data type and date 
+range, then click Export to download the XML file.
+
+### Via CLI
 
 ```bash
 # Export heart rate data
-curl "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
+curl -u user:password "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
 
 # Export steps data
-curl "http://localhost:8080/api/export/steps?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o steps.xml
+curl -u user:password "http://localhost:8080/api/export/steps?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o steps.xml
 ```
 
 Available export types: `heartrate`, `steps`, `calories`, `distance`, `sleep`
