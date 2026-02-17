@@ -7,9 +7,10 @@
     interface Props {
 		onClose: () => void;
 		onExport: () => void;
+		onImport: () => void;
 	}
 
-	let { onClose, onExport }: Props = $props();
+	let { onClose, onExport, onImport }: Props = $props();
 
 	function handleThemeToggle() {
 		preferences.toggleTheme();
@@ -100,6 +101,15 @@
 				<span class="text-sm text-theme-text-secondary">
 					{$preferences.theme === 'dark' ? 'Light' : 'Dark'}
 				</span>
+			</button>
+			<button
+				onclick={() => { onClose(); onImport(); }}
+				class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-theme-border transition-colors text-theme-text-bright"
+			>
+				<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+				</svg>
+				Import Data
 			</button>
 			<button
 				onclick={() => { onClose(); onExport(); }}

@@ -13,11 +13,11 @@ import kenny.fitbit.profile.AccountImporter
 import kenny.fitbit.sleep.*
 import kenny.fitbit.steps.StepsImporter
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import java.time.Instant
 import java.time.LocalDateTime
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 data class ImportRequest(
     val dataDir: String = "../data",
@@ -33,6 +33,25 @@ data class UserResult(
 )
 
 data class ImportResponse(val results: List<UserResult>)
+
+enum class ImportStatus { RUNNING, COMPLETED, FAILED }
+
+data class ImportJob(
+    val jobId: String,
+    @Volatile var status: ImportStatus = ImportStatus.RUNNING,
+    @Volatile var message: String? = null,
+    @Volatile var results: ImportResponse? = null,
+    @Volatile var error: String? = null,
+    val createdAt: Instant = Instant.now()
+)
+
+data class ImportJobResponse(
+    val jobId: String,
+    val status: ImportStatus,
+    val message: String?,
+    val results: ImportResponse?,
+    val error: String?
+)
 
 @RestController
 @RequestMapping("/api/import")
@@ -62,6 +81,8 @@ class ImportController(
     private val accountImporter: AccountImporter,
     private val importLogRepository: ImportLogRepository
 ) {
+
+    private val jobs = ConcurrentHashMap<String, ImportJob>()
 
     private val statImporters: Map<String, Importer<*>> by lazy {
         mapOf(
@@ -95,60 +116,90 @@ class ImportController(
 
     @PostMapping
     @Synchronized
-    fun importData(@RequestBody request: ImportRequest): ResponseEntity<ImportResponse> {
-        val results = mutableListOf<UserResult>()
+    fun importData(@RequestBody request: ImportRequest): ResponseEntity<Map<String, String>> {
+        // Clean up jobs older than 1 hour
+        val cutoff = Instant.now().minusSeconds(3600)
+        jobs.entries.removeIf { it.value.createdAt.isBefore(cutoff) }
 
-        for (user in request.users) {
-            // Set dataDir and userDir on all importers
-            allImporters.forEach {
-                it.dataDir = request.dataDir
-                it.userDir = user
-            }
+        val job = ImportJob(jobId = UUID.randomUUID().toString())
+        jobs[job.jobId] = job
 
-            // Import profile first
-            val profileCount = accountImporter.import()
-            val profile = accountImporter.profile
-            if (profile == null) {
-                println("WARNING: No profile imported for user $user, skipping stats")
-                continue
-            }
+        Thread {
+            try {
+                val results = mutableListOf<UserResult>()
 
-            // Set profile on all importers
-            allImporters.forEach { it.profile = profile }
+                for (user in request.users) {
+                    allImporters.forEach {
+                        it.dataDir = request.dataDir
+                        it.userDir = user
+                        it.onProgress = { message -> job.message = message }
+                    }
 
-            // Import requested stats
-            val statsResults = mutableMapOf<String, StatResult>()
-            val requestedStats = if (request.stats.contains("all")) statImporters.keys else request.stats
+                    accountImporter.import()
+                    val profile = accountImporter.profile
+                    if (profile == null) {
+                        job.message = "WARNING: No profile imported for user $user, skipping stats"
+                        continue
+                    }
 
-            for (statType in requestedStats) {
-                val importer = statImporters[statType]
-                if (importer == null) {
-                    println("Unknown stat type: $statType")
-                    continue
+                    allImporters.forEach { it.profile = profile }
+
+                    val statsResults = mutableMapOf<String, StatResult>()
+                    val requestedStats = if (request.stats.contains("all")) statImporters.keys else request.stats
+
+                    for (statType in requestedStats) {
+                        val importer = statImporters[statType]
+                        if (importer == null) {
+                            job.message = "Unknown stat type: $statType"
+                            continue
+                        }
+
+                        job.message = "Importing $statType data for user $user..."
+                        val count = importer.import()
+                        job.message = "Imported $count $statType files"
+
+                        if (count > 0 && importer.maxDate != null) {
+                            importLogRepository.save(
+                                ImportLog(
+                                    profile = profile,
+                                    statType = statType,
+                                    latestDataDate = importer.maxDate!!,
+                                    importedAt = LocalDateTime.now(),
+                                    fileCount = count
+                                )
+                            )
+                        }
+
+                        statsResults[statType] = StatResult(fileCount = count)
+                    }
+
+                    results.add(UserResult(user = user, stats = statsResults))
                 }
 
-                println("Importing $statType data for user $user...")
-                val count = importer.import()
-                println("Imported $count $statType files")
-
-                if (count > 0 && importer.maxDate != null) {
-                    importLogRepository.save(
-                        ImportLog(
-                            profile = profile,
-                            statType = statType,
-                            latestDataDate = importer.maxDate!!,
-                            importedAt = LocalDateTime.now(),
-                            fileCount = count
-                        )
-                    )
-                }
-
-                statsResults[statType] = StatResult(fileCount = count)
+                job.results = ImportResponse(results = results)
+                job.status = ImportStatus.COMPLETED
+            } catch (e: Exception) {
+                job.error = e.message ?: "Unknown error"
+                job.status = ImportStatus.FAILED
+            } finally {
+                allImporters.forEach { it.onProgress = ::println }
             }
+        }.start()
 
-            results.add(UserResult(user = user, stats = statsResults))
-        }
+        return ResponseEntity.ok(mapOf("jobId" to job.jobId))
+    }
 
-        return ResponseEntity.ok(ImportResponse(results = results))
+    @GetMapping("/{jobId}")
+    fun getJobStatus(@PathVariable jobId: String): ResponseEntity<ImportJobResponse> {
+        val job = jobs[jobId] ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(
+            ImportJobResponse(
+                jobId = job.jobId,
+                status = job.status,
+                message = job.message,
+                results = job.results,
+                error = job.error
+            )
+        )
     }
 }
