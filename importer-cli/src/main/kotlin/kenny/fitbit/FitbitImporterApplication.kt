@@ -60,8 +60,6 @@ class ImportRunner(
     val importLogRepository: ImportLogRepository
 ) : ApplicationRunner {
 
-    private val dataDir = "../data"
-
     private val allImporters: List<Importer<*>>
         get() = listOf(
             heartRateImporter, stepsImporter, caloriesImporter, distanceImporter,
@@ -77,6 +75,8 @@ class ImportRunner(
     override fun run(args: ApplicationArguments) {
         val all = args.containsOption("all")
         fun hasOption(option: String) = all || args.containsOption(option)
+
+        val dataDir = args.getOptionValues("datadir")?.firstOrNull() ?: "../data"
 
         // Scan data directory for user directories
         val dataDirFile = File(dataDir)
@@ -101,8 +101,11 @@ class ImportRunner(
         for (userDirName in userDirs) {
             println("\n=== Importing data for user: $userDirName ===")
 
-            // Set userDir on all importers
-            allImporters.forEach { it.userDir = userDirName }
+            // Set dataDir and userDir on all importers
+            allImporters.forEach {
+                it.dataDir = dataDir
+                it.userDir = userDirName
+            }
 
             // Always import profile first to establish the profile reference
             println("Importing profile data...")

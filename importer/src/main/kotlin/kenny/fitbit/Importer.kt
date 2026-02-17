@@ -23,8 +23,7 @@ import java.time.format.DateTimeFormatter
  * No dependencies on JSON/Jackson or JPA - those are in format-specific subclasses.
  */
 interface Importer<T> {
-    val dataDir: String
-        get() = "../data"
+    var dataDir: String
 
     var userDir: String?
 
@@ -84,6 +83,7 @@ abstract class JsonImporter<T>(
 
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
+    override var dataDir: String = "../data"
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null
@@ -214,6 +214,7 @@ abstract class CsvImporter<T>(
 
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
+    override var dataDir: String = "../data"
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null

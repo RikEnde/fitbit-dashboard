@@ -16,6 +16,7 @@
         <module>model</module>
         <module>server</module>
         <module>importer</module>
+        <module>importer-cli</module>
     </modules>
 
     <properties>
