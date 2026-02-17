@@ -55,11 +55,17 @@ To use this application, you first need to download your data from Fitbit:
 ### Import Your Fitbit Data
 
 ```bash
-# Import all data types
-mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--all"
+# Import all data types for all users (data directory defaults to ../data)
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all"
 
-# Or import specific data types
-mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps"
+# Import specific data types
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps"
+
+# Import for a specific user
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --user=YourName"
+
+# Import from a custom data directory
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --datadir=/path/to/data"
 ```
 
 Supported import options:
@@ -86,6 +92,9 @@ Supported import options:
 - `--respiratoryratesummary` - Respiratory rate summary
 - `--dailyspo2` - Daily SpO2
 - `--profile` - User profile
+- `--all` - All of the above
+- `--user=NAME` - Import only the specified user (default: all users)
+- `--datadir=PATH` - Data directory (default: `../data`)
 
 ### 3. Run the Server
 
@@ -272,19 +281,18 @@ to divide the export data into chunks. See the script `export.sh` for an example
 
 ## Architecture
 
-The project consists of four main modules:
+The project consists of five modules:
 
-- **model** - Shared JPA entities and Spring Data repositories (used by server and importer)
-- **server** - REST API and GraphQL server with resolvers and exporters
-- **importer** - Data import CLI for Fitbit JSON/CSV files
+- **model** - Shared JPA entities and Spring Data repositories
+- **importer** - Importer library: base classes and domain importers (no `@SpringBootApplication`, plain jar)
+- **importer-cli** - CLI runner for the importer (`@SpringBootApplication`, `ImportRunner`, executable jar)
+- **server** - REST API, GraphQL server, resolvers, exporters, and REST import endpoint (depends on importer library)
 - **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
 
-```
-        model
-       /     \
-      v       v
-   server   importer
-```
+Dependencies:
+- **importer** depends on model
+- **importer-cli** depends on importer
+- **server** depends on model and importer
 
 ## Tech Stack
 

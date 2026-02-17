@@ -19,6 +19,7 @@ class AccountImporterImpl(
     private val profileRepository: ProfileRepository
 ) : AccountImporter {
 
+    override var dataDir: String = "../data"
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null

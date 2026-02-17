@@ -24,23 +24,35 @@ mvn -pl model compile                    # Compile only
 mvn -pl model install -DskipTests        # Install to local repo (required before building server/importer separately)
 ```
 
-### Importer (Data Import CLI)
+### Importer Library
+
+```bash
+mvn -pl importer compile                 # Compile only
+mvn -pl importer test                    # Run all importer tests
+mvn -pl importer install -DskipTests     # Install to local repo (required before building server/importer-cli separately)
+```
+
+### Importer CLI (Data Import Runner)
 
 ```bash
 # Import specific stat types for all users
-mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
 
 # Import all stat types for a specific user
-mvn -pl importer spring-boot:run -Dspring-boot.run.arguments="--all --user=RikEnde"
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --user=YourName"
+
+# Import from a custom data directory
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --datadir=/path/to/data"
 
 # Available flags: --heartrate, --steps, --calories, --distance, --exercise, --sleep,
 # --sleepscore, --restingheartrate, --timeinzone, --activityminutes, --activezoneminutes,
 # --vo2max, --runvo2max, --activitygoals, --devicetemperature, --respiratoryrate,
 # --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary,
 # --dailyspo2, --profile, --all
+# --user=NAME (import only this user), --datadir=PATH (default: ../data)
 
-mvn -pl importer test                    # Run all importer tests
-mvn -pl importer compile                 # Compile only
+mvn -pl importer-cli compile             # Compile only
+mvn -pl importer-cli package             # Build executable jar
 ```
 
 ### Dashboard (SvelteKit/TypeScript)
@@ -69,20 +81,18 @@ docker-compose up -d
 
 ### Module Structure
 
-The project consists of four main modules:
+The project consists of five modules:
 
-- **model** - Shared JPA entities and Spring Data repositories (used by server and importer)
-- **server** - REST API and GraphQL server with resolvers and exporters
-- **importer** - Data import CLI for Fitbit JSON/CSV files
+- **model** - Shared JPA entities and Spring Data repositories
+- **importer** - Importer library: base classes (`Importer`, `JsonImporter`, `CsvImporter`) and all domain importer implementations. Plain jar, no `@SpringBootApplication`. Used by both server and importer-cli.
+- **importer-cli** - CLI runner for the importer. Contains `FitbitImporterApplication` (`@SpringBootApplication`), `ImportRunner`, and `application.yml`. Produces an executable jar.
+- **server** - REST API, GraphQL server with resolvers, exporters, and REST import endpoint. Depends on importer library for import beans.
 - **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
 
-Dependency graph:
-```
-        model
-       /     \
-      v       v
-   server   importer
-```
+Dependencies:
+- **importer** depends on model
+- **importer-cli** depends on importer
+- **server** depends on model and importer
 
 ### Multi-Tenancy
 
@@ -95,7 +105,7 @@ All data is scoped to a user profile. The system supports multiple users with da
 
 ### Naming Conventions
 
-**Packages**: `kenny.fitbit.{domain}` — same package name across all three Kotlin modules (model, server, importer). Domains: `calories`, `distance`, `exercise`, `heartrate`, `sleep`, `steps`, `profile`, `auth`, `importlog`.
+**Packages**: `kenny.fitbit.{domain}` — same package name across all Kotlin modules (model, server, importer, importer-cli). Domains: `calories`, `distance`, `exercise`, `heartrate`, `sleep`, `steps`, `profile`, `auth`, `importlog`.
 
 **Model module** (`model/src/main/kotlin/kenny/fitbit/{domain}/`):
 - `{Domain}Model.kt` — JPA entity classes (e.g., `HeartRate`, `RestingHeartRate`)
@@ -119,14 +129,18 @@ Heart rate domain has two resolvers: `HeartRateResolver.kt` (real-time readings)
 
 ### Importer Structure
 
-Core classes in `importer/src/main/kotlin/kenny/fitbit/Importer.kt`:
-- `Importer<T>` interface — defines `directory()`, `filePattern()`, `files()`, `import()`
+The importer is split into two modules:
+
+**importer** (library) — Core classes in `importer/src/main/kotlin/kenny/fitbit/Importer.kt`:
+- `Importer<T>` interface — defines `dataDir`, `directory()`, `filePattern()`, `files()`, `import()`
 - `JsonImporter<T>` — abstract base for JSON files with `parseToEntity(JsonNode): T?`
 - `CsvImporter<T>` — abstract base for CSV files with `parseRow(values, headers): T?`
 
-Both base classes handle concurrent file processing (coroutines + semaphore), batched JPA persistence (flush/clear), and automatic `.imported` suffix renaming.
+Both base classes handle concurrent file processing (coroutines + semaphore), batched JPA persistence (flush/clear), and automatic `.imported` suffix renaming. The `dataDir` property can be set at runtime (defaults to `../data`).
 
-Data lives in `../data/{username}/{subdirectory}/` (e.g., `../data/RikEnde/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username. `ImportRunner` orchestrates: scans user directories, imports profile first, then each enabled stat type.
+**importer-cli** (CLI runner) — `ImportRunner` in `importer-cli/src/main/kotlin/kenny/fitbit/FitbitImporterApplication.kt` orchestrates imports: scans user directories, imports profile first, then each enabled stat type. Accepts `--datadir=PATH` and `--user=NAME` command line options.
+
+Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username. The server also depends on the importer library and exposes a REST import endpoint at `/api/import`.
 
 ### Data Export System
 
