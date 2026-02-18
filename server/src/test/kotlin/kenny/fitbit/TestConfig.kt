@@ -21,7 +21,7 @@ class TestConfig {
         val profile = profileRepository.save(testProfile())
         userCredentialsRepository.save(
             UserCredentials(
-                profile = profile,
+                username = "testuser",
                 hash = passwordEncoder.encode("testpass")
             )
         )

@@ -31,6 +31,8 @@ interface Importer<T> {
 
     var maxDate: LocalDate?
 
+    var onProgress: (String) -> Unit
+
     /**
      * Subdirectory within dataDir where files are located.
      */
@@ -64,8 +66,8 @@ interface Importer<T> {
             file.isFile && pattern.matches(file.name)
         } ?: emptyArray()
 
-        println("Found ${files.size} files matching pattern ${filePattern()} in directory ${dir.absolutePath}")
-        files.forEach { println("  - ${it.name}") }
+        onProgress("Found ${files.size} files matching pattern ${filePattern()} in directory ${dir.absolutePath}")
+        files.forEach { onProgress("  - ${it.name}") }
 
         return files.toList().sorted()
     }
@@ -87,6 +89,7 @@ abstract class JsonImporter<T>(
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null
+    override var onProgress: (String) -> Unit = ::println
 
     /**
      * Number of entities to batch before persisting.
@@ -157,7 +160,7 @@ abstract class JsonImporter<T>(
             jobs.joinAll()
         }
 
-        println("Completed processing ${files.size} files")
+        onProgress("Completed processing ${files.size} files")
         return size
     }
 
@@ -167,8 +170,7 @@ abstract class JsonImporter<T>(
         file: File,
         objectMapper: ObjectMapper
     ) {
-        println("Processing file ${index + 1} of $size (%.1f%%)".format(100.0 * index / size))
-        println("Parsing $file")
+        onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
 
         try {
             val jsonNode = objectMapper.readTree(file)
@@ -194,10 +196,10 @@ abstract class JsonImporter<T>(
                     saveBatch(batch.toList())
                 }
 
-                println("Imported $count records from ${file.name}")
+                onProgress("Imported $count records from ${file.name}")
             }
         } catch (e: Exception) {
-            println("Error parsing file ${file.name}: ${e.message}")
+            onProgress("Error parsing file ${file.name}: ${e.message}")
         }
     }
 }
@@ -218,6 +220,7 @@ abstract class CsvImporter<T>(
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null
+    override var onProgress: (String) -> Unit = ::println
 
     /**
      * Number of entities to batch before persisting.
@@ -291,13 +294,12 @@ abstract class CsvImporter<T>(
             jobs.joinAll()
         }
 
-        println("Completed processing ${files.size} files")
+        onProgress("Completed processing ${files.size} files")
         return size
     }
 
     protected open suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
-        println("Parsing $file")
+        onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
 
         try {
             val batch = mutableListOf<T>()
@@ -331,10 +333,10 @@ abstract class CsvImporter<T>(
                 saveBatch(batch.toList())
             }
 
-            println("Imported $lineCount records from ${file.name}")
+            onProgress("Imported $lineCount records from ${file.name}")
         } catch (e: Exception) {
-            println("Error parsing file ${file.name}: ${e.message}")
-            e.printStackTrace()
+            onProgress("Error parsing file ${file.name}: ${e.message}")
+            onProgress(e.stackTraceToString())
         }
     }
 }

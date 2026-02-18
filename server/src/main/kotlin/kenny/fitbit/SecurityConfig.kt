@@ -24,7 +24,7 @@ class SecurityConfig {
     @Bean
     fun userDetailsService(userCredentialsRepository: UserCredentialsRepository): UserDetailsService {
         return UserDetailsService { username ->
-            val credentials = userCredentialsRepository.findByProfile_Username(username)
+            val credentials = userCredentialsRepository.findByUsername(username)
                 ?: throw UsernameNotFoundException("User not found: $username")
 
             User.builder()

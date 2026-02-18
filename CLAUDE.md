@@ -140,7 +140,13 @@ Both base classes handle concurrent file processing (coroutines + semaphore), ba
 
 **importer-cli** (CLI runner) — `ImportRunner` in `importer-cli/src/main/kotlin/kenny/fitbit/FitbitImporterApplication.kt` orchestrates imports: scans user directories, imports profile first, then each enabled stat type. Accepts `--datadir=PATH` and `--user=NAME` command line options.
 
-Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username. The server also depends on the importer library and exposes a REST import endpoint at `/api/import`.
+Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username.
+
+**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) which accepts:
+```json
+{"dataDir": "../data", "users": ["YourName"], "stats": ["heartrate", "steps"]}
+```
+Use `["all"]` for stats to import everything. Returns per-user, per-stat file counts.
 
 ### Data Export System
 

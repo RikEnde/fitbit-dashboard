@@ -250,6 +250,27 @@ query {
 
 The application also exposes a REST API at `/api` using Spring Data REST, providing standard CRUD operations for all entities.
 
+### Data Import via REST
+
+You can trigger data imports through the server's REST API instead of the CLI:
+
+```bash
+curl -u user:password -X POST http://localhost:8080/api/import \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataDir": "../data",
+    "users": ["YourName"],
+    "stats": ["heartrate", "steps", "calories"]
+  }'
+```
+
+Request fields:
+- `dataDir` - Path to the data directory (default: `../data`)
+- `users` - List of user directory names to import
+- `stats` - List of stat types to import (use `["all"]` for everything)
+
+The response returns per-user, per-stat file counts.
+
 ## Data Export
 
 Only Apple Health XML format is currently supported. 

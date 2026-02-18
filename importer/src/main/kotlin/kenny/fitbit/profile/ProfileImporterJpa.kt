@@ -23,6 +23,7 @@ class AccountImporterImpl(
     override var userDir: String? = null
     override var profile: Profile? = null
     override var maxDate: LocalDate? = null
+    override var onProgress: (String) -> Unit = ::println
 
     val maxConcurrentFiles: Int
         get() = 10
@@ -47,19 +48,18 @@ class AccountImporterImpl(
             jobs.joinAll()
         }
 
-        println("Completed processing ${files.size} files")
+        onProgress("Completed processing ${files.size} files")
         return size
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
     suspend fun importFile(index: Int, size: Int, file: File) {
-        println("Processing file ${index + 1} of $size (%.4f%%".format(100.0 * index / size))
-        println("Parsing $file")
+        onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
         try {
             // Read the CSV file
             val lines = file.readLines()
             if (lines.size < 2) {
-                println("CSV file has no data rows")
+                onProgress("CSV file has no data rows")
                 return
             }
 
@@ -74,7 +74,7 @@ class AccountImporterImpl(
             val avatarBytes = if (Files.exists(avatarBasePath)) {
                 Files.readAllBytes(avatarBasePath)
             } else {
-                println("Avatar image not found at $avatarBasePath")
+                onProgress("Avatar image not found at $avatarBasePath")
                 null
             }
 
@@ -116,11 +116,11 @@ class AccountImporterImpl(
 
             profileRepository.save(importedProfile)
             profile = importedProfile
-            println("Saved profile with ID: ${importedProfile.id}, username: ${importedProfile.username}")
+            onProgress("Saved profile with ID: ${importedProfile.id}, username: ${importedProfile.username}")
 
         } catch (e: Exception) {
-            println("Error parsing file ${file.name}: ${e.message}")
-            e.printStackTrace()
+            onProgress("Error parsing file ${file.name}: ${e.message}")
+            onProgress(e.stackTraceToString())
         }
     }
 }
