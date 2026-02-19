@@ -35,5 +35,11 @@ spring:
       connection-timeout: 30000
       idle-timeout: 600000
 
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      file-size-threshold: 10MB
+
 server:
   port: 8080

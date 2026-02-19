@@ -19,7 +19,7 @@ class DistanceExporterImpl(
 ) : DistanceExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<Distance> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val allData = mutableListOf<Distance>()
         var page = 0
         val pageSize = 10000

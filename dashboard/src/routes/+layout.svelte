@@ -36,7 +36,9 @@
 			profileLoading.set(true);
 			try {
 				const result = await client.query(PROFILE_QUERY, {}).toPromise();
-				if (result.data?.profile) {
+				if (result.error) {
+					profileError.set(result.error.message);
+				} else if (result.data?.profile) {
 					profile.set(result.data.profile);
 
 					// Set selected date to the most recent date with data
@@ -44,8 +46,6 @@
 					if (dateResult.data?.latestDataDate) {
 						setDate(new Date(dateResult.data.latestDataDate + 'T12:00:00'));
 					}
-				} else if (result.error) {
-					profileError.set(result.error.message);
 				}
 			} catch (err) {
 				profileError.set(err instanceof Error ? err.message : 'Failed to load profile');

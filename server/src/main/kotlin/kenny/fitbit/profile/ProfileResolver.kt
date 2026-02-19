@@ -9,8 +9,8 @@ import org.springframework.stereotype.Controller
 class ProfileResolver(private val authService: AuthenticatedProfileService) {
 
     @QueryMapping
-    fun profile(): Profile {
-        return authService.getProfile()
+    fun profile(): Profile? {
+        return authService.getProfileOrNull()
     }
 
     @SchemaMapping(typeName = "Profile")

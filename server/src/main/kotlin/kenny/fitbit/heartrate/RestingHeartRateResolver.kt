@@ -22,7 +22,7 @@ class RestingHeartRateResolver(
         @Argument offset: Int,
         @Argument range: DateRange?
     ): List<RestingHeartRate> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(
             offset / limit, limit,
             Sort.by("dateTime").descending()
@@ -37,7 +37,7 @@ class RestingHeartRateResolver(
 
     @QueryMapping
     fun restingHeartRate(@Argument date: LocalDate): RestingHeartRate? {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return null
         val startOfDay = date.atStartOfDay()
         val endOfDay = date.atTime(LocalTime.MAX)
         return restingHeartRateRepository.findFirstByProfileAndDateTimeBetweenOrderByDateTimeDesc(profile, startOfDay, endOfDay)

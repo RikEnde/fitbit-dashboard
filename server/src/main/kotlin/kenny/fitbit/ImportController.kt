@@ -14,10 +14,15 @@ import kenny.fitbit.sleep.*
 import kenny.fitbit.steps.StepsImporter
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.ZipInputStream
 
 data class ImportRequest(
     val dataDir: String = "../data",
@@ -117,64 +122,69 @@ class ImportController(
     @PostMapping
     @Synchronized
     fun importData(@RequestBody request: ImportRequest): ResponseEntity<Map<String, String>> {
-        // Clean up jobs older than 1 hour
-        val cutoff = Instant.now().minusSeconds(3600)
-        jobs.entries.removeIf { it.value.createdAt.isBefore(cutoff) }
-
-        val job = ImportJob(jobId = UUID.randomUUID().toString())
-        jobs[job.jobId] = job
+        val job = createJob()
 
         Thread {
             try {
                 val results = mutableListOf<UserResult>()
-
                 for (user in request.users) {
-                    allImporters.forEach {
-                        it.dataDir = request.dataDir
-                        it.userDir = user
-                        it.onProgress = { message -> job.message = message }
-                    }
-
-                    accountImporter.import()
-                    val profile = accountImporter.profile
-                    if (profile == null) {
-                        job.message = "WARNING: No profile imported for user $user, skipping stats"
-                        continue
-                    }
-
-                    allImporters.forEach { it.profile = profile }
-
-                    val statsResults = mutableMapOf<String, StatResult>()
-                    val requestedStats = if (request.stats.contains("all")) statImporters.keys else request.stats
-
-                    for (statType in requestedStats) {
-                        val importer = statImporters[statType]
-                        if (importer == null) {
-                            job.message = "Unknown stat type: $statType"
-                            continue
-                        }
-
-                        job.message = "Importing $statType data for user $user..."
-                        val count = importer.import()
-                        job.message = "Imported $count $statType files"
-
-                        if (count > 0 && importer.maxDate != null) {
-                            importLogRepository.save(
-                                ImportLog(
-                                    profile = profile,
-                                    statType = statType,
-                                    latestDataDate = importer.maxDate!!,
-                                    importedAt = LocalDateTime.now(),
-                                    fileCount = count
-                                )
-                            )
-                        }
-
-                        statsResults[statType] = StatResult(fileCount = count)
-                    }
-
-                    results.add(UserResult(user = user, stats = statsResults))
+                    val userResult = importUser(user, request.dataDir, request.stats, job)
+                    if (userResult != null) results.add(userResult)
                 }
+                job.results = ImportResponse(results = results)
+                job.status = ImportStatus.COMPLETED
+            } catch (e: Exception) {
+                job.error = e.message ?: "Unknown error"
+                job.status = ImportStatus.FAILED
+            } finally {
+                allImporters.forEach { it.onProgress = ::println }
+            }
+        }.start()
+
+        return ResponseEntity.ok(mapOf("jobId" to job.jobId))
+    }
+
+    @PostMapping("/upload")
+    @Synchronized
+    fun uploadZip(
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam("stats", defaultValue = "all") stats: List<String>
+    ): ResponseEntity<Any> {
+        val originalFilename = file.originalFilename ?: "upload"
+        if (!originalFilename.endsWith(".zip", ignoreCase = true)) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "Only .zip files are accepted"))
+        }
+
+        val freeSpace = File(System.getProperty("java.io.tmpdir")).usableSpace
+        val requiredSpace = file.size * 15 // zip expands ~10-15x
+        if (freeSpace < requiredSpace) {
+            return ResponseEntity.badRequest().body(
+                mapOf("error" to "Insufficient disk space. Need ~${requiredSpace / 1_000_000_000}GB free, have ${freeSpace / 1_000_000_000}GB")
+            )
+        }
+
+        val job = createJob()
+        val tempDir = Files.createTempDirectory("fitbit-import-${job.jobId}").toFile()
+
+        // Save file before returning — Spring cleans up MultipartFile after the request completes
+        val zipFile = File(tempDir, "upload.zip")
+        file.transferTo(zipFile)
+
+        Thread {
+            try {
+                job.message = "Extracting zip file..."
+                val extractDir = File(tempDir, "extracted")
+                extractDir.mkdirs()
+                extractZip(zipFile, extractDir)
+                zipFile.delete()
+
+                val (userName, dataDir) = detectUserDir(extractDir)
+                    ?: throw IllegalStateException("Could not detect user directory in zip. Expected a top-level folder containing subdirectories like 'Physical Activity', 'Sleep', etc.")
+
+                job.message = "Detected user: $userName"
+
+                val userResult = importUser(userName, dataDir, stats, job)
+                val results = if (userResult != null) listOf(userResult) else emptyList()
 
                 job.results = ImportResponse(results = results)
                 job.status = ImportStatus.COMPLETED
@@ -183,6 +193,7 @@ class ImportController(
                 job.status = ImportStatus.FAILED
             } finally {
                 allImporters.forEach { it.onProgress = ::println }
+                tempDir.deleteRecursively()
             }
         }.start()
 
@@ -201,5 +212,127 @@ class ImportController(
                 error = job.error
             )
         )
+    }
+
+    private fun createJob(): ImportJob {
+        val cutoff = Instant.now().minusSeconds(3600)
+        jobs.entries.removeIf { it.value.createdAt.isBefore(cutoff) }
+
+        val job = ImportJob(jobId = UUID.randomUUID().toString())
+        jobs[job.jobId] = job
+        return job
+    }
+
+    private fun importUser(user: String, dataDir: String, stats: List<String>, job: ImportJob): UserResult? {
+        allImporters.forEach {
+            it.dataDir = dataDir
+            it.userDir = user
+            it.onProgress = { message -> job.message = message }
+        }
+
+        accountImporter.import()
+        val profile = accountImporter.profile
+        if (profile == null) {
+            job.message = "WARNING: No profile imported for user $user, skipping stats"
+            return null
+        }
+
+        allImporters.forEach { it.profile = profile }
+
+        val statsResults = mutableMapOf<String, StatResult>()
+        val requestedStats = if (stats.contains("all")) statImporters.keys else stats
+
+        for (statType in requestedStats) {
+            val importer = statImporters[statType]
+            if (importer == null) {
+                job.message = "Unknown stat type: $statType"
+                continue
+            }
+
+            job.message = "Importing $statType data for user $user..."
+            val count = importer.import()
+            job.message = "Imported $count $statType files"
+
+            if (count > 0 && importer.maxDate != null) {
+                importLogRepository.save(
+                    ImportLog(
+                        profile = profile,
+                        statType = statType,
+                        latestDataDate = importer.maxDate!!,
+                        importedAt = LocalDateTime.now(),
+                        fileCount = count
+                    )
+                )
+            }
+
+            statsResults[statType] = StatResult(fileCount = count)
+        }
+
+        return UserResult(user = user, stats = statsResults)
+    }
+
+    private fun extractZip(zipFile: File, destDir: File) {
+        val destPath = destDir.toPath().toRealPath()
+
+        ZipInputStream(zipFile.inputStream().buffered()).use { zis ->
+            var entry = zis.nextEntry
+            while (entry != null) {
+                val resolvedPath = destPath.resolve(entry.name).normalize()
+                if (!resolvedPath.startsWith(destPath)) {
+                    throw SecurityException("Zip entry '${entry.name}' is outside of the target directory (path traversal)")
+                }
+
+                if (entry.isDirectory) {
+                    Files.createDirectories(resolvedPath)
+                } else {
+                    Files.createDirectories(resolvedPath.parent)
+                    Files.newOutputStream(resolvedPath).use { out ->
+                        zis.copyTo(out)
+                    }
+                }
+
+                zis.closeEntry()
+                entry = zis.nextEntry
+            }
+        }
+    }
+
+    /** Returns (userName, dataDir) where dataDir is the parent of the user directory. */
+    private fun detectUserDir(extractDir: File): Pair<String, String>? {
+        val knownSubdirs = setOf(
+            "Physical Activity", "Sleep", "Heart Rate Variability",
+            "Stress", "Body", "Food and Water", "Mindfulness",
+            "Estimated Oxygen Variation", "Temperature",
+            "heart_rate", "steps", "calories", "distance", "exercise",
+            "sleep", "hrv", "spo2", "temperature"
+        )
+
+        fun hasKnownSubdirs(dir: File): Boolean {
+            val children = dir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: return false
+            return children.any { it in knownSubdirs }
+        }
+
+        val directChildren = extractDir.listFiles()?.filter { it.isDirectory } ?: return null
+
+        // Level 0: extractDir itself contains known subdirs (files at root of zip)
+        if (hasKnownSubdirs(extractDir)) {
+            return extractDir.name to extractDir.parent
+        }
+
+        for (child in directChildren) {
+            // Level 1: child is the user dir (e.g. extracted/YourName/Physical Activity/)
+            if (hasKnownSubdirs(child)) {
+                return child.name to extractDir.absolutePath
+            }
+            // Level 2: zip wrapper dir → user dir (e.g. extracted/MyFitbitData-3/YourName/Physical Activity/)
+            val grandchildren = child.listFiles()?.filter { it.isDirectory } ?: continue
+            for (grandchild in grandchildren) {
+                if (hasKnownSubdirs(grandchild)) {
+                    return grandchild.name to child.absolutePath
+                }
+            }
+        }
+
+        return null
     }
 }

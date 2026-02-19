@@ -16,7 +16,7 @@ class StepsResolver(
 
     @QueryMapping
     fun steps(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Steps> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(offset / limit, limit,
             Sort.by("dateTime").ascending())
 
@@ -29,7 +29,7 @@ class StepsResolver(
 
     @QueryMapping
     fun dailyStepsSum(@Argument range: DateRange): List<DailyStepsSum> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val results = stepsRepository.sumStepsPerDayBetween(profile, range.fromLocal, range.toLocal)
         return results.map {
             val date = it[0] as java.sql.Date
@@ -40,7 +40,7 @@ class StepsResolver(
 
     @QueryMapping
     fun weeklyStepsAverage(@Argument range: DateRange): List<WeeklyStepsAverage> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val results = stepsRepository.avgStepsPerWeekBetween(profile, range.fromLocal, range.toLocal)
         return results.map {
             val weekNumber = (it[0] as Number).toString()

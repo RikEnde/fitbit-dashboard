@@ -16,7 +16,7 @@ class ExerciseResolver(
 
     @QueryMapping
     fun exercises(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Exercise> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(offset / limit, limit)
 
         return if (range == null) {

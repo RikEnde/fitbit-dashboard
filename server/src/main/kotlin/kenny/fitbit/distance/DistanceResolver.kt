@@ -15,7 +15,7 @@ class DistanceResolver(
 
     @QueryMapping
     fun distances(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Distance> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(offset / limit, limit)
 
         return if (range == null) {

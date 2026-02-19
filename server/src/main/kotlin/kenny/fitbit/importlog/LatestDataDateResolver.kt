@@ -13,7 +13,7 @@ class LatestDataDateResolver(
 
     @QueryMapping
     fun latestDataDate(): LocalDate? {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return null
         return importLogRepository.findTopByProfileOrderByLatestDataDateDesc(profile)?.latestDataDate
     }
 }
