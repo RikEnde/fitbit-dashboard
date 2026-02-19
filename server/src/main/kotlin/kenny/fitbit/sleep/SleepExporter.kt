@@ -30,7 +30,7 @@ class SleepExporterImpl(
 ) : SleepExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<SleepLevelData> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val allSleepData = mutableListOf<SleepLevelData>()
         var page = 0
         val pageSize = 100  // Smaller page size since each Sleep has many level entries

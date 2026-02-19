@@ -19,7 +19,7 @@ class StepsExporterImpl(
 ) : StepsExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<Steps> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val allData = mutableListOf<Steps>()
         var page = 0
         val pageSize = 10000

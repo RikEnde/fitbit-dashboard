@@ -131,8 +131,47 @@
 			</button>
 		</div>
 	{:else}
-		<div class="p-8 text-center text-theme-text-secondary">
-			<p>No profile loaded</p>
+		<!-- No profile yet — show actions only -->
+		<div class="p-4 border-b border-theme-border text-center">
+			<div class="w-16 h-16 mx-auto rounded-full bg-fitbit-steps flex items-center justify-center text-white text-2xl font-medium">
+				?
+			</div>
+			<p class="mt-2 text-theme-text font-semibold">Welcome</p>
+			<p class="text-theme-text-secondary text-sm">Import your Fitbit data to get started</p>
+		</div>
+		<div class="p-2 space-y-1">
+			<button
+				onclick={() => { onClose(); onImport(); }}
+				class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-theme-border transition-colors text-theme-text-bright"
+			>
+				<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+				</svg>
+				Import Data
+			</button>
+			<button
+				onclick={handleThemeToggle}
+				class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-theme-border transition-colors text-left"
+			>
+				<span class="text-theme-text-bright flex items-center">
+					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+					</svg>
+					Theme
+				</span>
+				<span class="text-sm text-theme-text-secondary">
+					{$preferences.theme === 'dark' ? 'Light' : 'Dark'}
+				</span>
+			</button>
+			<button
+				onclick={() => { onClose(); logout(); }}
+				class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-theme-border transition-colors text-theme-text-bright"
+			>
+				<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+				</svg>
+				Log out
+			</button>
 		</div>
 	{/if}
 </div>

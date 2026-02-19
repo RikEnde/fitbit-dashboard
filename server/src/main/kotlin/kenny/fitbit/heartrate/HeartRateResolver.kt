@@ -19,7 +19,7 @@ class HeartRateResolver(
 
     @QueryMapping
     fun heartRates(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<HeartRate> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(offset / limit, limit,
             Sort.by("time").ascending())
 
@@ -32,7 +32,7 @@ class HeartRateResolver(
 
     @QueryMapping
     fun heartRatesPerInterval(@Argument range: DateRange): List<SumsOfHeartRates> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         return heartRateRepository.sumByTimeBetween(
             profileId = profile.id,
             duration = "10 minutes",

@@ -19,7 +19,7 @@ class CaloriesExporterImpl(
 ) : CaloriesExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<Calories> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val allData = mutableListOf<Calories>()
         var page = 0
         val pageSize = 10000

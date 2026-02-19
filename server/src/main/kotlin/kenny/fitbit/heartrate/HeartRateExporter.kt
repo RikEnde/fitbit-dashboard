@@ -19,7 +19,7 @@ class HeartRateExporterImpl(
 ) : HeartRateExporter {
 
     override fun queryData(from: LocalDateTime, to: LocalDateTime): List<HeartRate> {
-        val profile = authService.getProfile()
+        val profile = authService.getProfileOrNull() ?: return emptyList()
         val allData = mutableListOf<HeartRate>()
         var page = 0
         val pageSize = 10000

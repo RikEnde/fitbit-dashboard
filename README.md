@@ -4,8 +4,12 @@ A Kotlin/Spring Boot application for importing, storing, and querying your Fitbi
 and SvelteKit dashboard for visualizing health metrics.
 
 The goals of this project are two-fold.
-First, I wanted to be able to preserve and view my historical Fitbit data after moving to a tracker from another brand.
-Second, I wanted to do this as much as possible using AI tools, without writing any code by hand. 
+First, I wanted to be able to preserve and view my historical Fitbit data after moving to a tracker from another brand. 
+Second, I wanted to do this as much as possible using AI tools, without writing any code by hand.
+
+The data turned out to be a strange mix of relational and unstructured data. The choice was made to import the data into 
+a database, and make a web application with exposing the data via GraphQL, to support querying the data as well as 
+support a web UI with graphs, to replace the old Fitbit dashboard. 
 
 It took some planning and correcting to make the AI stick to the architecture and not always take the easiest path to 
 implement a feature. We have to keep in mind that a significant part of architecture is to keep the code readable and 

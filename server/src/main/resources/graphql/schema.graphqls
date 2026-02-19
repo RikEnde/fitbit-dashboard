@@ -40,7 +40,7 @@ type Query {
     sleepScores(limit: Int = 10, offset: Int = 0, range: DateRange): [SleepScore!]!
 
     # Profile Queries
-    profile: Profile!
+    profile: Profile
 }
 
 # Heart Rate Types
