@@ -24,8 +24,9 @@ that being a "programmer", either as a profession or as an identity, is going to
 
 If you decide to run this application for yourself, do not expose it to the internet. This is your personal data. 
 Fitbit records when you sleep, when you exercise, your GPS locations (though we are not importing that data). I think 
-it should be obvious why you need to keep this private. The security / authentication serves only to support multiple 
-users, it is not designed to protect your data when exposed to the internet.
+it should be obvious why you need to keep this private. The security / authentication serves only to support multiple
+users, it is not designed to protect your data when exposed to the internet. The registration
+endpoint is open and anyone with network access can create an account.
 
 I accept no responsibility for any consequences of using this software or the information in this documentation.
 
@@ -112,12 +113,26 @@ mvn -pl server spring-boot:run
 
 The server will start on http://localhost:8080
 
-### 4. Access the Application
+### 4. Create an Account
+
+Open the dashboard (see step 5) and click "Create one" on the login page to register a new account. After registering, you'll be automatically logged in and prompted to import your Fitbit data.
+
+You can also register via the API:
+
+```bash
+curl -X POST http://localhost:8080/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"yourname","password":"yourpassword"}'
+```
+
+Username must be 3-50 characters (letters, numbers, hyphens, underscores). Password must be at least 8 characters.
+
+### 5. Access the Application
 
 - **GraphiQL** (GraphQL IDE): http://localhost:8080/graphiql
 - **REST API**: http://localhost:8080/api
 
-### 5. Run the Dashboard (Optional)
+### 6. Run the Dashboard (Optional)
 
 ```bash
 cd dashboard

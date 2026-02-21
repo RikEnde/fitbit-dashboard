@@ -20,7 +20,7 @@ class HeartRateExporterImplTest {
         val heartRate = HeartRate(
             bpm = 72,
             confidence = 3,
-            time = LocalDateTime.of(2024, 6, 15, 10, 30, 0),
+            dateTime = LocalDateTime.of(2024, 6, 15, 10, 30, 0),
             profile = TestConfig.testProfile()
         )
 

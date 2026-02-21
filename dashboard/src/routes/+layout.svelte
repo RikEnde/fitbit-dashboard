@@ -61,7 +61,16 @@
 	<div class="min-h-screen bg-theme-bg text-theme-text">
 		<Header />
 		<main class="max-w-7xl mx-auto">
-			{@render children()}
+			{#if !$profileLoading && !$profile}
+				<div class="flex items-center justify-center py-24">
+					<div class="bg-theme-card rounded-2xl shadow-xl p-8 max-w-md text-center">
+						<h2 class="text-xl font-bold text-theme-text mb-3">Welcome!</h2>
+						<p class="text-theme-muted">To get started, import your Fitbit data using the "Import Data" option in the menu above.</p>
+					</div>
+				</div>
+			{:else}
+				{@render children()}
+			{/if}
 		</main>
 	</div>
 {:else}

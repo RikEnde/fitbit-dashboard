@@ -97,7 +97,7 @@ Dependencies:
 
 All data is scoped to a user profile. The system supports multiple users with data isolation:
 
-- **Authentication**: Database-backed HTTP Basic Auth via `SecurityConfig.kt`. Credentials stored in `user_credentials` table (BCrypt hashed). No defaults — requires DB-seeded credentials.
+- **Authentication**: Database-backed HTTP Basic Auth via `SecurityConfig.kt`. Credentials stored in `user_credentials` table (BCrypt hashed). Users can self-register via `POST /api/register` (unauthenticated) or be seeded in the DB.
 - **Profile scoping**: `AuthenticatedProfileService` extracts the authenticated username from `SecurityContextHolder` and loads the corresponding `Profile`. All resolvers and exporters inject this service and pass the profile to repository queries.
 - **Data isolation**: Every health data entity (Steps, HeartRate, Sleep, etc.) has a `profile` FK. Repository methods filter by profile.
 - **Import log**: After each import, `ImportLog` records the latest data date per profile and stat type. The `latestDataDate` GraphQL query returns the most recent date with data for the authenticated user, which the dashboard uses as its default date.
@@ -123,7 +123,7 @@ Heart rate domain has two resolvers: `HeartRateResolver.kt` (real-time readings)
 **GraphQL query methods**: plural nouns matching the schema — `fun steps(...)`, `fun heartRates(...)`, `fun exercises(...)`. Aggregation queries use descriptive names: `dailyStepsSum`, `weeklyStepsAverage`, `heartRatesPerInterval`.
 
 **Tests**:
-- Server: `{Domain}ExporterImplTest.kt`, `SecurityConfigTest.kt`
+- Server: `{Domain}ExporterImplTest.kt`, `SecurityConfigTest.kt`, `RegistrationControllerTest.kt`
 - Importer: `{Domain}ImporterImplTest.kt`
 
 ### Importer Structure
@@ -141,7 +141,7 @@ Both base classes handle concurrent file processing (coroutines + semaphore), ba
 
 Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username.
 
-**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) as a multipart file upload. It accepts a Fitbit export zip file and a `stats` parameter (default `all`). The endpoint extracts the zip, auto-detects the user directory structure, imports the data, and returns a job ID. Poll `GET /api/import/{jobId}` for progress. The dashboard's Import Data dialog uses this endpoint.
+**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) as a multipart file upload. It accepts a Fitbit export zip file and a `stats` parameter (default `all`). The endpoint extracts the zip, auto-detects the user directory structure, imports the data, and returns a job ID. Poll `GET /api/import/{jobId}` for progress. The imported profile's `username` is set to the authenticated user's login username (not the zip directory name). The dashboard's Import Data dialog uses this endpoint.
 
 ### Data Export System
 
@@ -173,13 +173,18 @@ Key queries:
 
 ### Security & Authentication
 
-All API endpoints (`/graphql`, `/graphiql`, `/api/**`) require HTTP Basic Authentication via Spring Security (stateless, CSRF disabled).
+All API endpoints (`/graphql`, `/graphiql`, `/api/**`) require HTTP Basic Authentication via Spring Security (stateless, CSRF disabled). The only exception is `POST /api/register`, which is `permitAll()`.
+
+**Registration**: `POST /api/register` accepts `{ username, password }` JSON. Validates username (3-50 chars, alphanumeric/hyphens/underscores) and password (min 8 chars), checks uniqueness, hashes with BCrypt, and creates a `UserCredentials` row. New accounts start with no `Profile` — profile data is populated on first Fitbit data import. The dashboard login page has a "Create one" toggle to access the registration form.
+
+**Profile username binding**: When importing via the REST endpoint (`POST /api/import`), the imported profile's `username` is overridden with the authenticated user's login username (not the zip directory name). This ensures `AuthenticatedProfileService` can always find the profile by login username regardless of the Fitbit export's directory structure.
 
 Key files:
 - `server/src/main/kotlin/kenny/fitbit/SecurityConfig.kt` - SecurityFilterChain, database-backed UserDetailsService
+- `server/src/main/kotlin/kenny/fitbit/auth/RegistrationController.kt` - Self-service account registration endpoint
 - `server/src/main/kotlin/kenny/fitbit/AuthenticatedProfileService.kt` - Loads authenticated user's Profile from SecurityContext
 - `dashboard/src/lib/stores/auth.ts` - Credentials store (sessionStorage), login/logout functions
-- `dashboard/src/lib/components/Login.svelte` - Login form (validates credentials against server)
+- `dashboard/src/lib/components/Login.svelte` - Login/registration form (validates credentials against server)
 - `dashboard/src/lib/graphql/client.ts` - URQL client (sends Basic Auth header on all requests)
 
 ```bash

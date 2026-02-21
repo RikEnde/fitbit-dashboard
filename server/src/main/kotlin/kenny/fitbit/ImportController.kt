@@ -78,7 +78,9 @@ class ImportController(
     private val respiratoryRateSummaryImporter: RespiratoryRateSummaryImporter,
     private val dailySpO2Importer: DailySpO2Importer,
     private val accountImporter: AccountImporter,
-    private val importLogRepository: ImportLogRepository
+    private val importLogRepository: ImportLogRepository,
+    private val authenticatedProfileService: AuthenticatedProfileService,
+    private val profileRepository: kenny.fitbit.profile.ProfileRepository
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -136,6 +138,9 @@ class ImportController(
         val job = createJob()
         val tempDir = Files.createTempDirectory("fitbit-import-${job.jobId}").toFile()
 
+        // Capture authenticated username before spawning background thread (SecurityContext is thread-local)
+        val authenticatedUsername = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication.name
+
         // Save file before returning — Spring cleans up MultipartFile after the request completes
         val zipFile = File(tempDir, "upload.zip")
         file.transferTo(zipFile)
@@ -153,7 +158,7 @@ class ImportController(
 
                 job.message = "Detected user: $userName"
 
-                val userResult = importUser(userName, dataDir, stats, job)
+                val userResult = importUser(userName, dataDir, stats, job, authenticatedUsername)
                 val results = if (userResult != null) listOf(userResult) else emptyList()
 
                 job.results = ImportResponse(results = results)
@@ -194,7 +199,7 @@ class ImportController(
         return job
     }
 
-    private fun importUser(user: String, dataDir: String, stats: List<String>, job: ImportJob): UserResult? {
+    private fun importUser(user: String, dataDir: String, stats: List<String>, job: ImportJob, authenticatedUsername: String): UserResult? {
         allImporters.forEach {
             it.dataDir = dataDir
             it.userDir = user
@@ -208,7 +213,11 @@ class ImportController(
             return null
         }
 
-        allImporters.forEach { it.profile = profile }
+        // Set profile username to the authenticated user's login username so that
+        // AuthenticatedProfileService can find the profile regardless of the zip directory name
+        val savedProfile = profileRepository.save(profile.copy(username = authenticatedUsername))
+
+        allImporters.forEach { it.profile = savedProfile }
 
         val statsResults = mutableMapOf<String, StatResult>()
         val requestedStats = if (stats.contains("all")) statImporters.keys else stats
@@ -227,7 +236,7 @@ class ImportController(
             if (count > 0 && importer.maxDate != null) {
                 importLogRepository.save(
                     ImportLog(
-                        profile = profile,
+                        profile = savedProfile,
                         statType = statType,
                         latestDataDate = importer.maxDate!!,
                         importedAt = LocalDateTime.now(),
