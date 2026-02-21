@@ -42,6 +42,7 @@ class SecurityConfig {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers("/api/register").permitAll()
                     .requestMatchers("/graphql", "/graphiql", "/api/**").authenticated()
                     .anyRequest().permitAll()
             }
