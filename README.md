@@ -39,7 +39,11 @@ To use this application, you first need to download your data from Fitbit:
 3. Or navigate directly to: https://www.fitbit.com/settings/data/export
 4. Click **Request Data** to export your complete Fitbit history
 5. Fitbit will email you when your data is ready (this can take a few hours to days)
-6. Download the ZIP file and extract it to a `data` directory in the parent folder of this project. Each user's data goes in a subdirectory named after the user (the directory name becomes the username):
+6. Download the ZIP file. You can either:
+   - **Upload it directly** via the dashboard (Import Data) or the REST API
+   - **Extract it** to a `data` directory for CLI import (see below)
+
+   For CLI import, extract the zip so each user's data goes in a subdirectory named after the user (the directory name becomes the username):
    ```
    ../data/
    └── YourName/
@@ -256,24 +260,21 @@ The application also exposes a REST API at `/api` using Spring Data REST, provid
 
 ### Data Import via REST
 
-You can trigger data imports through the server's REST API instead of the CLI:
+You can trigger data imports through the server's REST API by uploading a Fitbit export zip file:
 
 ```bash
 curl -u user:password -X POST http://localhost:8080/api/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dataDir": "../data",
-    "users": ["YourName"],
-    "stats": ["heartrate", "steps", "calories"]
-  }'
+  -F "file=@MyFitbitData.zip" \
+  -F "stats=all"
 ```
 
-Request fields:
-- `dataDir` - Path to the data directory (default: `../data`)
-- `users` - List of user directory names to import
-- `stats` - List of stat types to import (use `["all"]` for everything)
+Parameters:
+- `file` - The Fitbit data export zip file (required)
+- `stats` - Comma-separated stat types to import, or `all` for everything (default: `all`)
 
-The response returns per-user, per-stat file counts.
+The response returns a job ID. Poll `GET /api/import/{jobId}` for progress and results.
+
+You can also import via the dashboard: click your profile avatar and select **Import Data**.
 
 ## Data Export
 

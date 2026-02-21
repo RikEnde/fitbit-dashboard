@@ -12,23 +12,17 @@ import kenny.fitbit.importlog.ImportLogRepository
 import kenny.fitbit.profile.AccountImporter
 import kenny.fitbit.sleep.*
 import kenny.fitbit.steps.StepsImporter
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
 import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipInputStream
-
-data class ImportRequest(
-    val dataDir: String = "../data",
-    val users: List<String> = emptyList(),
-    val stats: List<String> = emptyList()
-)
 
 data class StatResult(val fileCount: Int)
 
@@ -87,6 +81,7 @@ class ImportController(
     private val importLogRepository: ImportLogRepository
 ) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
     private val jobs = ConcurrentHashMap<String, ImportJob>()
 
     private val statImporters: Map<String, Importer<*>> by lazy {
@@ -120,31 +115,6 @@ class ImportController(
         get() = statImporters.values.toList() + accountImporter
 
     @PostMapping
-    @Synchronized
-    fun importData(@RequestBody request: ImportRequest): ResponseEntity<Map<String, String>> {
-        val job = createJob()
-
-        Thread {
-            try {
-                val results = mutableListOf<UserResult>()
-                for (user in request.users) {
-                    val userResult = importUser(user, request.dataDir, request.stats, job)
-                    if (userResult != null) results.add(userResult)
-                }
-                job.results = ImportResponse(results = results)
-                job.status = ImportStatus.COMPLETED
-            } catch (e: Exception) {
-                job.error = e.message ?: "Unknown error"
-                job.status = ImportStatus.FAILED
-            } finally {
-                allImporters.forEach { it.onProgress = ::println }
-            }
-        }.start()
-
-        return ResponseEntity.ok(mapOf("jobId" to job.jobId))
-    }
-
-    @PostMapping("/upload")
     @Synchronized
     fun uploadZip(
         @RequestParam("file") file: MultipartFile,
@@ -189,7 +159,8 @@ class ImportController(
                 job.results = ImportResponse(results = results)
                 job.status = ImportStatus.COMPLETED
             } catch (e: Exception) {
-                job.error = e.message ?: "Unknown error"
+                log.error("Import failed for job ${job.jobId}", e)
+                job.error = if (e is IllegalStateException) e.message ?: "Import failed" else "Import failed"
                 job.status = ImportStatus.FAILED
             } finally {
                 allImporters.forEach { it.onProgress = ::println }

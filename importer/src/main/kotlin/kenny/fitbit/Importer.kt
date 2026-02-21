@@ -9,6 +9,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
+import org.slf4j.LoggerFactory
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -63,7 +64,7 @@ interface Importer<T> {
         val pattern = filePattern().toRegex()
 
         val files = dir.listFiles { file ->
-            file.isFile && pattern.matches(file.name)
+            file.isFile && !java.nio.file.Files.isSymbolicLink(file.toPath()) && pattern.matches(file.name)
         } ?: emptyArray()
 
         onProgress("Found ${files.size} files matching pattern ${filePattern()} in directory ${dir.absolutePath}")
@@ -83,6 +84,7 @@ abstract class JsonImporter<T>(
     transactionManager: PlatformTransactionManager
 ) : Importer<T> {
 
+    private val log = LoggerFactory.getLogger(javaClass)
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
     override var dataDir: String = "../data"
@@ -200,6 +202,7 @@ abstract class JsonImporter<T>(
             }
         } catch (e: Exception) {
             onProgress("Error parsing file ${file.name}: ${e.message}")
+            log.error("Error parsing file ${file.name}", e)
         }
     }
 }
@@ -214,6 +217,7 @@ abstract class CsvImporter<T>(
     transactionManager: PlatformTransactionManager
 ) : Importer<T> {
 
+    private val log = LoggerFactory.getLogger(javaClass)
     private val transactionTemplate = TransactionTemplate(transactionManager)
 
     override var dataDir: String = "../data"
@@ -336,7 +340,7 @@ abstract class CsvImporter<T>(
             onProgress("Imported $lineCount records from ${file.name}")
         } catch (e: Exception) {
             onProgress("Error parsing file ${file.name}: ${e.message}")
-            onProgress(e.stackTraceToString())
+            log.error("Error parsing file ${file.name}", e)
         }
     }
 }

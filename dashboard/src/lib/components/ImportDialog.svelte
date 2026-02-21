@@ -10,8 +10,6 @@
 
 	let {onClose}: Props = $props();
 
-	type ImportMode = 'upload' | 'filesystem';
-
 	const statTypes: Record<string, string> = {
 		profile: 'Profile',
 		heartrate: 'Heart Rate',
@@ -38,9 +36,6 @@
 		dailyspo2: 'Daily SpO2'
 	};
 
-	let mode = $state<ImportMode>('upload');
-	let dataDir = $state('../data');
-	let userName = $state('');
 	let selectedFile = $state<File | null>(null);
 	let selectedStats = $state<Set<string>>(new Set(Object.keys(statTypes)));
 	let loading = $state(false);
@@ -97,11 +92,7 @@
 	}
 
 	async function handleImport() {
-		if (mode === 'filesystem' && !userName.trim()) {
-			error = 'Please enter a user name.';
-			return;
-		}
-		if (mode === 'upload' && !selectedFile) {
+		if (!selectedFile) {
 			error = 'Please select a zip file.';
 			return;
 		}
@@ -119,39 +110,16 @@
 		try {
 			const header = get(authHeader);
 			const stats = allSelected ? ['all'] : Array.from(selectedStats);
-			let jobId: string;
 
-			if (mode === 'upload') {
-				progressMessage = 'Uploading zip file...';
-				jobId = await uploadZipFile(
-					selectedFile!,
-					stats,
-					header,
-					(progress) => { uploadProgress = progress; }
-				);
-				uploadProgress = null;
-				progressMessage = 'Upload complete. Processing...';
-			} else {
-				progressMessage = 'Starting import...';
-				const response = await fetch('/api/import', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...(header ? {'Authorization': header} : {})
-					},
-					body: JSON.stringify({
-						dataDir: dataDir,
-						users: [userName.trim()],
-						stats
-					})
-				});
-
-				if (!response.ok) {
-					throw new Error(`Import failed: ${response.status} ${response.statusText}`);
-				}
-
-				({jobId} = await response.json());
-			}
+			progressMessage = 'Uploading zip file...';
+			const jobId = await uploadZipFile(
+				selectedFile!,
+				stats,
+				header,
+				(progress) => { uploadProgress = progress; }
+			);
+			uploadProgress = null;
+			progressMessage = 'Upload complete. Processing...';
 
 			importJob.set({
 				jobId,
@@ -263,69 +231,24 @@
 				</div>
 			{:else}
 				<p class="text-sm text-theme-text-secondary">
-					Import Fitbit data from a zip export or local files into the database.
+					Upload your Fitbit data export zip file to import into the database.
 				</p>
 
-				<!-- Mode Toggle -->
-				<div class="flex rounded-lg border border-theme-border overflow-hidden">
-					<button
-						onclick={() => mode = 'upload'}
+				<!-- File Upload -->
+				<div>
+					<label for="import-file" class="block text-sm font-medium text-theme-text mb-1">Fitbit Export Zip</label>
+					<input
+						id="import-file"
+						type="file"
+						accept=".zip"
+						onchange={handleFileSelect}
 						disabled={loading}
-						class="flex-1 px-3 py-2 text-sm font-medium transition-colors {mode === 'upload' ? 'bg-fitbit-steps text-white' : 'bg-theme-bg text-theme-text-secondary hover:text-theme-text'} disabled:opacity-50"
-					>
-						Upload Zip
-					</button>
-					<button
-						onclick={() => mode = 'filesystem'}
-						disabled={loading}
-						class="flex-1 px-3 py-2 text-sm font-medium transition-colors {mode === 'filesystem' ? 'bg-fitbit-steps text-white' : 'bg-theme-bg text-theme-text-secondary hover:text-theme-text'} disabled:opacity-50"
-					>
-						Filesystem
-					</button>
+						class="w-full px-3 py-2 bg-theme-bg border border-theme-border rounded-lg text-theme-text text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-fitbit-steps/20 file:text-fitbit-steps hover:file:bg-fitbit-steps/30 disabled:opacity-50"
+					/>
+					{#if selectedFile}
+						<p class="text-xs text-theme-text-secondary mt-1">{selectedFile.name} ({formatBytes(selectedFile.size)})</p>
+					{/if}
 				</div>
-
-				{#if mode === 'upload'}
-					<!-- File Upload -->
-					<div>
-						<label for="import-file" class="block text-sm font-medium text-theme-text mb-1">Fitbit Export Zip</label>
-						<input
-							id="import-file"
-							type="file"
-							accept=".zip"
-							onchange={handleFileSelect}
-							disabled={loading}
-							class="w-full px-3 py-2 bg-theme-bg border border-theme-border rounded-lg text-theme-text text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-fitbit-steps/20 file:text-fitbit-steps hover:file:bg-fitbit-steps/30 disabled:opacity-50"
-						/>
-						{#if selectedFile}
-							<p class="text-xs text-theme-text-secondary mt-1">{selectedFile.name} ({formatBytes(selectedFile.size)})</p>
-						{/if}
-					</div>
-				{:else}
-					<!-- Data Directory -->
-					<div>
-						<label for="import-datadir" class="block text-sm font-medium text-theme-text mb-1">Data Directory</label>
-						<input
-							id="import-datadir"
-							type="text"
-							bind:value={dataDir}
-							disabled={loading}
-							class="w-full px-3 py-2 bg-theme-bg border border-theme-border rounded-lg text-theme-text focus:outline-none focus:ring-2 focus:ring-fitbit-steps disabled:opacity-50"
-						/>
-					</div>
-
-					<!-- User Name -->
-					<div>
-						<label for="import-user" class="block text-sm font-medium text-theme-text mb-1">User Name</label>
-						<input
-							id="import-user"
-							type="text"
-							bind:value={userName}
-							disabled={loading}
-							placeholder="Directory name of the user"
-							class="w-full px-3 py-2 bg-theme-bg border border-theme-border rounded-lg text-theme-text placeholder:text-theme-text-muted focus:outline-none focus:ring-2 focus:ring-fitbit-steps disabled:opacity-50"
-						/>
-					</div>
-				{/if}
 
 				<!-- Stat Types -->
 				<div>
