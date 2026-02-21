@@ -80,7 +80,7 @@
 			hourlyMap.set(i, { sum: 0, count: 0 });
 		}
 		for (const hr of heartRates) {
-			const hour = new Date(hr.time).getHours();
+			const hour = new Date(hr.dateTime).getHours();
 			const current = hourlyMap.get(hour)!;
 			hourlyMap.set(hour, { sum: current.sum + hr.bpm, count: current.count + 1 });
 		}
@@ -129,7 +129,7 @@
 			// Process for line chart (sample every few minutes for smoother chart)
 			const sampledData = heartRates
 				.filter((_, i) => i % 5 === 0) // Sample every 5th reading
-				.map((hr) => ({ time: hr.time, value: hr.bpm }));
+				.map((hr) => ({ time: hr.dateTime, value: hr.bpm }));
 			heartRateData = sampledData;
 
 			// Calculate stats

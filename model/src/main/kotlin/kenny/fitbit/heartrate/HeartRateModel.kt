@@ -18,8 +18,8 @@ data class HeartRate(
     @Column(nullable = false)
     val confidence: Int,
 
-    @Column(nullable = false)
-    val time: LocalDateTime,
+    @Column(name = "time", nullable = false)
+    val dateTime: LocalDateTime,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id", nullable = false)

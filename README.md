@@ -116,7 +116,6 @@ The server will start on http://localhost:8080
 
 - **GraphiQL** (GraphQL IDE): http://localhost:8080/graphiql
 - **REST API**: http://localhost:8080/api
-- **pgAdmin** (database admin): http://localhost:5050
 
 ### 5. Run the Dashboard (Optional)
 
@@ -143,7 +142,7 @@ query {
     id
     bpm
     confidence
-    time
+    dateTime
   }
 }
 
@@ -225,31 +224,16 @@ query {
 
 ```graphql
 query {
-  profiles(limit: 5) {
+  profile {
     id
     displayName
+    fullName
     emailAddress
+    dateOfBirth
+    memberSince
     gender
     height
     weight
-  }
-
-  profile(id: "1") {
-    id
-    fullName
-    dateOfBirth
-    memberSince
-  }
-}
-```
-
-#### Health Check
-
-```graphql
-query {
-  healthStatus {
-    status
-    message
   }
 }
 ```

@@ -71,7 +71,6 @@ docker-compose up -d
 
 # Access points:
 # - PostgreSQL: localhost:5432
-# - pgAdmin: localhost:5050
 # - Server API: localhost:8080 (requires auth)
 # - GraphiQL: localhost:8080/graphiql (requires auth)
 # - REST API: localhost:8080/api (requires auth)

@@ -48,7 +48,7 @@ type HeartRate {
     id: ID!
     bpm: Int!
     confidence: Int!
-    time: String!
+    dateTime: String!
 }
 
 type SumsOfHeartRates {

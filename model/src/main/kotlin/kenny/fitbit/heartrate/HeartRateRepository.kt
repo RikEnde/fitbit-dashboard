@@ -17,7 +17,7 @@ data class SumsOfHeartRates(
 
 @Repository
 interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecificationExecutor<HeartRate> {
-    fun findByProfileAndTimeBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRate>
+    fun findByProfileAndDateTimeBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRate>
     fun findByProfile(profile: Profile, pageable: Pageable): Page<HeartRate>
 
     @Query(

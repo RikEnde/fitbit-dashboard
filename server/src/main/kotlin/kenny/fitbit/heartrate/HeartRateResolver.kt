@@ -21,12 +21,12 @@ class HeartRateResolver(
     fun heartRates(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<HeartRate> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
         val pageable = PageRequest.of(offset / limit, limit,
-            Sort.by("time").ascending())
+            Sort.by("dateTime").ascending())
 
         return if (range == null) {
             heartRateRepository.findByProfile(profile, pageable).content
         } else {
-            heartRateRepository.findByProfileAndTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
+            heartRateRepository.findByProfileAndDateTimeBetween(profile, range.fromLocal, range.toLocal, pageable).content
         }
     }
 
