@@ -42,7 +42,7 @@ class HeartRateImporterImplTest {
         assertNotNull(entity)
         assertEquals(72, entity!!.bpm)
         assertEquals(3, entity.confidence)
-        assertEquals(LocalDateTime.of(2024, 1, 1, 8, 0, 0), entity.time)
+        assertEquals(LocalDateTime.of(2024, 1, 1, 8, 0, 0), entity.dateTime)
 
         val entity2 = heartRateImporter.parseToEntity(jsonNode[1])
         assertEquals(75, entity2!!.bpm)

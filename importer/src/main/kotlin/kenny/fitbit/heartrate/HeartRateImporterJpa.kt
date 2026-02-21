@@ -17,7 +17,7 @@ class HeartRateImporterImpl(
     transactionManager: PlatformTransactionManager
 ) : JsonImporter<HeartRate>(repository, entityManager, transactionManager), HeartRateImporter {
 
-    override fun entityDate(entity: HeartRate): LocalDate = entity.time.toLocalDate()
+    override fun entityDate(entity: HeartRate): LocalDate = entity.dateTime.toLocalDate()
 
     override fun parseToEntity(jsonItem: JsonNode): HeartRate? {
         val bpm = jsonItem.get("value")?.get("bpm")?.asInt()

@@ -50,7 +50,7 @@ export const HEART_RATES_QUERY = gql`
 			id
 			bpm
 			confidence
-			time
+			dateTime
 		}
 	}
 `;

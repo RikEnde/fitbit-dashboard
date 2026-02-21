@@ -26,7 +26,7 @@ class HeartRateExporterImpl(
 
         do {
             val pageRequest = PageRequest.of(page, pageSize)
-            val result = repository.findByProfileAndTimeBetween(profile, from, to, pageRequest)
+            val result = repository.findByProfileAndDateTimeBetween(profile, from, to, pageRequest)
             allData.addAll(result.content)
             page++
         } while (result.hasNext())
@@ -35,7 +35,7 @@ class HeartRateExporterImpl(
     }
 
     override fun toRecord(entity: HeartRate): AppleHealthRecord {
-        val formattedDate = formatDate(entity.time)
+        val formattedDate = formatDate(entity.dateTime)
 
         return AppleHealthRecord(
             type = healthKitType(),
