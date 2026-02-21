@@ -41,7 +41,7 @@ export function uploadZipFile(
         stats.forEach(s => formData.append('stats', s));
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/import/upload');
+        xhr.open('POST', '/api/import');
 
         if (authHeaderValue) {
             xhr.setRequestHeader('Authorization', authHeaderValue);

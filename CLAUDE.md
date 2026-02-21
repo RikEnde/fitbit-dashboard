@@ -142,11 +142,7 @@ Both base classes handle concurrent file processing (coroutines + semaphore), ba
 
 Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username.
 
-**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) which accepts:
-```json
-{"dataDir": "../data", "users": ["YourName"], "stats": ["heartrate", "steps"]}
-```
-Use `["all"]` for stats to import everything. Returns per-user, per-stat file counts.
+**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) as a multipart file upload. It accepts a Fitbit export zip file and a `stats` parameter (default `all`). The endpoint extracts the zip, auto-detects the user directory structure, imports the data, and returns a job ID. Poll `GET /api/import/{jobId}` for progress. The dashboard's Import Data dialog uses this endpoint.
 
 ### Data Export System
 

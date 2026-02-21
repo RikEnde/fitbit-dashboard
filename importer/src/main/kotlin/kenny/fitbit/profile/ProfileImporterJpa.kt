@@ -2,6 +2,7 @@ package kenny.fitbit.profile
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -18,6 +19,8 @@ import java.time.LocalDate
 class AccountImporterImpl(
     private val profileRepository: ProfileRepository
 ) : AccountImporter {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     override var dataDir: String = "../data"
     override var userDir: String? = null
@@ -120,7 +123,7 @@ class AccountImporterImpl(
 
         } catch (e: Exception) {
             onProgress("Error parsing file ${file.name}: ${e.message}")
-            onProgress(e.stackTraceToString())
+            log.error("Error parsing file ${file.name}", e)
         }
     }
 }
