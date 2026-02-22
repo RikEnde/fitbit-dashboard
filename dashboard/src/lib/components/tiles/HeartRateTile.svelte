@@ -20,7 +20,7 @@
 			heartRates(limit: $limit, range: $range) {
 				id
 				bpm
-				time
+				dateTime
 			}
 			restingHeartRate(date: $date) {
 				value
@@ -31,7 +31,7 @@
 	interface HeartRateRecord {
 		id: string;
 		bpm: number;
-		time: string;
+		dateTime: string;
 	}
 
 	function processHourlyData(heartRates: HeartRateRecord[]): { label: string; value: number }[] {

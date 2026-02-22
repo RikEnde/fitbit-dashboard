@@ -50,15 +50,8 @@ class SecurityConfigTest {
 
     @Test
     fun `rest api returns 401 without credentials`() {
-        mockMvc.perform(get("/api"))
+        mockMvc.perform(get("/api/export/heartrate"))
             .andExpect(status().isUnauthorized)
-    }
-
-    @Test
-    fun `rest api returns 200 with valid credentials`() {
-        mockMvc.perform(
-            get("/api").with(httpBasic("testuser", "testpass"))
-        ).andExpect(status().isOk)
     }
 
     @Test

@@ -14,7 +14,7 @@ export interface HeartRate {
 	id: string;
 	bpm: number;
 	confidence: number;
-	time: string;
+	dateTime: string;
 }
 
 export interface SleepLevelSummary {
