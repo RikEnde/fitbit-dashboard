@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 @Table(
     name = "heart_rates",
     indexes = [
-        Index(name = "idx_heartrate_time", columnList = "time")
+        Index(name = "idx_heartrate_date_time", columnList = "date_time")
     ]
 )
 data class HeartRate(
@@ -18,7 +18,7 @@ data class HeartRate(
     @Column(nullable = false)
     val confidence: Int,
 
-    @Column(name = "time", nullable = false)
+    @Column(nullable = false)
     val dateTime: LocalDateTime,
 
     @ManyToOne(fetch = FetchType.LAZY)

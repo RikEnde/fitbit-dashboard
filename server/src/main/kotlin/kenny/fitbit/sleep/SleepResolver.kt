@@ -3,6 +3,7 @@ package kenny.fitbit.sleep
 import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.graphql.data.method.annotation.SchemaMapping
@@ -17,7 +18,7 @@ class SleepResolver(
     @QueryMapping
     fun sleeps(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Sleep> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit)
+        val pageable = PageRequest.of(offset / limit, limit, Sort.by("startTime").ascending())
 
         return if (range == null) {
             sleepRepository.findByProfile(profile, pageable).content
@@ -51,7 +52,7 @@ class SleepScoreResolver(
     @QueryMapping
     fun sleepScores(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<SleepScore> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit)
+        val pageable = PageRequest.of(offset / limit, limit, Sort.by("timestamp").ascending())
 
         return if (range == null) {
             sleepScoreRepository.findByProfile(profile, pageable).content

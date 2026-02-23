@@ -40,7 +40,7 @@
 			hourlyMap.set(i, { sum: 0, count: 0 });
 		}
 		for (const hr of heartRates) {
-			const hour = new Date(hr.time).getHours();
+			const hour = new Date(hr.dateTime).getHours();
 			const current = hourlyMap.get(hour)!;
 			hourlyMap.set(hour, { sum: current.sum + hr.bpm, count: current.count + 1 });
 		}

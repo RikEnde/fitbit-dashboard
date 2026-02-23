@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 When import or runtime behavior doesn't match expectations, consider that the test data or real data may be incorrect before changing code. Ask the user to verify the data first.
 
+This is a development project, not a production system. Do not create database migration scripts. Schema changes that require column renames or structural changes are handled by dropping and recreating the database.
+
+## GraphQL scalar types
+
+All JPA entity timestamp fields use `LocalDateTime`, which cannot be serialized by `ExtendedScalars.DateTime` (it requires `OffsetDateTime`). These fields must remain typed as `String!` in the schema — Hibernate serializes `LocalDateTime` via `.toString()` producing ISO-8601 format. Only fields that explicitly return `OffsetDateTime` in the resolver (e.g. `SumsOfHeartRates.timeInterval`) can use the `DateTime!` scalar. The `Date!` scalar works correctly with `LocalDate`.
+
 ## Build and Run Commands
 
 ### Server (Kotlin/Spring Boot)
