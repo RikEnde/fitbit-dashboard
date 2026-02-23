@@ -1,234 +1,44 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Critical Constraints
 
-## Working with data
+### GraphQL Scalar Types
+All JPA entity timestamp fields use `LocalDateTime`, which **cannot** be serialized by `ExtendedScalars.DateTime` (it requires `OffsetDateTime`). These fields must remain typed as `String!` in the schema — Hibernate serializes `LocalDateTime` via `.toString()` producing ISO-8601 format. Only fields that explicitly return `OffsetDateTime` in the resolver (e.g. `SumsOfHeartRates.timeInterval`) can use `DateTime!`. The `Date!` scalar works correctly with `LocalDate`.
 
+### Database Policy
+This is a development project. Do not create database migration scripts. Schema changes are handled by dropping and recreating the database.
+
+### Data Integrity
 When import or runtime behavior doesn't match expectations, consider that the test data or real data may be incorrect before changing code. Ask the user to verify the data first.
 
-This is a development project, not a production system. Do not create database migration scripts. Schema changes that require column renames or structural changes are handled by dropping and recreating the database.
+### Profile Scoping
+All health data entities have a `profile` FK. Every repository query must filter by profile. Never return unscoped data.
 
-## GraphQL scalar types
-
-All JPA entity timestamp fields use `LocalDateTime`, which cannot be serialized by `ExtendedScalars.DateTime` (it requires `OffsetDateTime`). These fields must remain typed as `String!` in the schema — Hibernate serializes `LocalDateTime` via `.toString()` producing ISO-8601 format. Only fields that explicitly return `OffsetDateTime` in the resolver (e.g. `SumsOfHeartRates.timeInterval`) can use the `DateTime!` scalar. The `Date!` scalar works correctly with `LocalDate`.
-
-## Build and Run Commands
-
-### Server (Kotlin/Spring Boot)
+## Build Commands
 
 ```bash
-mvn -pl server spring-boot:run          # Run server (API/GraphQL) on :8080
-mvn -pl server test                      # Run all server tests
-mvn -pl server test -Dtest=StepsResolverTest  # Run a single test
-mvn -pl server compile                   # Compile only
+mvn -pl model install -DskipTests        # required before building server or importer
+mvn -pl importer install -DskipTests     # required before building server or importer-cli
+mvn -pl server spring-boot:run           # run server on :8080
+mvn -pl server test                      # run server tests
+mvn -pl server test -Dtest=SomeTest      # run a single test
+mvn -pl importer test                    # run importer tests
+cd dashboard && npm run dev              # dashboard dev server on :3000, proxies to :8080
 ```
 
-### Model (Shared Entities and Repositories)
+## Importer CLI
 
 ```bash
-mvn -pl model compile                    # Compile only
-mvn -pl model install -DskipTests        # Install to local repo (required before building server/importer separately)
+mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --all --user=NAME --datadir=PATH"
 ```
 
-### Importer Library
+Flags: `--heartrate`, `--steps`, `--calories`, `--distance`, `--exercise`, `--sleep`, `--sleepscore`, `--restingheartrate`, `--timeinzone`, `--activityminutes`, `--activezoneminutes`, `--vo2max`, `--runvo2max`, `--activitygoals`, `--devicetemperature`, `--respiratoryrate`, `--hrv`, `--hrvdetails`, `--minutespo2`, `--computedtemperature`, `--respiratoryratesummary`, `--dailyspo2`, `--all`
 
-```bash
-mvn -pl importer compile                 # Compile only
-mvn -pl importer test                    # Run all importer tests
-mvn -pl importer install -DskipTests     # Install to local repo (required before building server/importer-cli separately)
-```
+Profile is always imported first, unconditionally. `--datadir` defaults to `../data`.
 
-### Importer CLI (Data Import Runner)
+## Importer Behavior
 
-```bash
-# Import specific stat types for all users
-mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--heartrate --steps --calories"
-
-# Import all stat types for a specific user
-mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --user=YourName"
-
-# Import from a custom data directory
-mvn -pl importer-cli spring-boot:run -Dspring-boot.run.arguments="--all --datadir=/path/to/data"
-
-# Available flags: --heartrate, --steps, --calories, --distance, --exercise, --sleep,
-# --sleepscore, --restingheartrate, --timeinzone, --activityminutes, --activezoneminutes,
-# --vo2max, --runvo2max, --activitygoals, --devicetemperature, --respiratoryrate,
-# --hrv, --hrvdetails, --minutespo2, --computedtemperature, --respiratoryratesummary,
-# --dailyspo2, --profile, --all
-# --user=NAME (import only this user), --datadir=PATH (default: ../data)
-
-mvn -pl importer-cli compile             # Compile only
-mvn -pl importer-cli package             # Build executable jar
-```
-
-### Dashboard (SvelteKit/TypeScript)
-
-```bash
-cd dashboard
-npm run dev      # Dev server on port 3000, proxies /graphql and /api to :8080
-npm run build    # Production build
-npm run preview  # Preview production build
-```
-
-### Infrastructure
-
-```bash
-docker-compose up -d
-
-# Access points:
-# - PostgreSQL: localhost:5432
-# - Server API: localhost:8080 (requires auth)
-# - GraphiQL: localhost:8080/graphiql (requires auth)
-# - REST API: localhost:8080/api (requires auth)
-```
-
-## Architecture
-
-### Module Structure
-
-The project consists of five modules:
-
-- **model** - Shared JPA entities and Spring Data repositories
-- **importer** - Importer library: base classes (`Importer`, `JsonImporter`, `CsvImporter`) and all domain importer implementations. Plain jar, no `@SpringBootApplication`. Used by both server and importer-cli.
-- **importer-cli** - CLI runner for the importer. Contains `FitbitImporterApplication` (`@SpringBootApplication`), `ImportRunner`, and `application.yml`. Produces an executable jar.
-- **server** - REST API, GraphQL server with resolvers, exporters, and REST import endpoint. Depends on importer library for import beans.
-- **dashboard** - SvelteKit web dashboard for visualizing Fitbit data
-
-Dependencies:
-- **importer** depends on model
-- **importer-cli** depends on importer
-- **server** depends on model and importer
-
-### Multi-Tenancy
-
-All data is scoped to a user profile. The system supports multiple users with data isolation:
-
-- **Authentication**: Database-backed HTTP Basic Auth via `SecurityConfig.kt`. Credentials stored in `user_credentials` table (BCrypt hashed). Users can self-register via `POST /api/register` (unauthenticated) or be seeded in the DB.
-- **Profile scoping**: `AuthenticatedProfileService` extracts the authenticated username from `SecurityContextHolder` and loads the corresponding `Profile`. All resolvers and exporters inject this service and pass the profile to repository queries.
-- **Data isolation**: Every health data entity (Steps, HeartRate, Sleep, etc.) has a `profile` FK. Repository methods filter by profile.
-- **Import log**: After each import, `ImportLog` records the latest data date per profile and stat type. The `latestDataDate` GraphQL query returns the most recent date with data for the authenticated user, which the dashboard uses as its default date.
-
-### Naming Conventions
-
-**Packages**: `kenny.fitbit.{domain}` — same package name across all Kotlin modules (model, server, importer, importer-cli). Domains: `calories`, `distance`, `exercise`, `heartrate`, `sleep`, `steps`, `profile`, `auth`, `importlog`.
-
-**Model module** (`model/src/main/kotlin/kenny/fitbit/{domain}/`):
-- `{Domain}Model.kt` — JPA entity classes (e.g., `HeartRate`, `RestingHeartRate`)
-- `{Domain}Repository.kt` — Spring Data JPA repository interfaces
-
-**Server module** (`server/src/main/kotlin/kenny/fitbit/{domain}/`):
-- `{Domain}Resolver.kt` — GraphQL `@Controller` with `@QueryMapping` methods
-- `{Domain}Exporter.kt` — `Exporter<T>` implementation for Apple Health XML export
-
-Heart rate domain has two resolvers: `HeartRateResolver.kt` (real-time readings) and `RestingHeartRateResolver.kt` (daily resting HR).
-
-**Importer module** (`importer/src/main/kotlin/kenny/fitbit/{domain}/`):
-- `{Domain}Importer.kt` — interface extending `Importer<T>`, defines `directory()` and `filePattern()`
-- `{Domain}ImporterJpa.kt` — contains `{Domain}ImporterImpl` class extending `JsonImporter` or `CsvImporter`
-
-**GraphQL query methods**: plural nouns matching the schema — `fun steps(...)`, `fun heartRates(...)`, `fun exercises(...)`. Aggregation queries use descriptive names: `dailyStepsSum`, `weeklyStepsAverage`, `heartRatesPerInterval`.
-
-**Tests**:
-- Server: `{Domain}ExporterImplTest.kt`, `SecurityConfigTest.kt`, `RegistrationControllerTest.kt`
-- Importer: `{Domain}ImporterImplTest.kt`
-
-### Importer Structure
-
-The importer is split into two modules:
-
-**importer** (library) — Core classes in `importer/src/main/kotlin/kenny/fitbit/Importer.kt`:
-- `Importer<T>` interface — defines `dataDir`, `directory()`, `filePattern()`, `files()`, `import()`
-- `JsonImporter<T>` — abstract base for JSON files with `parseToEntity(JsonNode): T?`
-- `CsvImporter<T>` — abstract base for CSV files with `parseRow(values, headers): T?`
-
-Both base classes handle concurrent file processing (coroutines + semaphore), batched JPA persistence (flush/clear), and automatic `.imported` suffix renaming. The `dataDir` property can be set at runtime (defaults to `../data`).
-
-**importer-cli** (CLI runner) — `ImportRunner` in `importer-cli/src/main/kotlin/kenny/fitbit/FitbitImporterApplication.kt` orchestrates imports: scans user directories, imports profile first, then each enabled stat type. Accepts `--datadir=PATH` and `--user=NAME` command line options.
-
-Data lives in `{dataDir}/{username}/{subdirectory}/` (e.g., `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`). The directory name becomes the username.
-
-**REST import endpoint** — The server exposes `POST /api/import` (in `server/src/main/kotlin/kenny/fitbit/ImportController.kt`) as a multipart file upload. It accepts a Fitbit export zip file and a `stats` parameter (default `all`). The endpoint extracts the zip, auto-detects the user directory structure, imports the data, and returns a job ID. Poll `GET /api/import/{jobId}` for progress. The imported profile's `username` is set to the authenticated user's login username (not the zip directory name). The dashboard's Import Data dialog uses this endpoint.
-
-### Data Export System
-
-The `Exporter<T>` interface in `Exporters.kt` provides Apple Health XML export:
-- Generates XML compatible with iOS "Health Data Importer" app
-- REST endpoints at `/api/export/{type}?from=...&to=...`
-- Types: heartrate, steps, calories, distance, sleep
-- Paginated queries to handle large datasets
-- Dashboard UI: Profile dropdown → "Export to Apple Health" opens an export dialog (select data type + date range)
-- Only Apple Health XML format is currently supported
-
-```bash
-# Export heart rate data for a year (requires auth)
-curl -u user:password "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
-```
-
-### GraphQL
-
-Schema at `server/src/main/resources/graphql/schema.graphqls`. Uses `graphql-java-extended-scalars` for `DateTime` and `Date` scalars. Resolvers use pagination with `PageRequest` and date range filtering via `DateRange` input type.
-
-Key queries:
-- `profile` - Authenticated user's profile
-- `latestDataDate` - Most recent date with imported data for the authenticated user
-- `heartRates(limit, offset, range)` - Heart rate readings
-- `restingHeartRate(date: Date!)` - Resting heart rate for a specific date
-- `restingHeartRates(limit, offset, range)` - Resting heart rate time series
-- `steps`, `calories`, `distances`, `exercises`, `sleeps`, `sleepScores` - Other health data
-- `dailyStepsSum`, `weeklyStepsAverage`, `heartRatesPerInterval` - Aggregations
-
-### Security & Authentication
-
-All API endpoints (`/graphql`, `/graphiql`, `/api/**`) require HTTP Basic Authentication via Spring Security (stateless, CSRF disabled). The only exception is `POST /api/register`, which is `permitAll()`.
-
-**Registration**: `POST /api/register` accepts `{ username, password }` JSON. Validates username (3-50 chars, alphanumeric/hyphens/underscores) and password (min 8 chars), checks uniqueness, hashes with BCrypt, and creates a `UserCredentials` row. New accounts start with no `Profile` — profile data is populated on first Fitbit data import. The dashboard login page has a "Create one" toggle to access the registration form.
-
-**Profile username binding**: When importing via the REST endpoint (`POST /api/import`), the imported profile's `username` is overridden with the authenticated user's login username (not the zip directory name). This ensures `AuthenticatedProfileService` can always find the profile by login username regardless of the Fitbit export's directory structure.
-
-Key files:
-- `server/src/main/kotlin/kenny/fitbit/SecurityConfig.kt` - SecurityFilterChain, database-backed UserDetailsService
-- `server/src/main/kotlin/kenny/fitbit/auth/RegistrationController.kt` - Self-service account registration endpoint
-- `server/src/main/kotlin/kenny/fitbit/AuthenticatedProfileService.kt` - Loads authenticated user's Profile from SecurityContext
-- `dashboard/src/lib/stores/auth.ts` - Credentials store (sessionStorage), login/logout functions
-- `dashboard/src/lib/components/Login.svelte` - Login/registration form (validates credentials against server)
-- `dashboard/src/lib/graphql/client.ts` - URQL client (sends Basic Auth header on all requests)
-
-```bash
-# Authenticated API calls
-curl -u user:password http://localhost:8080/api
-curl -u user:password "http://localhost:8080/api/export/heartrate?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59" -o heartrate.xml
-```
-
-### Dashboard
-
-SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS.
-
-Key patterns:
-- Uses Svelte 5 runes (`$state`, `$derived`, `$props`, `$effect`)
-- GraphQL queries via URQL with client-side fetching in `onMount`
-- On login: fetches `profile` and `latestDataDate`, sets dashboard to most recent data date
-- Reactive date range filtering via stores
-- TailwindCSS with custom Fitbit color palette
-
-Detail pages in `dashboard/src/routes/`:
-- `/steps` - 30-day trend, hourly breakdown, weekly averages
-- `/heartrate` - Resting HR, min/max stats, day chart, zones distribution, resting HR trend (30-day/1-year toggle)
-- `/sleep` - Stages timeline, score breakdown, 30-day trend
-- `/exercise` - Activity list with HR zones, 30-day trend
-- `/calories` - 30-day trend, hourly breakdown
-- `/distance` - 30-day trend, hourly breakdown (values in km)
-- `/profile` - User info, physical stats, stride lengths, unit preferences
-
-### Data Unit Notes
-
-- Distance values from Fitbit are stored in centimeters (divide by 100,000 for km)
-- Stride length values are stored in centimeters (divide by 2.54 for inches)
-- Exercise duration is in milliseconds (divide by 60,000 for minutes)
-- Resting heart rate is stored as a float (bpm) with an error margin field
-
-### Tech Stack
-
-- Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
-- PostgreSQL 17 with JPA/Hibernate
-- GraphQL + REST (custom controllers at `/api`)
-- SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS
+- Processed files are renamed with an `.imported` suffix.
+- Data path: `{dataDir}/{username}/{subdirectory}/` (e.g. `../data/YourName/Physical Activity/heart_rate-2024-01-01.json`).
+- **CLI**: directory name becomes the profile `username`.
+- **REST/UI** (`POST /api/import`): accepts a Fitbit export zip; auto-detects the user folder by looking for known subdirectory names (`Physical Activity`, `Sleep`, `Heart Rate Variability`, etc.). Supports three layouts — data at zip root, user folder at zip root, or user folder inside a wrapper folder. The profile `username` is always overridden with the authenticated user's login name after import, regardless of the folder name in the zip.
