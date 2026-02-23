@@ -224,5 +224,5 @@ Detail pages in `dashboard/src/routes/`:
 
 - Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
 - PostgreSQL 17 with JPA/Hibernate
-- GraphQL + REST (Spring Data REST at `/api`)
+- GraphQL + REST (custom controllers at `/api`)
 - SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS

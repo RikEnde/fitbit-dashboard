@@ -255,7 +255,7 @@ query {
 
 ## REST API
 
-The application also exposes a REST API at `/api` using Spring Data REST, providing standard CRUD operations for all entities.
+The application also exposes REST endpoints at `/api` for import, export, and registration.
 
 ### Data Import via REST
 
@@ -323,5 +323,5 @@ Dependencies:
 
 - Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
 - PostgreSQL 17 with JPA/Hibernate
-- GraphQL + REST (Spring Data REST)
+- GraphQL + REST (custom controllers)
 - SvelteKit 2 + Svelte 5 + TypeScript + URQL + TailwindCSS

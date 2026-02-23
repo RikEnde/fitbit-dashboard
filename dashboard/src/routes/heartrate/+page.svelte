@@ -34,7 +34,7 @@
 			heartRates(limit: $limit, range: $range) {
 				id
 				bpm
-				time
+				dateTime
 			}
 			restingHeartRate(date: $date) {
 				value
@@ -54,7 +54,7 @@
 	interface HeartRateRecord {
 		id: string;
 		bpm: number;
-		time: string;
+		dateTime: string;
 	}
 
 	// Zone definitions (standard Fitbit zones)
