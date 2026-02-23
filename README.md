@@ -100,12 +100,11 @@ Supported import options:
 - `--computedtemperature` - Computed temperature
 - `--respiratoryratesummary` - Respiratory rate summary
 - `--dailyspo2` - Daily SpO2
-- `--profile` - User profile
 - `--all` - All of the above
 - `--user=NAME` - Import only the specified user (default: all users)
 - `--datadir=PATH` - Data directory (default: `../data`)
 
-### 3. Run the Server
+### 1. Run the Server
 
 ```bash
 mvn -pl server spring-boot:run
@@ -113,7 +112,7 @@ mvn -pl server spring-boot:run
 
 The server will start on http://localhost:8080
 
-### 4. Create an Account
+### 2. Create an Account
 
 Open the dashboard (see step 5) and click "Create one" on the login page to register a new account. After registering, you'll be automatically logged in and prompted to import your Fitbit data.
 
@@ -127,12 +126,12 @@ curl -X POST http://localhost:8080/api/register \
 
 Username must be 3-50 characters (letters, numbers, hyphens, underscores). Password must be at least 8 characters.
 
-### 5. Access the Application
+### 3. Access the Application
 
 - **GraphiQL** (GraphQL IDE): http://localhost:8080/graphiql
 - **REST API**: http://localhost:8080/api
 
-### 6. Run the Dashboard (Optional)
+### 4. Run the Dashboard (Optional)
 
 ```bash
 cd dashboard
