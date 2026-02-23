@@ -1,6 +1,7 @@
 # add once, near the top
 scalar DateTime               # RFC‑3339 scalar from graphql‑java‑extended‑scalars
 scalar Date                   # ISO-8601 date (YYYY-MM-DD) from graphql‑java‑extended‑scalars
+scalar Long                   # 64-bit integer from graphql‑java‑extended‑scalars
 
 input DateRange {
     from: DateTime!
@@ -72,7 +73,7 @@ type Steps {
 
 # Daily Steps Sum Type
 type DailyStepsSum {
-    date: String!
+    date: Date!
     totalSteps: Int!
 }
 
@@ -104,14 +105,14 @@ type Exercise {
     activityTypeId: Int!
     averageHeartRate: Int
     calories: Int!
-    duration: Int!
-    activeDuration: Int!
+    duration: Long!
+    activeDuration: Long!
     steps: Int
     logType: String!
     startTime: String!
     lastModified: String
     originalStartTime: String
-    originalDuration: Int
+    originalDuration: Long
     elevationGain: Float
     hasGps: Boolean!
     shouldFetchDetails: Boolean!
@@ -141,7 +142,7 @@ type Sleep {
     dateOfSleep: String!
     startTime: String!
     endTime: String!
-    duration: Int!
+    duration: Long!
     minutesToFallAsleep: Int!
     minutesAsleep: Int!
     minutesAwake: Int!

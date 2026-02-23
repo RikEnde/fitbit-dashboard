@@ -3,6 +3,7 @@ package kenny.fitbit.exercise
 import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.graphql.data.method.annotation.SchemaMapping
@@ -17,7 +18,7 @@ class ExerciseResolver(
     @QueryMapping
     fun exercises(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Exercise> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit)
+        val pageable = PageRequest.of(offset / limit, limit, Sort.by("startTime").ascending())
 
         return if (range == null) {
             exerciseRepository.findByProfile(profile, pageable).content

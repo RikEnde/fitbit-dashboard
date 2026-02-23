@@ -3,6 +3,7 @@ package kenny.fitbit.calories
 import kenny.fitbit.AuthenticatedProfileService
 import kenny.fitbit.DateRange
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
@@ -16,7 +17,7 @@ class CaloriesResolver(
     @QueryMapping
     fun calories(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Calories> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit)
+        val pageable = PageRequest.of(offset / limit, limit, Sort.by("dateTime").ascending())
 
         return if (range == null) {
             caloriesRepository.findByProfile(profile, pageable).content

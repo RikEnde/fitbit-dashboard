@@ -34,8 +34,8 @@ interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecification
           COALESCE(SUM(hr.bpm), 0)::int AS bpm_sum
         FROM buckets b
         LEFT JOIN heart_rates hr
-          ON hr.time >= b.bucket_start
-         AND hr.time < b.bucket_start + CAST(:duration AS interval)
+          ON hr.date_time >= b.bucket_start
+         AND hr.date_time < b.bucket_start + CAST(:duration AS interval)
          AND hr.profile_id = :profileId
         GROUP BY b.bucket_start
         ORDER BY b.bucket_start
