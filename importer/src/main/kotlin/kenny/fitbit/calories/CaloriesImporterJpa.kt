@@ -19,8 +19,8 @@ class CaloriesImporterImpl(
 
     override fun parseToEntity(jsonItem: JsonNode): Calories? {
         val valueStr = jsonItem.get("value")?.asText()
-        val dateTimeStr = jsonItem.get("dateTime")?.asText()
-        val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
+        val dateTimeStr = jsonItem.get("dateTime")?.asText() ?: return null
+        val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
 
         return if (valueStr != null) {
             val value = valueStr.toDouble()

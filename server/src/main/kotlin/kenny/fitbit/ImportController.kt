@@ -22,6 +22,9 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.zip.ZipInputStream
 
 data class StatResult(val fileCount: Int)
@@ -84,6 +87,7 @@ class ImportController(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+    private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
     private val jobs = ConcurrentHashMap<String, ImportJob>()
 
     private val statImporters: Map<String, Importer<*>> by lazy {
@@ -145,33 +149,40 @@ class ImportController(
         val zipFile = File(tempDir, "upload.zip")
         file.transferTo(zipFile)
 
-        Thread {
-            try {
-                job.message = "Extracting zip file..."
-                val extractDir = File(tempDir, "extracted")
-                extractDir.mkdirs()
-                extractZip(zipFile, extractDir)
-                zipFile.delete()
+        try {
+            executor.submit {
+                try {
+                    job.message = "Extracting zip file..."
+                    val extractDir = File(tempDir, "extracted")
+                    extractDir.mkdirs()
+                    extractZip(zipFile, extractDir)
+                    zipFile.delete()
 
-                val (userName, dataDir) = detectUserDir(extractDir)
-                    ?: throw IllegalStateException("Could not detect user directory in zip. Expected a top-level folder containing subdirectories like 'Physical Activity', 'Sleep', etc.")
+                    val (userName, dataDir) = detectUserDir(extractDir)
+                        ?: throw IllegalStateException("Could not detect user directory in zip. Expected a top-level folder containing subdirectories like 'Physical Activity', 'Sleep', etc.")
 
-                job.message = "Detected user: $userName"
+                    job.message = "Detected user: $userName"
 
-                val userResult = importUser(userName, dataDir, stats, job, authenticatedUsername)
-                val results = if (userResult != null) listOf(userResult) else emptyList()
+                    val userResult = importUser(userName, dataDir, stats, job, authenticatedUsername)
+                    val results = if (userResult != null) listOf(userResult) else emptyList()
 
-                job.results = ImportResponse(results = results)
-                job.status = ImportStatus.COMPLETED
-            } catch (e: Exception) {
-                log.error("Import failed for job ${job.jobId}", e)
-                job.error = if (e is IllegalStateException) e.message ?: "Import failed" else "Import failed"
-                job.status = ImportStatus.FAILED
-            } finally {
-                allImporters.forEach { it.onProgress = ::println }
-                tempDir.deleteRecursively()
+                    job.results = ImportResponse(results = results)
+                    job.status = ImportStatus.COMPLETED
+                } catch (e: Exception) {
+                    log.error("Import failed for job ${job.jobId}", e)
+                    job.error = if (e is IllegalStateException) e.message ?: "Import failed" else "Import failed"
+                    job.status = ImportStatus.FAILED
+                } finally {
+                    allImporters.forEach { it.onProgress = ::println }
+                    tempDir.deleteRecursively()
+                }
             }
-        }.start()
+        } catch (e: RejectedExecutionException) {
+            log.error("Could not start import job ${job.jobId}: executor rejected task", e)
+            job.error = "Server is shutting down, import cannot be started"
+            job.status = ImportStatus.FAILED
+            tempDir.deleteRecursively()
+        }
 
         return ResponseEntity.ok(mapOf("jobId" to job.jobId))
     }

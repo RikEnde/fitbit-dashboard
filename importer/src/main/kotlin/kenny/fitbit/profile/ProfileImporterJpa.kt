@@ -32,6 +32,7 @@ class AccountImporterImpl(
         get() = 10
 
     override fun import(): Int {
+        profile = null
         val files = files()
         val size = files.size
         val semaphore = Semaphore(maxConcurrentFiles)
