@@ -2,6 +2,7 @@ package kenny.fitbit.sleep
 
 import jakarta.persistence.*
 import kenny.fitbit.profile.Profile
+import org.hibernate.annotations.BatchSize
 import java.time.LocalDateTime
 
 @Entity
@@ -63,12 +64,15 @@ data class Sleep(
     val profile: Profile,
 
     @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     val levelSummaries: MutableList<SleepLevelSummary> = mutableListOf(),
 
     @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     val levelData: MutableList<SleepLevelData> = mutableListOf(),
 
     @OneToMany(mappedBy = "sleep", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     val levelShortData: MutableList<SleepLevelShortData> = mutableListOf(),
 
     @Id

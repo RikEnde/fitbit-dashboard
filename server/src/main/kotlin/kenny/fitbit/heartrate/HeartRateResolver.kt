@@ -20,7 +20,8 @@ class HeartRateResolver(
     @QueryMapping
     fun heartRates(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<HeartRate> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit,
+        val effectiveLimit = limit.coerceIn(1, 1000)
+        val pageable = PageRequest.of(offset / effectiveLimit, effectiveLimit,
             Sort.by("dateTime").ascending())
 
         return if (range == null) {

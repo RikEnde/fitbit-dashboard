@@ -4,8 +4,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -56,8 +54,7 @@ class AccountImporterImpl(
         return size
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
-    suspend fun importFile(index: Int, size: Int, file: File) {
+    fun importFile(index: Int, size: Int, file: File) {
         onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
         try {
             // Read the CSV file

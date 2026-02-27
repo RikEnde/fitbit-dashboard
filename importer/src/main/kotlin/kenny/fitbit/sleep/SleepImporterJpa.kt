@@ -25,25 +25,23 @@ class SleepImporterImpl(
 
     override fun entityDate(entity: Sleep): LocalDate = entity.dateOfSleep.toLocalDate()
 
-    // Thread-safe set to track log IDs (from DB + being imported) to prevent duplicates
+    // Thread-safe set to track log IDs (from DB + being imported) to prevent duplicates.
     // Fitbit's monthly exports overlap at boundaries. Sleep sessions near month transitions
-    // appear in both months' files. We need a workaround to prevent duplicate keys
+    // appear in both months' files. We need a workaround to prevent duplicate keys.
     private val seenLogIds: MutableSet<Long> = ConcurrentHashMap.newKeySet()
-    @Volatile private var importing = false
 
     override fun beforeImport() {
         println("Loading existing sleep log IDs for duplicate detection...")
         seenLogIds.clear()
         seenLogIds.addAll(sleepRepository.findAllLogIdsByProfile(profile!!))
-        importing = true
         println("Found ${seenLogIds.size} existing sleep records")
     }
 
     override fun parseToEntity(jsonItem: JsonNode): Sleep? {
         val logId = jsonItem.get("logId")?.asLong() ?: return null
 
-        // During imports, atomically check-and-add to prevent duplicates across concurrent files
-        if (importing && !seenLogIds.add(logId)) {
+        // Atomically check-and-add to prevent duplicates across concurrent files
+        if (!seenLogIds.add(logId)) {
             return null
         }
 
