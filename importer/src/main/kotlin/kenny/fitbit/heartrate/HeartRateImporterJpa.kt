@@ -22,8 +22,8 @@ class HeartRateImporterImpl(
     override fun parseToEntity(jsonItem: JsonNode): HeartRate? {
         val bpm = jsonItem.get("value")?.get("bpm")?.asInt()
         val confidence = jsonItem.get("value")?.get("confidence")?.asInt()
-        val dateTimeStr = jsonItem.get("dateTime")?.asText()
-        val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
+        val dateTimeStr = jsonItem.get("dateTime")?.asText() ?: return null
+        val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
 
         return if (bpm != null && confidence != null) {
             HeartRate(bpm, confidence, dateTime, profile!!)
@@ -46,8 +46,8 @@ class RestingHeartRateImporterImpl(
         val valueNode = jsonItem.get("value")
         val value = valueNode?.get("value")?.asDouble()
         val error = valueNode?.get("error")?.asDouble()
-        val dateTimeStr = jsonItem.get("dateTime")?.asText()
-        val dateTime: LocalDateTime = LocalDateTime.parse(dateTimeStr ?: "", getDateTimeFormatter())
+        val dateTimeStr = jsonItem.get("dateTime")?.asText() ?: return null
+        val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
 
         return if (value != null && value != 0.0 && error != null) {
             RestingHeartRate(value, error, dateTime, profile!!)
