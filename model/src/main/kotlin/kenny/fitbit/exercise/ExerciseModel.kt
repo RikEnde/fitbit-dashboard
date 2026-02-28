@@ -2,6 +2,7 @@ package kenny.fitbit.exercise
 
 import jakarta.persistence.*
 import kenny.fitbit.profile.Profile
+import org.hibernate.annotations.BatchSize
 import java.time.LocalDateTime
 
 @Entity
@@ -69,9 +70,11 @@ data class Exercise(
     val profile: Profile,
 
     @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     val heartRateZones: MutableList<HeartRateZone> = mutableListOf(),
 
     @OneToMany(mappedBy = "exercise", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     val activityLevels: MutableList<ActivityLevel> = mutableListOf(),
 
     @Id

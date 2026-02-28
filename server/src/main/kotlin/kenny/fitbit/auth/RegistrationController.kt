@@ -28,7 +28,7 @@ class RegistrationController(
             return ResponseEntity.badRequest().body(mapOf("error" to "Password must be at least 8 characters"))
         }
         if (userCredentialsRepository.findByUsername(username) != null) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "Username is already taken"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "Registration failed"))
         }
 
         userCredentialsRepository.save(

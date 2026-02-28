@@ -18,6 +18,7 @@ import java.io.File
 import java.io.FileReader
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Base interface for file importers.
@@ -90,7 +91,10 @@ abstract class JsonImporter<T>(
     override var dataDir: String = "../data"
     override var userDir: String? = null
     override var profile: Profile? = null
-    override var maxDate: LocalDate? = null
+    private val _maxDate = AtomicReference<LocalDate?>(null)
+    override var maxDate: LocalDate?
+        get() = _maxDate.get()
+        set(value) { _maxDate.set(value) }
     override var onProgress: (String) -> Unit = ::println
 
     /**
@@ -132,9 +136,10 @@ abstract class JsonImporter<T>(
 
     private fun updateMaxDate(entity: T) {
         val date = entityDate(entity) ?: return
-        val current = maxDate
-        if (current == null || date > current) {
-            maxDate = date
+        while (true) {
+            val current = _maxDate.get()
+            if (current != null && date <= current) break
+            if (_maxDate.compareAndSet(current, date)) break
         }
     }
 
@@ -223,7 +228,10 @@ abstract class CsvImporter<T>(
     override var dataDir: String = "../data"
     override var userDir: String? = null
     override var profile: Profile? = null
-    override var maxDate: LocalDate? = null
+    private val _maxDate = AtomicReference<LocalDate?>(null)
+    override var maxDate: LocalDate?
+        get() = _maxDate.get()
+        set(value) { _maxDate.set(value) }
     override var onProgress: (String) -> Unit = ::println
 
     /**
@@ -271,9 +279,10 @@ abstract class CsvImporter<T>(
 
     private fun updateMaxDate(entity: T) {
         val date = entityDate(entity) ?: return
-        val current = maxDate
-        if (current == null || date > current) {
-            maxDate = date
+        while (true) {
+            val current = _maxDate.get()
+            if (current != null && date <= current) break
+            if (_maxDate.compareAndSet(current, date)) break
         }
     }
 

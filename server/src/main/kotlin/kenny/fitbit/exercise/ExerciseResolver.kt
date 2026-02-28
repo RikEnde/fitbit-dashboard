@@ -18,7 +18,8 @@ class ExerciseResolver(
     @QueryMapping
     fun exercises(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Exercise> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val pageable = PageRequest.of(offset / limit, limit, Sort.by("startTime").ascending())
+        val effectiveLimit = limit.coerceIn(1, 1000)
+        val pageable = PageRequest.of(offset / effectiveLimit, effectiveLimit, Sort.by("startTime").ascending())
 
         return if (range == null) {
             exerciseRepository.findByProfile(profile, pageable).content

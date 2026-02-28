@@ -205,6 +205,13 @@ class ExportController(
         to: LocalDateTime,
         exportFn: (ByteArrayOutputStream) -> Int
     ): ResponseEntity<ByteArray> {
+        if (from.isAfter(to)) {
+            return ResponseEntity.badRequest().build()
+        }
+        if (java.time.temporal.ChronoUnit.DAYS.between(from, to) > 365) {
+            return ResponseEntity.badRequest().build()
+        }
+
         val output = ByteArrayOutputStream()
         exportFn(output)
 

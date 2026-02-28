@@ -14,8 +14,6 @@ interface SleepRepository :
     JpaRepository<Sleep, Long>,
     JpaSpecificationExecutor<Sleep> {
 
-    fun findByLogId(logId: Long): Sleep?
-
     @Query("SELECT s.logId FROM Sleep s WHERE s.profile = :profile")
     fun findAllLogIdsByProfile(profile: Profile): Set<Long>
 
@@ -33,8 +31,6 @@ interface SleepRepository :
 interface SleepScoreRepository :
     JpaRepository<SleepScore, Long>,
     JpaSpecificationExecutor<SleepScore> {
-
-    fun findBySleepLogEntryId(sleepLogEntryId: Long): SleepScore?
 
     fun findByProfile(profile: Profile, pageable: Pageable): Page<SleepScore>
 

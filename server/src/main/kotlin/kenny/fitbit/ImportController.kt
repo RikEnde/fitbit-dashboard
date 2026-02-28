@@ -12,6 +12,7 @@ import kenny.fitbit.importlog.ImportLogRepository
 import kenny.fitbit.profile.AccountImporter
 import kenny.fitbit.sleep.*
 import kenny.fitbit.steps.StepsImporter
+import jakarta.annotation.PreDestroy
 import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipInputStream
 
 data class StatResult(val fileCount: Int)
@@ -89,6 +91,19 @@ class ImportController(
     private val log = LoggerFactory.getLogger(javaClass)
     private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
     private val jobs = ConcurrentHashMap<String, ImportJob>()
+    private val importRunning = AtomicBoolean(false)
+
+    @PreDestroy
+    fun shutdown() {
+        executor.shutdown()
+        if (importRunning.get()) {
+            log.info("Import in progress, waiting for it to complete before shutdown...")
+            if (!executor.awaitTermination(30, java.util.concurrent.TimeUnit.MINUTES)) {
+                log.warn("Import did not complete within shutdown timeout, forcing shutdown")
+                executor.shutdownNow()
+            }
+        }
+    }
 
     private val statImporters: Map<String, Importer<*>> by lazy {
         mapOf(
@@ -129,6 +144,10 @@ class ImportController(
         val originalFilename = file.originalFilename ?: "upload"
         if (!originalFilename.endsWith(".zip", ignoreCase = true)) {
             return ResponseEntity.badRequest().body(mapOf("error" to "Only .zip files are accepted"))
+        }
+
+        if (!importRunning.compareAndSet(false, true)) {
+            return ResponseEntity.status(409).body(mapOf("error" to "An import is already in progress. Please wait for it to complete."))
         }
 
         val freeSpace = File(System.getProperty("java.io.tmpdir")).usableSpace
@@ -173,6 +192,7 @@ class ImportController(
                     job.error = if (e is IllegalStateException) e.message ?: "Import failed" else "Import failed"
                     job.status = ImportStatus.FAILED
                 } finally {
+                    importRunning.set(false)
                     allImporters.forEach { it.onProgress = ::println }
                     tempDir.deleteRecursively()
                 }
@@ -181,6 +201,7 @@ class ImportController(
             log.error("Could not start import job ${job.jobId}: executor rejected task", e)
             job.error = "Server is shutting down, import cannot be started"
             job.status = ImportStatus.FAILED
+            importRunning.set(false)
             tempDir.deleteRecursively()
         }
 
