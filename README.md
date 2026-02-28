@@ -318,6 +318,83 @@ Dependencies:
 - **importer-cli** depends on importer
 - **server** depends on model and importer
 
+## Docker Deployment
+
+The application is packaged as a single Docker image containing PostgreSQL 17, the Spring Boot backend, and the SvelteKit dashboard. The image is stored as a private package on GitHub Container Registry (GHCR).
+
+### Prerequisites
+
+- Docker installed on both your development machine and the target server
+- A GitHub account with access to the package
+- A GitHub Personal Access Token (PAT) — see below
+
+### Creating a GitHub Personal Access Token
+
+You need a token to push the image from your machine and to pull it on the server.
+
+1. Go to **https://github.com/settings/tokens**
+2. Click **Generate new token → Classic**
+3. Give it a descriptive name (e.g. `fitbit-deploy`)
+4. Select scopes:
+   - **`write:packages`** — to build and push from your dev machine
+   - **`read:packages`** — to pull on the server (a separate read-only token is safer for the server)
+5. Click **Generate token** and save it somewhere safe — GitHub only shows it once
+
+### Setup
+
+Both scripts read your GitHub username from the `GITHUB_USER` environment variable. Add it to your shell profile (`.zshrc`, `.bashrc`, etc.) so you don't have to set it every time:
+
+```bash
+export GITHUB_USER=your-github-username
+```
+
+Log in to GHCR on each machine you'll use:
+
+```bash
+echo YOUR_PAT | docker login ghcr.io -u $GITHUB_USER --password-stdin
+```
+
+### Building and Pushing the Image
+
+Run from the project root on your development machine:
+
+```bash
+./docker/build-and-push.sh           # builds and pushes :latest
+./docker/build-and-push.sh v1.2      # builds and pushes a specific tag
+```
+
+This creates a `linux/amd64` image using Docker BuildKit's cache mounts for fast incremental builds.
+
+### Running on the Server
+
+Copy `docker/run-on-server.sh` to the server, then:
+
+```bash
+POSTGRES_PASSWORD=changeme ./run-on-server.sh           # pulls and starts :latest
+POSTGRES_PASSWORD=changeme ./run-on-server.sh v1.2      # specific tag
+```
+
+The container binds to `127.0.0.1:8080` by default (localhost only). Put nginx in front for LAN or internet access — see `https.md` for a full nginx + self-signed TLS setup.
+
+### Importing Data on the Server
+
+Once the container is running, trigger an import with:
+
+```bash
+docker exec fitbit java -jar /app/importer-cli.jar --all --user=NAME --datadir=/data
+```
+
+Mount a directory containing your Fitbit export files by adding `-v /path/to/exports:/data` to the `docker run` command.
+
+### Useful Commands
+
+```bash
+docker logs -f fitbit                 # follow logs
+docker restart fitbit                 # restart the container
+docker exec -it fitbit bash           # shell into the container
+docker pull ghcr.io/$GITHUB_USER/fitbit:latest && docker restart fitbit  # update to latest
+```
+
 ## Tech Stack
 
 - Kotlin 2.3.0 / JVM 25 / Spring Boot 3.4.4
