@@ -1,0 +1,7 @@
+dashboard/node_modules
+dashboard/.svelte-kit
+**/target
+.git
+.envrc
+data/
+*.imported
