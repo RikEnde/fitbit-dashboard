@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {HEART_RATE_QUERY, RESTING_HEART_RATES_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, toLocalISOString} from '$stores/dashboard';
     import {colors, heartRateZoneColors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
@@ -27,29 +27,6 @@
 
 	// Trend data
 	let dailyTrend = $state<{ time: string; value: number }[]>([]);
-
-	// GraphQL Queries
-	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
-			heartRates(limit: $limit, range: $range) {
-				id
-				bpm
-				dateTime
-			}
-			restingHeartRate(date: $date) {
-				value
-			}
-		}
-	`;
-
-	const RESTING_HR_TREND_QUERY = gql`
-		query RestingHeartRates($limit: Int, $range: DateRange) {
-			restingHeartRates(limit: $limit, range: $range) {
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface HeartRateRecord {
 		id: string;
@@ -162,7 +139,7 @@
 		};
 
 		const limit = period === '30d' ? 30 : 365;
-		const result = await client.query(RESTING_HR_TREND_QUERY, { limit, range }, { requestPolicy: 'network-only' }).toPromise();
+		const result = await client.query(RESTING_HEART_RATES_QUERY, { limit, range }, { requestPolicy: 'network-only' }).toPromise();
 		if (result.error) {
 			throw new Error(result.error.message);
 		}

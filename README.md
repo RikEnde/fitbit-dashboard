@@ -1,6 +1,6 @@
-# Fitbit Kotlin Application
+# Fitbit Web Application
 
-A Kotlin/Spring Boot application for importing, storing, and querying your Fitbit data. Includes a GraphQL API, REST API,
+A Web application for importing, storing, and querying your Fitbit data. Includes a GraphQL API,
 and SvelteKit dashboard for visualizing health metrics.
 
 The goals of this project are two-fold.

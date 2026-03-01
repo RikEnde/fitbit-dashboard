@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {DAILY_STEPS_SUM_QUERY, WEEKLY_STEPS_AVERAGE_QUERY, STEPS_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -36,35 +36,6 @@
 		best30Days: dailyData.length > 0 ? Math.max(...dailyData.map((d) => d.value)) : 0,
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL).length
 	});
-
-	// GraphQL Queries
-	const DAILY_STEPS_SUM_QUERY = gql`
-		query DailyStepsSum($range: DateRange!) {
-			dailyStepsSum(range: $range) {
-				date
-				totalSteps
-			}
-		}
-	`;
-
-	const WEEKLY_STEPS_AVERAGE_QUERY = gql`
-		query WeeklyStepsAverage($range: DateRange!) {
-			weeklyStepsAverage(range: $range) {
-				weekNumber
-				averageSteps
-			}
-		}
-	`;
-
-	const HOURLY_STEPS_QUERY = gql`
-		query Steps($limit: Int, $range: DateRange) {
-			steps(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface StepRecord {
 		id: string;
@@ -141,7 +112,7 @@
 
 		const [dailyResult, hourlyResult] = await Promise.all([
 			client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise(),
-			client.query(HOURLY_STEPS_QUERY, { limit: 1440, range }).toPromise()
+			client.query(STEPS_QUERY, { limit: 1440, range }).toPromise()
 		]);
 
 		if (dailyResult.error) {

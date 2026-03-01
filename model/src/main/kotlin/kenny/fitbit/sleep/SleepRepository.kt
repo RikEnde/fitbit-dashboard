@@ -55,19 +55,37 @@ interface SleepLevelShortDataRepository :
     JpaRepository<SleepLevelShortData, Long>
 
 @Repository
-interface DeviceTemperatureRepository : JpaRepository<DeviceTemperature, Long>, JpaSpecificationExecutor<DeviceTemperature>
+interface DeviceTemperatureRepository : JpaRepository<DeviceTemperature, Long>, JpaSpecificationExecutor<DeviceTemperature> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<DeviceTemperature>
+    fun findByProfileAndRecordedTimeBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<DeviceTemperature>
+}
 
 @Repository
-interface DailyRespiratoryRateRepository : JpaRepository<DailyRespiratoryRate, Long>, JpaSpecificationExecutor<DailyRespiratoryRate>
+interface DailyRespiratoryRateRepository : JpaRepository<DailyRespiratoryRate, Long>, JpaSpecificationExecutor<DailyRespiratoryRate> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<DailyRespiratoryRate>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<DailyRespiratoryRate>
+}
 
 @Repository
-interface MinuteSpO2Repository : JpaRepository<MinuteSpO2, Long>, JpaSpecificationExecutor<MinuteSpO2>
+interface MinuteSpO2Repository : JpaRepository<MinuteSpO2, Long>, JpaSpecificationExecutor<MinuteSpO2> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<MinuteSpO2>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<MinuteSpO2>
+}
 
 @Repository
-interface ComputedTemperatureRepository : JpaRepository<ComputedTemperature, Long>, JpaSpecificationExecutor<ComputedTemperature>
+interface ComputedTemperatureRepository : JpaRepository<ComputedTemperature, Long>, JpaSpecificationExecutor<ComputedTemperature> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<ComputedTemperature>
+    fun findByProfileAndSleepStartBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<ComputedTemperature>
+}
 
 @Repository
-interface RespiratoryRateSummaryRepository : JpaRepository<RespiratoryRateSummary, Long>, JpaSpecificationExecutor<RespiratoryRateSummary>
+interface RespiratoryRateSummaryRepository : JpaRepository<RespiratoryRateSummary, Long>, JpaSpecificationExecutor<RespiratoryRateSummary> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<RespiratoryRateSummary>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<RespiratoryRateSummary>
+}
 
 @Repository
-interface DailySpO2Repository : JpaRepository<DailySpO2, Long>, JpaSpecificationExecutor<DailySpO2>
+interface DailySpO2Repository : JpaRepository<DailySpO2, Long>, JpaSpecificationExecutor<DailySpO2> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<DailySpO2>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<DailySpO2>
+}

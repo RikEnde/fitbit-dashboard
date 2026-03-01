@@ -19,6 +19,7 @@ class SleepImporterImplTest {
     @BeforeEach
     fun setUp() {
         sleepImporter.profile = testProfile()
+        sleepImporter.beforeImport()
     }
 
     @Test

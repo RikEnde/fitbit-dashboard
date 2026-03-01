@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {DISTANCES_QUERY as DISTANCE_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
@@ -33,17 +33,6 @@
 		best30Days: dailyData.length > 0 ? Math.max(...dailyData.map((d) => d.value)) : 0,
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL_KM).length
 	});
-
-	// GraphQL Query
-	const DISTANCE_QUERY = gql`
-		query Distances($limit: Int, $range: DateRange) {
-			distances(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface DistanceRecord {
 		id: string;

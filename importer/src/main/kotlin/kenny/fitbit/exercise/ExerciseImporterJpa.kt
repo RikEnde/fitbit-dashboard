@@ -121,10 +121,10 @@ class ActivityMinutesImporterImpl(
     // Track the current file being processed
     private val currentFile = ThreadLocal<String>()
 
-    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
+    override suspend fun importFile(index: Int, size: Int, file: File) {
         currentFile.set(file.name)
         try {
-            super.importFile(index, size, file, objectMapper)
+            super.importFile(index, size, file)
         } finally {
             currentFile.remove()
         }

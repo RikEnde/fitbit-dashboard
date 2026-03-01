@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {EXERCISES_QUERY as EXERCISE_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatDuration} from '$utils/formatters';
@@ -20,19 +20,6 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let recentActivities = $state<{ name: string; duration: number; calories: number }[]>([]);
-
-	// Query for exercise data
-	const EXERCISE_QUERY = gql`
-		query Exercises($limit: Int, $range: DateRange) {
-			exercises(limit: $limit, range: $range) {
-				id
-				activityName
-				activeDuration
-				calories
-				averageHeartRate
-			}
-		}
-	`;
 
 	interface ExerciseRecord {
 		id: string;

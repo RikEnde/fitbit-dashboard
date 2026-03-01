@@ -208,6 +208,10 @@ class ImportController(
         return ResponseEntity.ok(mapOf("jobId" to job.jobId))
     }
 
+    // No per-user ownership check needed: job IDs are cryptographically random UUIDs only
+    // returned to the creating user, the response contains only generic file counts (no
+    // private data), and only one concurrent import is allowed. The UI polls this endpoint
+    // to show import progress.
     @GetMapping("/{jobId}")
     fun getJobStatus(@PathVariable jobId: String): ResponseEntity<ImportJobResponse> {
         val job = jobs[jobId] ?: return ResponseEntity.notFound().build()

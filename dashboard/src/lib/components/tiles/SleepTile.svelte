@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {SLEEPS_QUERY as SLEEP_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors, sleepStageColors} from '$utils/colors';
     import {formatDuration} from '$utils/formatters';
@@ -19,22 +19,6 @@
 	let efficiency = $state(0);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-
-	// Query for sleep data
-	const SLEEP_QUERY = gql`
-		query Sleeps($limit: Int, $range: DateRange) {
-			sleeps(limit: $limit, range: $range) {
-				id
-				minutesAsleep
-				minutesAwake
-				efficiency
-				levelSummaries {
-					level
-					minutes
-				}
-			}
-		}
-	`;
 
 	interface LevelSummary {
 		level: string;

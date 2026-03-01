@@ -58,7 +58,13 @@ interface RestingHeartRateRepository : JpaRepository<RestingHeartRate, Long>, Jp
 }
 
 @Repository
-interface DailyHeartRateVariabilityRepository : JpaRepository<DailyHeartRateVariability, Long>, JpaSpecificationExecutor<DailyHeartRateVariability>
+interface DailyHeartRateVariabilityRepository : JpaRepository<DailyHeartRateVariability, Long>, JpaSpecificationExecutor<DailyHeartRateVariability> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<DailyHeartRateVariability>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<DailyHeartRateVariability>
+}
 
 @Repository
-interface HeartRateVariabilityDetailsRepository : JpaRepository<HeartRateVariabilityDetails, Long>, JpaSpecificationExecutor<HeartRateVariabilityDetails>
+interface HeartRateVariabilityDetailsRepository : JpaRepository<HeartRateVariabilityDetails, Long>, JpaSpecificationExecutor<HeartRateVariabilityDetails> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<HeartRateVariabilityDetails>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRateVariabilityDetails>
+}

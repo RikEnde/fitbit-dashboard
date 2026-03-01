@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {HEART_RATE_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import MiniBarChart from '$components/charts/MiniBarChart.svelte';
@@ -13,20 +13,6 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
-
-	// Query for heart rate data
-	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
-			heartRates(limit: $limit, range: $range) {
-				id
-				bpm
-				dateTime
-			}
-			restingHeartRate(date: $date) {
-				value
-			}
-		}
-	`;
 
 	interface HeartRateRecord {
 		id: string;
