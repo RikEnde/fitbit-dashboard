@@ -23,7 +23,7 @@ class RestingHeartRateResolver(
         @Argument range: DateRange?
     ): List<RestingHeartRate> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val effectiveLimit = limit.coerceIn(1, 1000)
+        val effectiveLimit = limit.coerceIn(1, 50000)
         val pageable = PageRequest.of(
             offset / effectiveLimit, effectiveLimit,
             Sort.by("dateTime").descending()

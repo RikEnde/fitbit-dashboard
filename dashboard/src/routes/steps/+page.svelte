@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import {client} from '$graphql/client';
-    import {DAILY_STEPS_SUM_QUERY, WEEKLY_STEPS_AVERAGE_QUERY, STEPS_QUERY} from '$graphql/queries';
+    import {DAILY_STEPS_SUM_QUERY, WEEKLY_STEPS_AVERAGE_QUERY, STEPS_PER_INTERVAL_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -37,27 +37,19 @@
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL).length
 	});
 
-	interface StepRecord {
-		id: string;
-		value: number;
-		dateTime: string;
+	interface IntervalRecord {
+		timeInterval: string;
+		sum: number;
 	}
 
-	function processHourlyData(steps: StepRecord[]): { label: string; value: number }[] {
-		const hourlyMap = new Map<number, number>();
-		for (let i = 0; i < 24; i++) {
-			hourlyMap.set(i, 0);
-		}
-		for (const step of steps) {
-			const hour = new Date(step.dateTime).getHours();
-			hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + step.value);
-		}
-		return Array.from(hourlyMap.entries())
-			.sort((a, b) => a[0] - b[0])
-			.map(([hour, value]) => ({
+	function processIntervalData(intervals: IntervalRecord[]): { label: string; value: number }[] {
+		return intervals.map((interval) => {
+			const hour = new Date(interval.timeInterval).getHours();
+			return {
 				label: `${hour.toString().padStart(2, '0')}:00`,
-				value
-			}));
+				value: interval.sum
+			};
+		});
 	}
 
 	async function fetchDailyData(endDate: Date) {
@@ -112,7 +104,7 @@
 
 		const [dailyResult, hourlyResult] = await Promise.all([
 			client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise(),
-			client.query(STEPS_QUERY, { limit: 1440, range }).toPromise()
+			client.query(STEPS_PER_INTERVAL_QUERY, { range, duration: '1 hour' }).toPromise()
 		]);
 
 		if (dailyResult.error) {
@@ -121,8 +113,8 @@
 
 		selectedDayTotal = dailyResult.data?.dailyStepsSum?.[0]?.totalSteps ?? 0;
 
-		if (hourlyResult.data?.steps) {
-			hourlyData = processHourlyData(hourlyResult.data.steps);
+		if (hourlyResult.data?.stepsPerInterval) {
+			hourlyData = processIntervalData(hourlyResult.data.stepsPerInterval);
 		} else {
 			hourlyData = [];
 		}

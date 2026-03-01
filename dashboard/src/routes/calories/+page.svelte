@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import {client} from '$graphql/client';
-    import {CALORIES_QUERY} from '$graphql/queries';
+    import {DAILY_CALORIES_SUM_QUERY, CALORIES_PER_INTERVAL_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -34,36 +34,19 @@
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL).length
 	});
 
-	interface CaloriesRecord {
-		id: string;
-		value: number;
-		dateTime: string;
+	interface IntervalRecord {
+		timeInterval: string;
+		sum: number;
 	}
 
-	function processHourlyData(records: CaloriesRecord[]): { label: string; value: number }[] {
-		const hourlyMap = new Map<number, number>();
-		for (let i = 0; i < 24; i++) {
-			hourlyMap.set(i, 0);
-		}
-		for (const record of records) {
-			const hour = new Date(record.dateTime).getHours();
-			hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + record.value);
-		}
-		return Array.from(hourlyMap.entries())
-			.sort((a, b) => a[0] - b[0])
-			.map(([hour, value]) => ({
+	function processIntervalData(intervals: IntervalRecord[]): { label: string; value: number }[] {
+		return intervals.map((interval) => {
+			const hour = new Date(interval.timeInterval).getHours();
+			return {
 				label: `${hour.toString().padStart(2, '0')}:00`,
-				value: Math.round(value)
-			}));
-	}
-
-	function aggregateByDay(records: CaloriesRecord[]): Map<string, number> {
-		const dailyMap = new Map<string, number>();
-		for (const record of records) {
-			const date = format(new Date(record.dateTime), 'yyyy-MM-dd');
-			dailyMap.set(date, (dailyMap.get(date) ?? 0) + record.value);
-		}
-		return dailyMap;
+				value: Math.round(interval.sum)
+			};
+		});
 	}
 
 	async function fetchDailyData(endDate: Date) {
@@ -72,13 +55,13 @@
 			to: toLocalISOString(endOfDay(endDate))
 		};
 
-		const result = await client.query(CALORIES_QUERY, { limit: 50000, range }).toPromise();
+		const result = await client.query(DAILY_CALORIES_SUM_QUERY, { range }).toPromise();
 		if (result.error) {
 			throw new Error(result.error.message);
 		}
 
-		const records: CaloriesRecord[] = result.data?.calories ?? [];
-		const dataMap = aggregateByDay(records);
+		const rawData = result.data?.dailyCaloriesSum ?? [];
+		const dataMap = new Map(rawData.map((d: { date: string; totalCalories: number }) => [d.date, d.totalCalories]));
 
 		// Fill in all 30 days
 		const filledData = [];
@@ -87,7 +70,7 @@
 			const dateStr = format(date, 'yyyy-MM-dd');
 			filledData.push({
 				date: dateStr,
-				value: Math.round(dataMap.get(dateStr) ?? 0)
+				value: Math.round((dataMap.get(dateStr) as number) ?? 0)
 			});
 		}
 
@@ -100,14 +83,22 @@
 			to: toLocalISOString(endOfDay(date))
 		};
 
-		const result = await client.query(CALORIES_QUERY, { limit: 1440, range }).toPromise();
-		if (result.error) {
-			throw new Error(result.error.message);
+		const [dailyResult, hourlyResult] = await Promise.all([
+			client.query(DAILY_CALORIES_SUM_QUERY, { range }).toPromise(),
+			client.query(CALORIES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }).toPromise()
+		]);
+
+		if (dailyResult.error) {
+			throw new Error(dailyResult.error.message);
 		}
 
-		const records: CaloriesRecord[] = result.data?.calories ?? [];
-		selectedDayTotal = Math.round(records.reduce((sum, r) => sum + r.value, 0));
-		hourlyData = processHourlyData(records);
+		selectedDayTotal = Math.round(dailyResult.data?.dailyCaloriesSum?.[0]?.totalCalories ?? 0);
+
+		if (hourlyResult.data?.caloriesPerInterval) {
+			hourlyData = processIntervalData(hourlyResult.data.caloriesPerInterval);
+		} else {
+			hourlyData = [];
+		}
 	}
 
 	async function fetchAllData() {
