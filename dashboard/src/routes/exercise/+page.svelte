@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {EXERCISES_QUERY as EXERCISE_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors, heartRateZoneColors} from '$utils/colors';
     import {formatDuration, formatNumber} from '$utils/formatters';
@@ -24,36 +24,6 @@
 
 	// Expanded exercise for details
 	let expandedId = $state<string | null>(null);
-
-	// GraphQL Query
-	const EXERCISE_QUERY = gql`
-		query Exercises($limit: Int, $range: DateRange) {
-			exercises(limit: $limit, range: $range) {
-				id
-				logId
-				activityName
-				activityTypeId
-				averageHeartRate
-				calories
-				duration
-				activeDuration
-				steps
-				startTime
-				elevationGain
-				hasGps
-				heartRateZones {
-					name
-					min
-					max
-					minutes
-				}
-				activityLevels {
-					name
-					minutes
-				}
-			}
-		}
-	`;
 
 	interface HeartRateZone {
 		name: string;

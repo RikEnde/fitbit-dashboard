@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {HEART_RATE_QUERY, HEART_RATES_PER_INTERVAL_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import MiniBarChart from '$components/charts/MiniBarChart.svelte';
@@ -14,35 +14,23 @@
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
 
-	// Query for heart rate data
-	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
-			heartRates(limit: $limit, range: $range) {
-				id
-				bpm
-				dateTime
-			}
-			restingHeartRate(date: $date) {
-				value
-			}
-		}
-	`;
-
-	interface HeartRateRecord {
-		id: string;
-		bpm: number;
-		dateTime: string;
+	interface IntervalRecord {
+		timeInterval: string;
+		bpmSum: number;
+		bpmAvg: number;
 	}
 
-	function processHourlyData(heartRates: HeartRateRecord[]): { label: string; value: number }[] {
+	function processHourlyData(intervals: IntervalRecord[]): { label: string; value: number }[] {
 		const hourlyMap = new Map<number, { sum: number; count: number }>();
 		for (let i = 0; i < 24; i++) {
 			hourlyMap.set(i, { sum: 0, count: 0 });
 		}
-		for (const hr of heartRates) {
-			const hour = new Date(hr.dateTime).getHours();
-			const current = hourlyMap.get(hour)!;
-			hourlyMap.set(hour, { sum: current.sum + hr.bpm, count: current.count + 1 });
+		for (const interval of intervals) {
+			if (interval.bpmAvg > 0) {
+				const hour = new Date(interval.timeInterval).getHours();
+				const current = hourlyMap.get(hour)!;
+				hourlyMap.set(hour, { sum: current.sum + interval.bpmAvg, count: current.count + 1 });
+			}
 		}
 		return Array.from(hourlyMap.entries())
 			.sort((a, b) => a[0] - b[0])
@@ -57,27 +45,32 @@
 		error = null;
 
 		try {
-			// Extract date from range for resting heart rate query (YYYY-MM-DD format)
 			const date = range.to.split('T')[0];
-			const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range, date }).toPromise();
-			if (result.error) {
-				error = result.error.message;
+			const [hrResult, intervalResult] = await Promise.all([
+				client.query(HEART_RATE_QUERY, { limit: 1000, range, date }).toPromise(),
+				client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }).toPromise()
+			]);
+
+			if (hrResult.error) {
+				error = hrResult.error.message;
 				return;
 			}
 
-			const heartRates = result.data?.heartRates ?? [];
-			const restingHr = result.data?.restingHeartRate;
+			const heartRates = hrResult.data?.heartRates ?? [];
+			const restingHr = hrResult.data?.restingHeartRate;
 			restingBpm = restingHr ? Math.round(restingHr.value) : 0;
+
 			if (heartRates.length > 0) {
-				const bpms = heartRates.map((hr: HeartRateRecord) => hr.bpm);
+				const bpms = heartRates.map((hr: { bpm: number }) => hr.bpm);
 				minBpm = Math.min(...bpms);
 				maxBpm = Math.max(...bpms);
-				hourlyData = processHourlyData(heartRates);
 			} else {
 				minBpm = 0;
 				maxBpm = 0;
-				hourlyData = [];
 			}
+
+			const intervals = intervalResult?.data?.heartRatesPerInterval ?? [];
+			hourlyData = processHourlyData(intervals);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to fetch data';
 		} finally {

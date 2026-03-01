@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {HEART_RATE_QUERY, HEART_RATES_PER_INTERVAL_QUERY, RESTING_HEART_RATES_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, toLocalISOString} from '$stores/dashboard';
     import {colors, heartRateZoneColors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
@@ -28,29 +28,6 @@
 	// Trend data
 	let dailyTrend = $state<{ time: string; value: number }[]>([]);
 
-	// GraphQL Queries
-	const HEART_RATE_QUERY = gql`
-		query HeartRates($limit: Int, $range: DateRange, $date: Date!) {
-			heartRates(limit: $limit, range: $range) {
-				id
-				bpm
-				dateTime
-			}
-			restingHeartRate(date: $date) {
-				value
-			}
-		}
-	`;
-
-	const RESTING_HR_TREND_QUERY = gql`
-		query RestingHeartRates($limit: Int, $range: DateRange) {
-			restingHeartRates(limit: $limit, range: $range) {
-				value
-				dateTime
-			}
-		}
-	`;
-
 	interface HeartRateRecord {
 		id: string;
 		bpm: number;
@@ -74,15 +51,23 @@
 		return 'Out of Range';
 	}
 
-	function processHourlyData(heartRates: HeartRateRecord[]): { label: string; value: number }[] {
+	interface IntervalRecord {
+		timeInterval: string;
+		bpmSum: number;
+		bpmAvg: number;
+	}
+
+	function processHourlyData(intervals: IntervalRecord[]): { label: string; value: number }[] {
 		const hourlyMap = new Map<number, { sum: number; count: number }>();
 		for (let i = 0; i < 24; i++) {
 			hourlyMap.set(i, { sum: 0, count: 0 });
 		}
-		for (const hr of heartRates) {
-			const hour = new Date(hr.dateTime).getHours();
-			const current = hourlyMap.get(hour)!;
-			hourlyMap.set(hour, { sum: current.sum + hr.bpm, count: current.count + 1 });
+		for (const interval of intervals) {
+			if (interval.bpmAvg > 0) {
+				const hour = new Date(interval.timeInterval).getHours();
+				const current = hourlyMap.get(hour)!;
+				hourlyMap.set(hour, { sum: current.sum + interval.bpmAvg, count: current.count + 1 });
+			}
 		}
 		return Array.from(hourlyMap.entries())
 			.sort((a, b) => a[0] - b[0])
@@ -117,13 +102,17 @@
 		};
 		const dateStr = format(date, 'yyyy-MM-dd');
 
-		const result = await client.query(HEART_RATE_QUERY, { limit: 10000, range, date: dateStr }, { requestPolicy: 'network-only' }).toPromise();
-		if (result.error) {
-			throw new Error(result.error.message);
+		const [hrResult, intervalResult] = await Promise.all([
+			client.query(HEART_RATE_QUERY, { limit: 1000, range, date: dateStr }, { requestPolicy: 'network-only' }).toPromise(),
+			client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }, { requestPolicy: 'network-only' }).toPromise()
+		]);
+
+		if (hrResult.error) {
+			throw new Error(hrResult.error.message);
 		}
 
-		const heartRates: HeartRateRecord[] = result.data?.heartRates ?? [];
-		const restingHr = result.data?.restingHeartRate;
+		const heartRates: HeartRateRecord[] = hrResult.data?.heartRates ?? [];
+		const restingHr = hrResult.data?.restingHeartRate;
 
 		if (heartRates.length > 0) {
 			// Process for line chart (sample every few minutes for smoother chart)
@@ -140,17 +129,17 @@
 				resting: restingHr ? Math.round(restingHr.value) : 0
 			};
 
-			// Hourly data
-			hourlyData = processHourlyData(heartRates);
-
 			// Zone distribution
 			zoneDistribution = calculateZoneDistribution(heartRates);
 		} else {
 			heartRateData = [];
 			dayStats = { min: 0, max: 0, resting: restingHr ? Math.round(restingHr.value) : 0 };
-			hourlyData = [];
 			zoneDistribution = zones.map((z) => ({ name: z.name, minutes: 0, color: z.color, percentage: 0 }));
 		}
+
+		// Hourly data from server-side aggregation (covers all data, not limited by pagination)
+		const intervals = intervalResult?.data?.heartRatesPerInterval ?? [];
+		hourlyData = processHourlyData(intervals);
 	}
 
 	async function fetchTrendData(endDate: Date, period: '30d' | '1y' = '30d') {
@@ -162,7 +151,7 @@
 		};
 
 		const limit = period === '30d' ? 30 : 365;
-		const result = await client.query(RESTING_HR_TREND_QUERY, { limit, range }, { requestPolicy: 'network-only' }).toPromise();
+		const result = await client.query(RESTING_HEART_RATES_QUERY, { limit, range }, { requestPolicy: 'network-only' }).toPromise();
 		if (result.error) {
 			throw new Error(result.error.message);
 		}

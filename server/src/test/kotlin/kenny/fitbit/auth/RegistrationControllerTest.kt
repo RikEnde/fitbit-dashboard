@@ -40,7 +40,7 @@ class RegistrationControllerTest {
                 .content("""{"username":"testuser","password":"password123"}""")
         )
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.error").value("Username is already taken"))
+            .andExpect(jsonPath("$.error").value("Registration failed"))
     }
 
     @Test

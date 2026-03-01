@@ -118,44 +118,54 @@ class ActivityMinutesImporterImpl(
 
     override fun entityDate(entity: ActivityMinutes): LocalDate = entity.dateTime.toLocalDate()
 
-    // Track the current file being processed
-    private val currentFile = ThreadLocal<String>()
+    // Not used — parsing is handled in importFile directly since intensity depends on filename
+    override fun parseToEntity(jsonItem: JsonNode): ActivityMinutes? = null
 
-    override suspend fun importFile(index: Int, size: Int, file: File, objectMapper: ObjectMapper) {
-        currentFile.set(file.name)
-        try {
-            super.importFile(index, size, file, objectMapper)
-        } finally {
-            currentFile.remove()
+    override suspend fun importFile(index: Int, size: Int, file: File) {
+        onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
+
+        val intensity = when {
+            file.name.contains("sedentary_minutes") -> "sedentary"
+            file.name.contains("lightly_active_minutes") -> "light"
+            file.name.contains("moderately_active_minutes") -> "moderate"
+            file.name.contains("very_active_minutes") -> "active"
+            else -> throw IllegalArgumentException("Unknown activity type in file: ${file.name}")
         }
-    }
 
-    override fun parseToEntity(jsonItem: JsonNode): ActivityMinutes? {
-        val valueStr = jsonItem.get("value")?.asText()
-        val dateTimeStr = jsonItem.get("dateTime")?.asText()
+        val objectMapper = ObjectMapper()
+        val jsonNode = objectMapper.readTree(file)
+        if (jsonNode.isArray) {
+            val batch = mutableListOf<ActivityMinutes>()
+            var count = 0
 
-        if (valueStr != null && dateTimeStr != null) {
-            val value = valueStr.toInt()
-            val dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter())
+            for (item in jsonNode) {
+                val valueStr = item.get("value")?.asText()
+                val dateTimeStr = item.get("dateTime")?.asText()
 
-            // Get the file name from the ThreadLocal to determine the activity type
-            val fileName = currentFile.get() ?: throw IllegalStateException("File name not set in ThreadLocal")
-            val intensity = when {
-                fileName.contains("sedentary_minutes") -> "sedentary"
-                fileName.contains("lightly_active_minutes") -> "light"
-                fileName.contains("moderately_active_minutes") -> "moderate"
-                fileName.contains("very_active_minutes") -> "active"
-                else -> throw IllegalArgumentException("Unknown activity type in file: $fileName")
+                if (valueStr != null && dateTimeStr != null) {
+                    val entity = ActivityMinutes(
+                        dateTime = LocalDateTime.parse(dateTimeStr, getDateTimeFormatter()),
+                        value = valueStr.toInt(),
+                        intensity = intensity,
+                        profile = profile!!
+                    )
+                    batch.add(entity)
+                    updateMaxDate(entity)
+                    count++
+
+                    if (batch.size >= batchSize) {
+                        saveBatch(batch.toList())
+                        batch.clear()
+                    }
+                }
             }
 
-            return ActivityMinutes(
-                dateTime = dateTime,
-                value = value,
-                intensity = intensity,
-                profile = profile!!
-            )
+            if (batch.isNotEmpty()) {
+                saveBatch(batch.toList())
+            }
+
+            onProgress("Imported $count records from ${file.name}")
         }
-        return null
     }
 }
 

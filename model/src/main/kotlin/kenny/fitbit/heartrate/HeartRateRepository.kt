@@ -13,7 +13,8 @@ import java.time.OffsetDateTime
 
 data class SumsOfHeartRates(
     val timeInterval: OffsetDateTime,
-    val bpmSum: Int);
+    val bpmSum: Int,
+    val bpmAvg: Int)
 
 @Repository
 interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecificationExecutor<HeartRate> {
@@ -31,7 +32,8 @@ interface HeartRateRepository : JpaRepository<HeartRate, Long>, JpaSpecification
         )
         SELECT
           b.bucket_start AS time_interval,
-          COALESCE(SUM(hr.bpm), 0)::int AS bpm_sum
+          COALESCE(SUM(hr.bpm), 0)::int AS bpm_sum,
+          COALESCE(AVG(hr.bpm), 0)::int AS bpm_avg
         FROM buckets b
         LEFT JOIN heart_rates hr
           ON hr.date_time >= b.bucket_start
@@ -58,7 +60,13 @@ interface RestingHeartRateRepository : JpaRepository<RestingHeartRate, Long>, Jp
 }
 
 @Repository
-interface DailyHeartRateVariabilityRepository : JpaRepository<DailyHeartRateVariability, Long>, JpaSpecificationExecutor<DailyHeartRateVariability>
+interface DailyHeartRateVariabilityRepository : JpaRepository<DailyHeartRateVariability, Long>, JpaSpecificationExecutor<DailyHeartRateVariability> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<DailyHeartRateVariability>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<DailyHeartRateVariability>
+}
 
 @Repository
-interface HeartRateVariabilityDetailsRepository : JpaRepository<HeartRateVariabilityDetails, Long>, JpaSpecificationExecutor<HeartRateVariabilityDetails>
+interface HeartRateVariabilityDetailsRepository : JpaRepository<HeartRateVariabilityDetails, Long>, JpaSpecificationExecutor<HeartRateVariabilityDetails> {
+    fun findByProfile(profile: Profile, pageable: Pageable): Page<HeartRateVariabilityDetails>
+    fun findByProfileAndTimestampBetween(profile: Profile, from: LocalDateTime, to: LocalDateTime, pageable: Pageable): Page<HeartRateVariabilityDetails>
+}

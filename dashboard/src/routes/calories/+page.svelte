@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {CALORIES_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -33,17 +33,6 @@
 		best30Days: dailyData.length > 0 ? Math.max(...dailyData.map((d) => d.value)) : 0,
 		daysMetGoal: dailyData.filter((d) => d.value >= GOAL).length
 	});
-
-	// GraphQL Query
-	const CALORIES_QUERY = gql`
-		query Calories($limit: Int, $range: DateRange) {
-			calories(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface CaloriesRecord {
 		id: string;

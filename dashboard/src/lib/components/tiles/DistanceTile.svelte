@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {DISTANCES_QUERY as DISTANCE_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import ProgressRing from '$components/charts/ProgressRing.svelte';
@@ -21,17 +21,6 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
-
-	// Query for distance data
-	const DISTANCE_QUERY = gql`
-		query Distances($limit: Int, $range: DateRange) {
-			distances(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface DistanceRecord {
 		id: string;

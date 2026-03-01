@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {SLEEPS_QUERY as SLEEP_QUERY, SLEEP_SCORES_QUERY as SLEEP_SCORE_QUERY} from '$graphql/queries';
     import {formattedDate, selectedDate, setDate, toLocalISOString} from '$stores/dashboard';
     import {colors, sleepStageColors} from '$utils/colors';
     import {endOfDay, format, parseISO, startOfDay, subDays} from 'date-fns';
@@ -22,55 +22,6 @@
 
 	// 30-day trend
 	let dailyTrend = $state<{ date: string; value: number; efficiency: number }[]>([]);
-
-	// GraphQL Queries
-	const SLEEP_QUERY = gql`
-		query Sleeps($limit: Int, $range: DateRange) {
-			sleeps(limit: $limit, range: $range) {
-				id
-				logId
-				dateOfSleep
-				startTime
-				endTime
-				duration
-				minutesToFallAsleep
-				minutesAsleep
-				minutesAwake
-				minutesAfterWakeup
-				timeInBed
-				efficiency
-				mainSleep
-				levelSummaries {
-					level
-					count
-					minutes
-					thirtyDayAvgMinutes
-				}
-				levelData {
-					dateTime
-					level
-					seconds
-				}
-			}
-		}
-	`;
-
-	const SLEEP_SCORE_QUERY = gql`
-		query SleepScores($limit: Int, $range: DateRange) {
-			sleepScores(limit: $limit, range: $range) {
-				id
-				sleepLogEntryId
-				timestamp
-				overallScore
-				compositionScore
-				revitalizationScore
-				durationScore
-				deepSleepInMinutes
-				restingHeartRate
-				restlessness
-			}
-		}
-	`;
 
 	interface LevelSummary {
 		level: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {CALORIES_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -19,17 +19,6 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
-
-	// Query for calories data
-	const CALORIES_QUERY = gql`
-		query Calories($limit: Int, $range: DateRange) {
-			calories(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface CaloriesRecord {
 		id: string;

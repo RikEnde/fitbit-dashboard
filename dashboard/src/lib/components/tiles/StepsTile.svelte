@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {gql} from '@urql/svelte';
     import {client} from '$graphql/client';
+    import {DAILY_STEPS_SUM_QUERY, STEPS_QUERY as HOURLY_STEPS_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import {formatNumber} from '$utils/formatters';
@@ -19,27 +19,6 @@
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
-
-	// Query for daily steps total
-	const DAILY_STEPS_QUERY = gql`
-		query DailyStepsSum($range: DateRange!) {
-			dailyStepsSum(range: $range) {
-				date
-				totalSteps
-			}
-		}
-	`;
-
-	// Query for hourly breakdown (raw steps data)
-	const HOURLY_STEPS_QUERY = gql`
-		query Steps($limit: Int, $range: DateRange) {
-			steps(limit: $limit, range: $range) {
-				id
-				value
-				dateTime
-			}
-		}
-	`;
 
 	interface StepRecord {
 		id: string;
@@ -70,7 +49,7 @@
 
 		try {
 			// Fetch daily total
-			const dailyResult = await client.query(DAILY_STEPS_QUERY, { range }).toPromise();
+			const dailyResult = await client.query(DAILY_STEPS_SUM_QUERY, { range }).toPromise();
 			if (dailyResult.error) {
 				error = dailyResult.error.message;
 				return;

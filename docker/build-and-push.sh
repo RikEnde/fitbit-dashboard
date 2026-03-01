@@ -8,7 +8,7 @@ IMAGE="fitbit"
 TAG="${1:-latest}"
 FULL_IMAGE="$REGISTRY/$IMAGE:$TAG"
 
-echo "Building and pushing $FULL_IMAGE for linux/amd64..."
+echo "Building and pushing $FULL_IMAGE for linux/amd64,linux/arm64..."
 
 # Ensure a buildx builder with multi-platform support exists
 if ! docker buildx inspect multibuilder &>/dev/null; then
@@ -19,7 +19,7 @@ else
 fi
 
 docker buildx build \
-    --platform linux/amd64 \
+    --platform linux/amd64,linux/arm64 \
     -t "$FULL_IMAGE" \
     --push \
     "$(dirname "$0")/.."
