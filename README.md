@@ -363,7 +363,7 @@ Run from the project root on your development machine:
 ./docker/build-and-push.sh v1.2      # builds and pushes a specific tag
 ```
 
-This creates a `linux/amd64` image using Docker BuildKit's cache mounts for fast incremental builds.
+This creates a multi-platform image (`linux/amd64` and `linux/arm64`) using Docker BuildKit.
 
 ### Running on the Server
 
@@ -374,7 +374,7 @@ POSTGRES_PASSWORD=changeme ./run-on-server.sh           # pulls and starts :late
 POSTGRES_PASSWORD=changeme ./run-on-server.sh v1.2      # specific tag
 ```
 
-The container binds to `127.0.0.1:8080` by default (localhost only). Put nginx in front for LAN or internet access — see `https.md` for a full nginx + self-signed TLS setup.
+The container binds to port 8080 on all interfaces by default. Put nginx in front for TLS — see `https.md` for a full nginx + self-signed TLS setup.
 
 ### Importing Data on the Server
 
