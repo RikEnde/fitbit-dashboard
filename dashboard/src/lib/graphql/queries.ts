@@ -100,6 +100,56 @@ export const WEEKLY_STEPS_AVERAGE_QUERY = gql`
 	}
 `;
 
+// Steps aggregated per time interval (server-side bucketing)
+export const STEPS_PER_INTERVAL_QUERY = gql`
+	query StepsPerInterval($range: DateRange!, $duration: String) {
+		stepsPerInterval(range: $range, duration: $duration) {
+			timeInterval
+			sum
+		}
+	}
+`;
+
+// Calories aggregated per time interval (server-side bucketing)
+export const CALORIES_PER_INTERVAL_QUERY = gql`
+	query CaloriesPerInterval($range: DateRange!, $duration: String) {
+		caloriesPerInterval(range: $range, duration: $duration) {
+			timeInterval
+			sum
+		}
+	}
+`;
+
+// Daily calories summary
+export const DAILY_CALORIES_SUM_QUERY = gql`
+	query DailyCaloriesSum($range: DateRange!) {
+		dailyCaloriesSum(range: $range) {
+			date
+			totalCalories
+		}
+	}
+`;
+
+// Distance aggregated per time interval (server-side bucketing)
+export const DISTANCE_PER_INTERVAL_QUERY = gql`
+	query DistancePerInterval($range: DateRange!, $duration: String) {
+		distancePerInterval(range: $range, duration: $duration) {
+			timeInterval
+			sum
+		}
+	}
+`;
+
+// Daily distance summary
+export const DAILY_DISTANCE_SUM_QUERY = gql`
+	query DailyDistanceSum($range: DateRange!) {
+		dailyDistanceSum(range: $range) {
+			date
+			totalDistance
+		}
+	}
+`;
+
 // Sleep data
 export const SLEEPS_QUERY = gql`
 	query Sleeps($limit: Int, $offset: Int, $range: DateRange) {

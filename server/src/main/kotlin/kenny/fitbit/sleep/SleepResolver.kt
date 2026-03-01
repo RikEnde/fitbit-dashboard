@@ -18,7 +18,7 @@ class SleepResolver(
     @QueryMapping
     fun sleeps(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Sleep> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val effectiveLimit = limit.coerceIn(1, 1000)
+        val effectiveLimit = limit.coerceIn(1, 50000)
         val pageable = PageRequest.of(offset / effectiveLimit, effectiveLimit, Sort.by("startTime").ascending())
 
         return if (range == null) {
@@ -53,7 +53,7 @@ class SleepScoreResolver(
     @QueryMapping
     fun sleepScores(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<SleepScore> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val effectiveLimit = limit.coerceIn(1, 1000)
+        val effectiveLimit = limit.coerceIn(1, 50000)
         val pageable = PageRequest.of(offset / effectiveLimit, effectiveLimit, Sort.by("timestamp").ascending())
 
         return if (range == null) {

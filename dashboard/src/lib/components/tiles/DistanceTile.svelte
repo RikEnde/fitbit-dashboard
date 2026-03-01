@@ -1,7 +1,7 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import {client} from '$graphql/client';
-    import {DISTANCES_QUERY as DISTANCE_QUERY} from '$graphql/queries';
+    import {DAILY_DISTANCE_SUM_QUERY, DISTANCE_PER_INTERVAL_QUERY} from '$graphql/queries';
     import {dateRange} from '$stores/dashboard';
     import {colors} from '$utils/colors';
     import ProgressRing from '$components/charts/ProgressRing.svelte';
@@ -22,27 +22,19 @@
 	let error = $state<string | null>(null);
 	let hourlyData = $state<{ label: string; value: number }[]>([]);
 
-	interface DistanceRecord {
-		id: string;
-		value: number;
-		dateTime: string;
+	interface IntervalRecord {
+		timeInterval: string;
+		sum: number;
 	}
 
-	function processHourlyData(distances: DistanceRecord[]): { label: string; value: number }[] {
-		const hourlyMap = new Map<number, number>();
-		for (let i = 0; i < 24; i++) {
-			hourlyMap.set(i, 0);
-		}
-		for (const dist of distances) {
-			const hour = new Date(dist.dateTime).getHours();
-			hourlyMap.set(hour, (hourlyMap.get(hour) ?? 0) + dist.value);
-		}
-		return Array.from(hourlyMap.entries())
-			.sort((a, b) => a[0] - b[0])
-			.map(([hour, value]) => ({
+	function processIntervalData(intervals: IntervalRecord[]): { label: string; value: number }[] {
+		return intervals.map((interval) => {
+			const hour = new Date(interval.timeInterval).getHours();
+			return {
 				label: `${hour}:00`,
-				value: value / CM_TO_KM // Convert cm to km for display
-			}));
+				value: interval.sum / CM_TO_KM // Convert cm to km for display
+			};
+		});
 	}
 
 	async function fetchData(range: { from: string; to: string }) {
@@ -50,16 +42,22 @@
 		error = null;
 
 		try {
-			const result = await client.query(DISTANCE_QUERY, { limit: 1440, range }).toPromise();
-			if (result.error) {
-				error = result.error.message;
+			const [dailyResult, hourlyResult] = await Promise.all([
+				client.query(DAILY_DISTANCE_SUM_QUERY, { range }).toPromise(),
+				client.query(DISTANCE_PER_INTERVAL_QUERY, { range, duration: '1 hour' }).toPromise()
+			]);
+
+			if (dailyResult.error) {
+				error = dailyResult.error.message;
 				return;
 			}
 
-			const distanceData = result.data?.distances ?? [];
-			const totalCm = distanceData.reduce((sum: number, d: DistanceRecord) => sum + d.value, 0);
-			totalDistanceKm = totalCm / CM_TO_KM; // Convert cm to km
-			hourlyData = processHourlyData(distanceData);
+			const totalCm = dailyResult.data?.dailyDistanceSum?.[0]?.totalDistance ?? 0;
+			totalDistanceKm = totalCm / CM_TO_KM;
+
+			if (hourlyResult.data?.distancePerInterval) {
+				hourlyData = processIntervalData(hourlyResult.data.distancePerInterval);
+			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to fetch data';
 		} finally {

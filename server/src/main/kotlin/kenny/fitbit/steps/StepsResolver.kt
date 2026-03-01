@@ -7,6 +7,9 @@ import org.springframework.data.domain.Sort
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Controller
 class StepsResolver(
@@ -17,7 +20,7 @@ class StepsResolver(
     @QueryMapping
     fun steps(@Argument limit: Int, @Argument offset: Int, @Argument range: DateRange?): List<Steps> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val effectiveLimit = limit.coerceIn(1, 1000)
+        val effectiveLimit = limit.coerceIn(1, 50000)
         val pageable = PageRequest.of(offset / effectiveLimit, effectiveLimit,
             Sort.by("dateTime").ascending())
 
@@ -36,6 +39,24 @@ class StepsResolver(
             val date = it[0] as java.sql.Date
             val totalSteps = (it[1] as Number).toInt()
             DailyStepsSum(date.toLocalDate(), totalSteps)
+        }
+    }
+
+    @QueryMapping
+    fun stepsPerInterval(@Argument range: DateRange, @Argument duration: String?): List<HourlyStepsValue> {
+        val profile = authService.getProfileOrNull() ?: return emptyList()
+        val validDurations = setOf("10 minutes", "15 minutes", "30 minutes", "1 hour")
+        val effectiveDuration = if (duration in validDurations) duration!! else "1 hour"
+        return stepsRepository.sumStepsPerInterval(
+            profileId = profile.id,
+            duration = effectiveDuration,
+            fromDateTime = range.fromLocal,
+            toDateTime = range.toLocal
+        ).map {
+            HourlyStepsValue(
+                OffsetDateTime.ofInstant(it[0] as Instant, ZoneOffset.UTC),
+                it[1] as Int
+            )
         }
     }
 
