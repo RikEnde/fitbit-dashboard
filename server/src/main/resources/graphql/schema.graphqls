@@ -11,7 +11,7 @@ input DateRange {
 type Query {
     # Heart Rate Queries
     heartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [HeartRate!]!
-    heartRatesPerInterval(range: DateRange!): [SumsOfHeartRates!]!
+    heartRatesPerInterval(range: DateRange!, duration: String): [SumsOfHeartRates!]!
 
     # Resting Heart Rate Queries
     restingHeartRates(limit: Int = 10, offset: Int = 0, range: DateRange): [RestingHeartRate!]!
@@ -55,6 +55,7 @@ type HeartRate {
 type SumsOfHeartRates {
     timeInterval: DateTime!  # start of the bucket
     bpmSum:       Int!       # Sum bpm inside the bucket
+    bpmAvg:       Int!       # Average bpm inside the bucket
 }
 
 type RestingHeartRate {

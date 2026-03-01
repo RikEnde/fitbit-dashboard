@@ -144,6 +144,9 @@ abstract class FileImporter<T>(
                     try {
                         importFile(index, size, file)
                         file.renameTo(File(file.absolutePath + ".imported"))
+                    } catch (e: Exception) {
+                        onProgress("Failed to import ${file.name}, file will not be renamed: ${e.message}")
+                        log.error("Failed to import ${file.name}", e)
                     } finally {
                         semaphore.release()
                     }
@@ -184,35 +187,30 @@ abstract class JsonImporter<T>(
     override suspend fun importFile(index: Int, size: Int, file: File) {
         onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
 
-        try {
-            val jsonNode = objectMapper.readTree(file)
-            if (jsonNode.isArray) {
-                val batch = mutableListOf<T>()
-                var count = 0
+        val jsonNode = objectMapper.readTree(file)
+        if (jsonNode.isArray) {
+            val batch = mutableListOf<T>()
+            var count = 0
 
-                for (item in jsonNode) {
-                    val entity = parseToEntity(item)
-                    if (entity != null) {
-                        batch.add(entity)
-                        updateMaxDate(entity)
-                        count++
+            for (item in jsonNode) {
+                val entity = parseToEntity(item)
+                if (entity != null) {
+                    batch.add(entity)
+                    updateMaxDate(entity)
+                    count++
 
-                        if (batch.size >= batchSize) {
-                            saveBatch(batch.toList())
-                            batch.clear()
-                        }
+                    if (batch.size >= batchSize) {
+                        saveBatch(batch.toList())
+                        batch.clear()
                     }
                 }
-
-                if (batch.isNotEmpty()) {
-                    saveBatch(batch.toList())
-                }
-
-                onProgress("Imported $count records from ${file.name}")
             }
-        } catch (e: Exception) {
-            onProgress("Error parsing file ${file.name}: ${e.message}")
-            log.error("Error parsing file ${file.name}", e)
+
+            if (batch.isNotEmpty()) {
+                saveBatch(batch.toList())
+            }
+
+            onProgress("Imported $count records from ${file.name}")
         }
     }
 }
@@ -254,42 +252,37 @@ abstract class CsvImporter<T>(
     override suspend fun importFile(index: Int, size: Int, file: File) {
         onProgress("Processing file ${index + 1} of $size (%.1f%%) - ${file.name}".format(100.0 * index / size))
 
-        try {
-            val batch = mutableListOf<T>()
-            var lineCount = 0
+        val batch = mutableListOf<T>()
+        var lineCount = 0
 
-            BufferedReader(FileReader(file)).use { reader ->
-                val headers = if (hasHeader) {
-                    reader.readLine()?.split(delimiter) ?: emptyList()
-                } else {
-                    emptyList()
-                }
+        BufferedReader(FileReader(file)).use { reader ->
+            val headers = if (hasHeader) {
+                reader.readLine()?.split(delimiter) ?: emptyList()
+            } else {
+                emptyList()
+            }
 
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val values = line!!.split(delimiter)
-                    val entity = parseRow(values, headers)
-                    if (entity != null) {
-                        batch.add(entity)
-                        updateMaxDate(entity)
-                        lineCount++
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val values = line!!.split(delimiter)
+                val entity = parseRow(values, headers)
+                if (entity != null) {
+                    batch.add(entity)
+                    updateMaxDate(entity)
+                    lineCount++
 
-                        if (batch.size >= batchSize) {
-                            saveBatch(batch.toList())
-                            batch.clear()
-                        }
+                    if (batch.size >= batchSize) {
+                        saveBatch(batch.toList())
+                        batch.clear()
                     }
                 }
             }
-
-            if (batch.isNotEmpty()) {
-                saveBatch(batch.toList())
-            }
-
-            onProgress("Imported $lineCount records from ${file.name}")
-        } catch (e: Exception) {
-            onProgress("Error parsing file ${file.name}: ${e.message}")
-            log.error("Error parsing file ${file.name}", e)
         }
+
+        if (batch.isNotEmpty()) {
+            saveBatch(batch.toList())
+        }
+
+        onProgress("Imported $lineCount records from ${file.name}")
     }
 }

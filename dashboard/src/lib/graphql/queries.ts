@@ -48,6 +48,17 @@ export const HEART_RATE_QUERY = gql`
 	}
 `;
 
+// Heart rates aggregated per time interval (server-side bucketing)
+export const HEART_RATES_PER_INTERVAL_QUERY = gql`
+	query HeartRatesPerInterval($range: DateRange!, $duration: String) {
+		heartRatesPerInterval(range: $range, duration: $duration) {
+			timeInterval
+			bpmSum
+			bpmAvg
+		}
+	}
+`;
+
 // Resting heart rate trend
 export const RESTING_HEART_RATES_QUERY = gql`
 	query RestingHeartRates($limit: Int, $range: DateRange) {
