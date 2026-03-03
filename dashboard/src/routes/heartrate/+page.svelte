@@ -165,16 +165,18 @@
 			hrByDate.set(date, Math.round(hr.value));
 		}
 
-		// Build trend data for all days in the period
+		// Build trend data only for days that have actual data
 		const trendData: typeof dailyTrend = [];
 		for (let i = days; i >= 0; i--) {
 			const date = subDays(endDate, i);
 			const dateStr = format(date, 'yyyy-MM-dd');
-			const value = hrByDate.get(dateStr) ?? 0;
-			trendData.push({
-				time: dateStr,
-				value
-			});
+			const value = hrByDate.get(dateStr);
+			if (value !== undefined) {
+				trendData.push({
+					time: dateStr,
+					value
+				});
+			}
 		}
 
 		dailyTrend = trendData;
