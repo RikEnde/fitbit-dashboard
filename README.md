@@ -374,7 +374,7 @@ POSTGRES_PASSWORD=changeme ./run-on-server.sh           # pulls and starts :late
 POSTGRES_PASSWORD=changeme ./run-on-server.sh v1.2      # specific tag
 ```
 
-The container binds to port 8080 on all interfaces by default. Put nginx in front for TLS — see `https.md` for a full nginx + self-signed TLS setup.
+The container binds to port 8080 on all interfaces by default.
 
 ### Importing Data on the Server
 
