@@ -102,9 +102,10 @@
 		};
 		const dateStr = format(date, 'yyyy-MM-dd');
 
-		const [hrResult, intervalResult] = await Promise.all([
-			client.query(HEART_RATE_QUERY, { limit: 1000, range, date: dateStr }, { requestPolicy: 'network-only' }).toPromise(),
-			client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }, { requestPolicy: 'network-only' }).toPromise()
+		const [hrResult, intervalResult, chartIntervalResult] = await Promise.all([
+			client.query(HEART_RATE_QUERY, { limit: 50000, range, date: dateStr }, { requestPolicy: 'network-only' }).toPromise(),
+			client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }, { requestPolicy: 'network-only' }).toPromise(),
+			client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 minute' }, { requestPolicy: 'network-only' }).toPromise()
 		]);
 
 		if (hrResult.error) {
@@ -114,14 +115,15 @@
 		const heartRates: HeartRateRecord[] = hrResult.data?.heartRates ?? [];
 		const restingHr = hrResult.data?.restingHeartRate;
 
-		if (heartRates.length > 0) {
-			// Process for line chart (sample every few minutes for smoother chart)
-			const sampledData = heartRates
-				.filter((_, i) => i % 5 === 0) // Sample every 5th reading
-				.map((hr) => ({ time: hr.dateTime, value: hr.bpm }));
-			heartRateData = sampledData;
+		// Use 5-minute interval aggregation for the line chart (covers full day)
+		const chartIntervals: IntervalRecord[] = chartIntervalResult?.data?.heartRatesPerInterval ?? [];
+		const chartData = chartIntervals
+			.filter((d) => d.bpmAvg > 0)
+			.map((d) => ({ time: d.timeInterval, value: Math.round(d.bpmAvg) }));
+		heartRateData = chartData;
 
-			// Calculate stats
+		if (heartRates.length > 0) {
+			// Calculate stats from raw data
 			const bpms = heartRates.map((hr) => hr.bpm);
 			dayStats = {
 				min: Math.min(...bpms),
@@ -132,7 +134,6 @@
 			// Zone distribution
 			zoneDistribution = calculateZoneDistribution(heartRates);
 		} else {
-			heartRateData = [];
 			dayStats = { min: 0, max: 0, resting: restingHr ? Math.round(restingHr.value) : 0 };
 			zoneDistribution = zones.map((z) => ({ name: z.name, minutes: 0, color: z.color, percentage: 0 }));
 		}

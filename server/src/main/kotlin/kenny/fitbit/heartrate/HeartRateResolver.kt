@@ -34,7 +34,7 @@ class HeartRateResolver(
     @QueryMapping
     fun heartRatesPerInterval(@Argument range: DateRange, @Argument duration: String?): List<SumsOfHeartRates> {
         val profile = authService.getProfileOrNull() ?: return emptyList()
-        val validDurations = setOf("10 minutes", "15 minutes", "30 minutes", "1 hour")
+        val validDurations = setOf("1 minute", "5 minutes", "10 minutes", "15 minutes", "30 minutes", "1 hour")
         val effectiveDuration = if (duration in validDurations) duration!! else "10 minutes"
         return heartRateRepository.sumByTimeBetween(
             profileId = profile.id,
