@@ -47,7 +47,7 @@
 		try {
 			const date = range.to.split('T')[0];
 			const [hrResult, intervalResult] = await Promise.all([
-				client.query(HEART_RATE_QUERY, { limit: 1000, range, date }).toPromise(),
+				client.query(HEART_RATE_QUERY, { limit: 50000, range, date }).toPromise(),
 				client.query(HEART_RATES_PER_INTERVAL_QUERY, { range, duration: '1 hour' }).toPromise()
 			]);
 

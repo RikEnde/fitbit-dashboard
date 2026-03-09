@@ -1,5 +1,19 @@
 # CLAUDE.md
 
+## Architecture
+
+Maven multi-module: `model` → `importer` → `importer-cli` / `server`. Dashboard is SvelteKit (npm).
+
+DDD by domain package `kenny.fitbit.{domain}` across all modules. Each domain has:
+- `model/` — Entity + Repository
+- `importer/` — Interface (directory + filePattern) + Impl extending `JsonImporter<T>` or `CsvImporter<T>`
+- `server/` — GraphQL `@Controller` resolver, optional `Exporter<T>`
+- `dashboard/` — GQL query in `queries.ts`, route page `routes/{domain}/+page.svelte`, tile in `components/tiles/`
+
+Use an existing domain as reference: `steps` for simple, `heartrate` for complex with aggregation, `sleep` for aggregate roots with child entities.
+
+Wiring a new importer: add CLI flag in `ImportRunner.kt`, register in `ImportService.kt` for REST import, add subdirectory to `ZipImportService.kt` known directories.
+
 ## Critical Constraints
 
 ### GraphQL Scalar Types
